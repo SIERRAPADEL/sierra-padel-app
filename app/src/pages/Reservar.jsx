@@ -111,7 +111,7 @@ export default function Reservar() {
         </div>
         <div className="bg-sp-green-light rounded-2xl px-5 py-4 text-center w-full max-w-xs">
           <p className="text-sp-green-dark text-sm font-medium">
-            El equipo de Sierra Padel confirmará tu reserva por WhatsApp.
+            Tu solicitud llegó al panel del club. El equipo te confirmará a la brevedad.
           </p>
         </div>
         <button className="btn-green w-full max-w-xs" onClick={reset}>Nueva solicitud</button>
@@ -316,7 +316,7 @@ export default function Reservar() {
         </button>
 
         <p className="text-xs text-gray-400 text-center -mt-1">
-          Tu solicitud quedará pendiente hasta que Sierra Padel la confirme por WhatsApp.
+          Tu solicitud llega directamente al panel del club.
         </p>
       </div>
     </div>
