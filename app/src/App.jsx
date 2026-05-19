@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import BottomNav from './components/BottomNav';
 import Login from './pages/Login';
@@ -37,13 +37,14 @@ function AppRoutes() {
 
 function LayoutWrapper() {
   const { user } = useAuth();
+  const { pathname } = useLocation();
   const noNavRoutes = ['/login', '/registro'];
-  const isNoNav = noNavRoutes.some(r => window.location.pathname.startsWith(r)) || !user;
+  const showNav = user && !noNavRoutes.some(r => pathname.startsWith(r));
 
   return (
     <div className="max-w-md mx-auto relative min-h-screen">
       <AppRoutes />
-      {user && !isNoNav && <BottomNav />}
+      {showNav && <BottomNav />}
     </div>
   );
 }
