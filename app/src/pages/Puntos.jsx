@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
@@ -8,14 +9,14 @@ const META_PUNTOS = 20;
 export default function Puntos() {
   const { user } = useAuth();
   const { apiFetch } = useApi();
+  const location = useLocation();
   const [saldo, setSaldo] = useState(null);
   const [historial, setHistorial] = useState([]);
-  const [tab, setTab] = useState('card');
+  const [tab, setTab] = useState(location.state?.tab || 'card');
   const [ticket, setTicket] = useState('');
   const [monto, setMonto] = useState('');
   const [msg, setMsg] = useState(null);
   const [loadingConsumo, setLoadingConsumo] = useState(false);
-  const fileRef = useRef();
 
   useEffect(() => {
     apiFetch('/auth/me').then(d => { if (d.ok) setSaldo(d.data); });

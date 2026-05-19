@@ -60,26 +60,16 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="card flex items-center justify-between gap-3 active:scale-[0.98] transition-transform cursor-pointer" onClick={() => navigate('/puntos')}>
-          <div>
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Próxima reserva</p>
-            <p className="text-sp-gray font-bold">Cancha 3</p>
-            <p className="text-sm text-gray-400">Hoy · 8:00 PM</p>
-          </div>
-          <span className="bg-sp-green-light text-sp-green-dark text-xs font-bold px-3 py-1 rounded-lg">Confirmada</span>
-        </div>
-
         <button
-          onClick={() => navigate('/puntos')}
+          onClick={() => navigate('/puntos', { state: { tab: 'consumo' } })}
           className="bg-sp-gray rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
         >
           <div className="text-left">
-            <p className="text-gray-400 text-xs">Registra tu consumo</p>
-            <p className="text-white font-bold text-sm mt-0.5">Escanea tu ticket →</p>
+            <p className="text-gray-400 text-xs">Restaurante · 1 pto por $50</p>
+            <p className="text-white font-bold text-sm mt-0.5">Registrar consumo →</p>
           </div>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#84C200" strokeWidth="1.8" strokeLinecap="round">
-            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
-            <circle cx="12" cy="13" r="4" />
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#84C200" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
         </button>
       </div>
