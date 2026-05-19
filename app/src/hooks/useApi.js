@@ -7,15 +7,24 @@ export function useApi() {
 
   async function apiFetch(path, options = {}) {
     const token = getToken();
-    const res = await fetch(`${BASE}${path}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options.headers,
-      },
-    });
-    return res.json();
+    try {
+      const res = await fetch(`${BASE}${path}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...options.headers,
+        },
+      });
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { ok: false, error: `Error del servidor (${res.status})` };
+      }
+    } catch {
+      return { ok: false, error: 'Sin conexión. Verifica tu internet.' };
+    }
   }
 
   return { apiFetch };
