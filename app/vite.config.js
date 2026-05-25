@@ -12,7 +12,7 @@ export default defineConfig({
         name: 'Sierra Padel',
         short_name: 'Sierra Padel',
         description: 'Reserva canchas, torneos y puntos de lealtad',
-        theme_color: '#84C200',
+        theme_color: '#96C800',
         background_color: '#FAFAFA',
         display: 'standalone',
         orientation: 'portrait',

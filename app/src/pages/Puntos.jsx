@@ -19,7 +19,7 @@ function NivelBadge({ nivel, size = 56 }) {
   }
 
   // Placeholders geométricos por orden
-  const color = nivel.color || '#84C200';
+  const color = nivel.color || '#96C800';
   const orden = nivel.orden || 1;
 
   const shapes = {

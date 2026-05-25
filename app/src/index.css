@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --sp-green: #84C200;
+  --sp-green: #96C800;
   --sp-gray: #575757;
   --safe-bottom: env(safe-area-inset-bottom);
   --safe-top: env(safe-area-inset-top);

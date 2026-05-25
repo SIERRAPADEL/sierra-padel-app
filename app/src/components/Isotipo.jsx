@@ -1,4 +1,4 @@
-export default function Isotipo({ size = 48, color = '#84C200' }) {
+export default function Isotipo({ size = 48, color = '#96C800' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Outer ring — gap at ~1 o'clock where diagonal exits */}

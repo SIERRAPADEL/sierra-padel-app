@@ -51,7 +51,7 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-3">
           {acciones.map(a => (
             <button key={a.to} onClick={() => navigate(a.to)} className="card flex flex-col items-center py-4 gap-1 active:scale-95 transition-transform">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#84C200" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d={a.icon} />
               </svg>
               <span className="text-sp-gray font-bold text-sm mt-1">{a.label}</span>
@@ -68,7 +68,7 @@ export default function Home() {
             <p className="text-gray-400 text-xs">Restaurante · 1 pto por $50</p>
             <p className="text-white font-bold text-sm mt-0.5">Registrar consumo →</p>
           </div>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#84C200" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
         </button>

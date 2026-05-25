@@ -1,5 +1,151 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
+
+// ── Mis Reservas ─────────────────────────────────────────────────────────────
+
+function fmtFecha(iso) {
+  if (!iso) return '';
+  return new Date(iso + 'T12:00').toLocaleDateString('es-MX', {
+    weekday: 'short', day: 'numeric', month: 'short',
+  });
+}
+
+function EstadoPill({ estado, source }) {
+  if (source === 'pre' || estado === 'pendiente') {
+    return <span className="text-xs font-bold px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full">Pendiente</span>;
+  }
+  if (estado === 'confirmada') {
+    return <span className="text-xs font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded-full">Confirmada</span>;
+  }
+  if (estado === 'cancelada') {
+    return <span className="text-xs font-bold px-2 py-0.5 bg-red-100 text-red-400 rounded-full">Cancelada</span>;
+  }
+  if (estado === 'no-show') {
+    return <span className="text-xs font-bold px-2 py-0.5 bg-gray-100 text-gray-400 rounded-full">No-show</span>;
+  }
+  return <span className="text-xs font-bold px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">{estado}</span>;
+}
+
+function MisReservas({ apiFetch }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState('proximas'); // 'proximas' | 'historial'
+
+  const load = useCallback(() => {
+    setLoading(true);
+    apiFetch('/reservas/mis-reservas').then(d => {
+      if (d.ok) setData(d.data);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, [apiFetch]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const proximas = [
+    ...(data?.pendientes || []),
+    ...(data?.confirmadas || []),
+  ].sort((a, b) => {
+    if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
+    return (a.hora_inicio || '') < (b.hora_inicio || '') ? -1 : 1;
+  });
+
+  const historial = data?.historial || [];
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="w-8 h-8 border-4 border-sp-green border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Tabs */}
+      <div className="flex gap-1">
+        {[['proximas','Próximas'],['historial','Historial']].map(([v, label]) => (
+          <button
+            key={v}
+            onClick={() => setTab(v)}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+              tab === v ? 'bg-sp-green text-white' : 'bg-white text-sp-gray border border-gray-200'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'proximas' && (
+        <>
+          {proximas.length === 0 && (
+            <div className="card text-center py-12">
+              <p className="text-3xl mb-3">🎾</p>
+              <p className="text-gray-500 font-medium">Sin reservas próximas</p>
+              <p className="text-gray-400 text-sm mt-1">Haz tu primera solicitud arriba</p>
+            </div>
+          )}
+          {proximas.map(r => (
+            <div key={`${r._source}-${r.id}`} className="card">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-black text-sp-gray">
+                    {r.tipo === 'renta' ? `Cancha ${r.cancha}` :
+                     r.tipo === 'clase' ? `Clase con ${r.instructor}` : r.tipo}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-0.5 capitalize">
+                    {fmtFecha(r.fecha)} · {r.hora_inicio}
+                  </p>
+                </div>
+                <EstadoPill estado={r.estado} source={r._source} />
+              </div>
+              {r._source === 'pre' && (
+                <p className="text-xs text-yellow-600 mt-2 bg-yellow-50 rounded-lg px-3 py-1.5">
+                  ⏳ Esperando confirmación del club
+                </p>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+
+      {tab === 'historial' && (
+        <>
+          {historial.length === 0 && (
+            <div className="card text-center py-10">
+              <p className="text-gray-400 text-sm">Sin historial de reservas</p>
+            </div>
+          )}
+          {historial.map(r => (
+            <div key={r.id} className="card opacity-80">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-semibold text-sp-gray">
+                    {r.tipo === 'renta' ? `Cancha ${r.cancha}` :
+                     r.tipo === 'clase' ? `Clase con ${r.instructor}` : r.tipo}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5 capitalize">
+                    {fmtFecha(r.fecha)} · {r.hora_inicio}
+                  </p>
+                </div>
+                <EstadoPill estado={r.estado} source={r._source} />
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      <button
+        onClick={load}
+        className="text-sp-green text-sm font-semibold text-center py-2"
+      >
+        Actualizar
+      </button>
+    </div>
+  );
+}
+
+// ── Constantes del formulario ─────────────────────────────────────────────────
 
 const HORARIOS = [
   '07:00','08:00','09:00','10:00','11:00','12:00','13:00',
@@ -16,6 +162,7 @@ function formatDate(iso) {
 
 export default function Reservar() {
   const { apiFetch } = useApi();
+  const [mainTab, setMainTab] = useState('nueva'); // 'nueva' | 'mis'
   const [tipo, setTipo] = useState('cancha'); // 'cancha' | 'clase'
 
   // --- Cancha ---
@@ -100,7 +247,7 @@ export default function Reservar() {
     return (
       <div className="page safe-bottom flex flex-col items-center justify-center px-6 gap-5">
         <div className="w-20 h-20 rounded-full bg-sp-green-light flex items-center justify-center">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#84C200" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6L9 17l-5-5" />
           </svg>
         </div>
@@ -122,13 +269,33 @@ export default function Reservar() {
   // ─── Formulario ───────────────────────────────────────────────────────────
   return (
     <div className="page safe-bottom">
-      <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-4">
-        <p className="text-white font-black text-lg pt-3">Reservar</p>
+      <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-0">
+        <p className="text-white font-black text-lg pt-3 mb-3">Reservar</p>
+        {/* Main tabs */}
+        <div className="flex gap-1">
+          {[['nueva','Nueva reserva'],['mis','Mis reservas']].map(([v,label]) => (
+            <button
+              key={v}
+              onClick={() => { setMainTab(v); setDone(null); }}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
+                mainTab === v ? 'bg-white text-sp-green' : 'text-white/70'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="px-4 py-4 flex flex-col gap-4">
 
-        {/* Tabs */}
+        {/* ── Mis reservas ── */}
+        {mainTab === 'mis' && <MisReservas apiFetch={apiFetch} />}
+
+        {/* ── Nueva reserva ── */}
+        {mainTab === 'nueva' && <>
+
+        {/* Tipo tabs */}
         <div className="flex gap-1 bg-gray-100 rounded-2xl p-1">
           {[['cancha', '🎾 Cancha'], ['clase', '🏫 Clase']].map(([val, label]) => (
             <button
@@ -182,143 +349,4 @@ export default function Reservar() {
                   Canchas disponibles
                 </p>
                 {loadingCanchas ? (
-                  <div className="flex justify-center py-4">
-                    <div className="w-6 h-6 border-2 border-sp-green border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : canchasDisp && canchasDisp.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-2">
-                    Sin canchas disponibles en este horario
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-4 gap-2">
-                    {(canchasDisp || []).map(c => (
-                      <button
-                        key={c}
-                        onClick={() => setCancha(c)}
-                        className={`py-2 rounded-xl text-sm font-semibold border transition-all active:scale-95 ${
-                          cancha === c
-                            ? 'bg-sp-green text-white border-sp-green'
-                            : 'bg-white text-sp-gray border-gray-200'
-                        }`}
-                      >
-                        #{c}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {puedeConfirmarCancha && (
-              <div className="card bg-sp-green-light border border-sp-green/30">
-                <p className="text-sp-green-dark font-semibold text-sm">Cancha {cancha} · {hora}</p>
-                <p className="text-sp-green-dark text-xs mt-0.5 capitalize">{formatDate(fecha)}</p>
-                <p className="text-sp-green-dark text-xs mt-0.5">Duración: 1:30 hrs</p>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ── CLASE ── */}
-        {tipo === 'clase' && (
-          <>
-            <div className="card">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">Fecha</p>
-              <input
-                type="date"
-                className="input-field"
-                value={fechaClase}
-                min={hoyISO()}
-                onChange={e => setFechaClase(e.target.value)}
-              />
-            </div>
-
-            <div className="card">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">
-                Coach disponible
-              </p>
-              {loadingCoaches ? (
-                <div className="flex justify-center py-4">
-                  <div className="w-6 h-6 border-2 border-sp-green border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : coaches && coaches.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-2">
-                  Sin coaches disponibles este día
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {(coaches || []).map(c => (
-                    <div key={c.instructor}>
-                      <button
-                        onClick={() => { setCoachSel(c.instructor); setHoraSel(null); }}
-                        className={`w-full flex items-center gap-3 py-2.5 px-3 rounded-xl border transition-all active:scale-[0.98] ${
-                          coachSel === c.instructor
-                            ? 'border-sp-green bg-sp-green-light'
-                            : 'border-gray-200 bg-white'
-                        }`}
-                      >
-                        <div className="w-9 h-9 rounded-full bg-sp-green flex items-center justify-center shrink-0">
-                          <span className="text-white font-black text-sm">
-                            {c.instructor.charAt(0)}
-                          </span>
-                        </div>
-                        <span className={`font-semibold text-sm flex-1 text-left ${
-                          coachSel === c.instructor ? 'text-sp-green-dark' : 'text-sp-gray'
-                        }`}>
-                          {c.instructor}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {c.slots.length} {c.slots.length === 1 ? 'horario' : 'horarios'}
-                        </span>
-                      </button>
-
-                      {coachSel === c.instructor && (
-                        <div className="grid grid-cols-4 gap-2 mt-2 px-1">
-                          {c.slots.map(s => (
-                            <button
-                              key={s}
-                              onClick={() => setHoraSel(s)}
-                              className={`py-2 rounded-xl text-sm font-semibold border transition-all active:scale-95 ${
-                                horaSel === s
-                                  ? 'bg-sp-green text-white border-sp-green'
-                                  : 'bg-white text-sp-gray border-gray-200'
-                              }`}
-                            >
-                              {s}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {puedeConfirmarClase && (
-              <div className="card bg-sp-green-light border border-sp-green/30">
-                <p className="text-sp-green-dark font-semibold text-sm">Clase con {coachSel}</p>
-                <p className="text-sp-green-dark text-xs mt-0.5 capitalize">{formatDate(fechaClase)} · {horaSel}</p>
-                <p className="text-sp-green-dark text-xs mt-0.5">Duración: 1 hr</p>
-              </div>
-            )}
-          </>
-        )}
-
-        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-        <button
-          onClick={handleConfirmar}
-          disabled={loading || (tipo === 'cancha' ? !puedeConfirmarCancha : !puedeConfirmarClase)}
-          className="btn-green disabled:opacity-50"
-        >
-          {loading ? 'Enviando...' : 'Solicitar reserva'}
-        </button>
-
-        <p className="text-xs text-gray-400 text-center -mt-1">
-          Tu solicitud llega directamente al panel del club.
-        </p>
-      </div>
-    </div>
-  );
-}
+  

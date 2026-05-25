@@ -3,8 +3,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        'sp-green': '#84C200',
-        'sp-green-dark': '#6AA000',
+        'sp-green': '#96C800',
+        'sp-green-dark': '#7aaa00',
         'sp-green-light': '#EDF7D6',
         'sp-gray': '#575757',
         'sp-gray-light': '#F2F2F2',
