@@ -349,4 +349,130 @@ export default function Reservar() {
                   Canchas disponibles
                 </p>
                 {loadingCanchas ? (
-  
+                  <div className="flex justify-center py-6">
+                    <div className="w-6 h-6 border-4 border-sp-green border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : canchasDisp && canchasDisp.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-4">Sin canchas disponibles para este horario</p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {(canchasDisp || []).map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setCancha(c)}
+                        className={`py-3 rounded-xl text-sm font-bold border transition-all active:scale-95 ${
+                          cancha === c
+                            ? 'bg-sp-green text-white border-sp-green'
+                            : 'bg-white text-sp-gray border-gray-200'
+                        }`}
+                      >
+                        Cancha {c}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+            {puedeConfirmarCancha && (
+              <div className="card bg-sp-green-light border-0">
+                <p className="text-xs text-sp-green-dark font-semibold uppercase tracking-wide mb-2">Resumen</p>
+                <p className="font-black text-sp-gray text-base">Cancha {cancha}</p>
+                <p className="text-sm text-gray-500 capitalize">{formatDate(fecha)} · {hora}</p>
+                <button
+                  className="btn-green w-full mt-4"
+                  onClick={handleConfirmar}
+                  disabled={loading}
+                >
+                  {loading ? 'Enviando...' : 'Confirmar solicitud'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── CLASE ── */}
+        {tipo === 'clase' && (
+          <>
+            <div className="card">
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">Fecha</p>
+              <input
+                type="date"
+                className="input-field"
+                value={fechaClase}
+                min={hoyISO()}
+                onChange={e => setFechaClase(e.target.value)}
+              />
+            </div>
+
+            {loadingCoaches ? (
+              <div className="flex justify-center py-8">
+                <div className="w-6 h-6 border-4 border-sp-green border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : coaches && coaches.length === 0 ? (
+              <div className="card text-center py-8">
+                <p className="text-gray-400 text-sm">Sin instructores disponibles para esta fecha</p>
+              </div>
+            ) : coaches ? (
+              coaches.map(coach => (
+                <div
+                  key={coach.nombre}
+                  onClick={() => { setCoachSel(coach.nombre); setHoraSel(null); }}
+                  className={`card cursor-pointer transition-all ${coachSel === coach.nombre ? 'ring-2 ring-sp-green' : ''}`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-sp-green-light flex items-center justify-center text-sp-green font-black text-lg">
+                      {coach.nombre[0]}
+                    </div>
+                    <div>
+                      <p className="font-black text-sp-gray">{coach.nombre}</p>
+                      <p className="text-xs text-gray-400">{coach.horarios?.length || 0} horarios disponibles</p>
+                    </div>
+                  </div>
+                  {coachSel === coach.nombre && coach.horarios?.length > 0 && (
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {coach.horarios.map(h => (
+                        <button
+                          key={h}
+                          onClick={e => { e.stopPropagation(); setHoraSel(h); }}
+                          className={`py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                            horaSel === h
+                              ? 'bg-sp-green text-white border-sp-green'
+                              : 'bg-white text-sp-gray border-gray-200'
+                          }`}
+                        >
+                          {h}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : null}
+
+            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+            {puedeConfirmarClase && (
+              <div className="card bg-sp-green-light border-0">
+                <p className="text-xs text-sp-green-dark font-semibold uppercase tracking-wide mb-2">Resumen</p>
+                <p className="font-black text-sp-gray text-base">Clase con {coachSel}</p>
+                <p className="text-sm text-gray-500 capitalize">{formatDate(fechaClase)} · {horaSel}</p>
+                <button
+                  className="btn-green w-full mt-4"
+                  onClick={handleConfirmar}
+                  disabled={loading}
+                >
+                  {loading ? 'Enviando...' : 'Confirmar solicitud'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        </>}
+      </div>
+    </div>
+  );
+}
