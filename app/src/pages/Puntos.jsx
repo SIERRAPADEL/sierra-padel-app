@@ -18,12 +18,12 @@ function NivelBadge({ nivel, size = 56 }) {
     );
   }
 
-  // Placeholders geométricos por orden
+  // Placeholders geometricos por orden
   const color = nivel.color || '#96C800';
   const orden = nivel.orden || 1;
 
   const shapes = {
-    1: ( // Círculo simple
+    1: ( // Circulo simple
       <svg width={size} height={size} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="28" cy="28" r="24" stroke={color} strokeWidth="3" fill="none"/>
         <circle cx="28" cy="28" r="16" fill={color} fillOpacity="0.15"/>
@@ -117,12 +117,12 @@ export default function Puntos() {
 
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
 
-  // Si el código expiró, limpiar
+  // Si el codigo expiro, limpiar
   useEffect(() => {
     if (canjeActivo && segs === 0) setCanjeActivo(null);
   }, [segs, canjeActivo]);
 
-  // Si aún no cargaron los niveles, mostramos loading mínimo
+  // Si aun no cargaron los niveles, mostramos loading minimo
   if (niveles.length === 0) {
     return (
       <div className="page safe-bottom">
@@ -157,7 +157,7 @@ export default function Puntos() {
       setCanjeActivo(data.data);
       setCanjeModal(null);
     } else {
-      setCanjeError(data.error || 'Error al generar código');
+      setCanjeError(data.error || 'Error al generar codigo');
     }
   }
 
@@ -184,16 +184,16 @@ export default function Puntos() {
     return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
   }
 
-  // ── Pantalla de código activo ─────────────────────────────────────────────
+  // ── Pantalla de codigo activo ─────────────────────────────────────────────
   if (canjeActivo) {
     return (
       <div className="page safe-bottom">
         <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
-          <p className="text-white font-black text-lg pt-3">Código de canje</p>
+          <p className="text-white font-black text-lg pt-3">Codigo de canje</p>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6 py-8">
           <div className="text-center">
-            <p className="text-gray-500 text-sm font-medium mb-1">Muestra este código al cajero</p>
+            <p className="text-gray-500 text-sm font-medium mb-1">Muestra este codigo al cajero</p>
             <p className="text-xs text-gray-400">{canjeActivo.descripcion}</p>
           </div>
 
@@ -202,12 +202,12 @@ export default function Puntos() {
             <div className={`text-2xl font-bold tabular-nums ${segs < 60 ? 'text-red-400' : 'text-sp-green'}`}>
               {countdown}
             </div>
-            <p className="text-gray-500 text-xs">El código expira en {countdown}</p>
+            <p className="text-gray-500 text-xs">El codigo expira en {countdown}</p>
           </div>
 
           <div className="bg-sp-green-light rounded-2xl px-5 py-3 text-center w-full max-w-xs">
             <p className="text-sp-green-dark text-xs font-medium">
-              Se descontarán <strong>{canjeActivo.puntos_usados} puntos</strong> al confirmar el cajero
+              Se descontaran <strong>{canjeActivo.puntos_usados} puntos</strong> al confirmar el cajero
             </p>
           </div>
 
@@ -257,12 +257,12 @@ export default function Puntos() {
               />
             </div>
             <p className="text-gray-600 text-xs mt-1">
-              {nextNivel.min_pc - (saldo?.nivel_pc || 0)} rentas más para llegar a {nextNivel.nombre}
+              {nextNivel.min_pc - (saldo?.nivel_pc || 0)} rentas mas para llegar a {nextNivel.nombre}
             </p>
           </div>
         )}
         {!nextNivel && (
-          <p className="text-xs mt-3" style={{ color: nivel.color }}>¡Nivel máximo alcanzado!</p>
+          <p className="text-xs mt-3" style={{ color: nivel.color }}>¡Nivel maximo alcanzado!</p>
         )}
       </div>
 
@@ -363,7 +363,7 @@ export default function Puntos() {
             </div>
           </div>
 
-          {/* Próximo nivel */}
+          {/* Proximo nivel */}
           {nextNivel && (
             <div className="card border-2 opacity-80" style={{ borderColor: nextNivel.color }}>
               <div className="flex items-center gap-2 mb-2">
@@ -375,7 +375,7 @@ export default function Puntos() {
                 <p>• Restaurante con solo <strong>{nextNivel.pr_meta} PR</strong></p>
                 {nextNivel.descuento_merch > 0 && <p>• <strong>{nextNivel.descuento_merch}% de descuento</strong> en tienda</p>}
                 <p className="mt-1 font-medium" style={{ color: nextNivel.color }}>
-                  Faltan {nextNivel.min_pc - (saldo?.nivel_pc || 0)} rentas más
+                  Faltan {nextNivel.min_pc - (saldo?.nivel_pc || 0)} rentas mas
                 </p>
               </div>
             </div>
@@ -412,7 +412,7 @@ export default function Puntos() {
         <form onSubmit={handleConsumo} className="mx-4 mt-3 card flex flex-col gap-3 pb-4 mb-24">
           <p className="text-sm text-gray-500">Ingresa los datos de tu ticket del restaurante para acreditar puntos.</p>
           <div>
-            <label className="text-xs text-gray-500 font-medium mb-1 block">Número de ticket</label>
+            <label className="text-xs text-gray-500 font-medium mb-1 block">Numero de ticket</label>
             <input className="input-field" placeholder="Ej: 1842" value={ticket} onChange={e => setTicket(e.target.value)} />
           </div>
           <div>
@@ -435,7 +435,7 @@ export default function Puntos() {
       {tab === 'historial' && (
         <div className="mx-4 mt-3 flex flex-col gap-2 pb-24">
           {historial.length === 0 && (
-            <div className="card text-center text-gray-400 text-sm py-8">Sin movimientos aún</div>
+            <div className="card text-center text-gray-400 text-sm py-8">Sin movimientos aun</div>
           )}
           {historial.map(h => (
             <div key={h.id} className="card flex items-center justify-between">
@@ -454,7 +454,7 @@ export default function Puntos() {
         </div>
       )}
 
-      {/* Modal de confirmación de canje */}
+      {/* Modal de confirmacion de canje */}
       {canjeModal && (
         <div
           className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 px-4 pb-8"
@@ -476,7 +476,7 @@ export default function Puntos() {
             </div>
             <div className="bg-sp-green-light rounded-xl px-4 py-3 text-center">
               <p className="text-sp-green-dark text-sm">
-                Se generará un código de 6 dígitos válido por <strong>5 minutos</strong>. Muéstraselo al cajero para aplicar el descuento.
+                Se generara un codigo de 6 digitos valido por <strong>5 minutos</strong>. Muestraselo al cajero para aplicar el descuento.
               </p>
             </div>
             {canjeError && <p className="text-red-500 text-sm text-center">{canjeError}</p>}
@@ -485,7 +485,7 @@ export default function Puntos() {
               disabled={loadingCanje}
               className="btn-green disabled:opacity-50"
             >
-              {loadingCanje ? 'Generando...' : 'Generar código'}
+              {loadingCanje ? 'Generando...' : 'Generar codigo'}
             </button>
             <button onClick={() => setCanjeModal(null)} className="text-gray-400 text-sm text-center">
               Cancelar
