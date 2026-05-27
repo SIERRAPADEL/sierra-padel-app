@@ -359,7 +359,7 @@ function Notificaciones({ apiFetch, onBack }) {
               width: 44, height: 26, borderRadius: 13,
               background: isActive ? '#96C800' : '#E5E7EB',
               position: 'relative', transition: 'background 0.2s',
-  2           display: 'flex', alignItems: 'center', padding: '0 3px',
+             display: 'flex', alignItems: 'center', padding: '0 3px',
             }}>
               <div style={{
                 width: 20, height: 20, borderRadius: '50%', background: 'white',
@@ -396,7 +396,7 @@ function Notificaciones({ apiFetch, onBack }) {
         )}
 
         {permission === 'unsupported' ? (
-     0    <div className="card text-center py-4">
+         <div className="card text-center py-4">
             <p className="text-gray-400 text-sm">Tu dispositivo no soporta notificaciones push.</p>
           </div>
         ) : permission === 'denied' ? (
@@ -510,7 +510,7 @@ export default function Perfil() {
           >
             <div className="flex items-center gap-3">
               <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-        2        <span className="text-sp-gray font-semibold text-sm">Cambiar PIN</span>
+                <span className="text-sp-gray font-semibold text-sm">Cambiar PIN</span>
             </div>
             <ChevronRight />
           </button>
@@ -525,7 +525,7 @@ export default function Perfil() {
             </div>
             <div className="flex items-center gap-2">
               {notifStatus === 'on' && (
- 2              <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#f0f9e8', color: '#5a8a00' }}>Activas</span>
+               <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#f0f9e8', color: '#5a8a00' }}>Activas</span>
               )}
               {notifStatus === 'off' && (
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-400">Bloqueadas</span>
@@ -536,7 +536,7 @@ export default function Perfil() {
         </div>
 
         <button
-   2      onClick={handleLogout}
+         onClick={handleLogout}
           className="card flex items-center gap-3 px-4 py-4 w-full text-left active:bg-red-50"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
