@@ -63,7 +63,7 @@ function MisReservas({ apiFetch }) {
     <div className="flex flex-col gap-3">
       {/* Tabs */}
       <div className="flex gap-1">
-        {[['proximas','Próximas'],['historial','Historial']].map(([v, label]) => (
+        {[['proximas','Proximas'],['historial','Historial']].map(([v, label]) => (
           <button
             key={v}
             onClick={() => setTab(v)}
@@ -81,7 +81,7 @@ function MisReservas({ apiFetch }) {
           {proximas.length === 0 && (
             <div className="card text-center py-12">
               <p className="text-3xl mb-3">🎾</p>
-              <p className="text-gray-500 font-medium">Sin reservas próximas</p>
+              <p className="text-gray-500 font-medium">Sin reservas proximas</p>
               <p className="text-gray-400 text-sm mt-1">Haz tu primera solicitud arriba</p>
             </div>
           )}
@@ -101,7 +101,7 @@ function MisReservas({ apiFetch }) {
               </div>
               {r._source === 'pre' && (
                 <p className="text-xs text-yellow-600 mt-2 bg-yellow-50 rounded-lg px-3 py-1.5">
-                  ⏳ Esperando confirmación del club
+                  ⏳ Esperando confirmacion del club
                 </p>
               )}
             </div>
@@ -242,7 +242,7 @@ export default function Reservar() {
   const puedeConfirmarCancha = cancha && hora && fecha;
   const puedeConfirmarClase  = coachSel && horaSel && fechaClase;
 
-  // ─── Pantalla de éxito ────────────────────────────────────────────────────
+  // ─── Pantalla de exito ────────────────────────────────────────────────────
   if (done) {
     return (
       <div className="page safe-bottom flex flex-col items-center justify-center px-6 gap-5">
@@ -258,7 +258,7 @@ export default function Reservar() {
         </div>
         <div className="bg-sp-green-light rounded-2xl px-5 py-4 text-center w-full max-w-xs">
           <p className="text-sp-green-dark text-sm font-medium">
-            Tu solicitud llegó al panel del club. El equipo te confirmará a la brevedad.
+            Tu solicitud llego al panel del club. El equipo te confirmara a la brevedad.
           </p>
         </div>
         <button className="btn-green w-full max-w-xs" onClick={reset}>Nueva solicitud</button>
