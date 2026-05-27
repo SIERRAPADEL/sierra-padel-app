@@ -35,7 +35,7 @@ function WebViewBanner({ isAndroid }) {
       window.location.href = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encoded};end`;
     } else {
       if (navigator.clipboard) {
-        navigator.clipboard.writeText(window.location.href).then(() => { alert('Link copiado. Pégalo en Safari para instalar la app.'); });
+        navigator.clipboard.writeText(window.location.href).then(() => { alert('Link copiado. Pegalo en Safari para instalar la app.'); });
       } else {
         alert(`Copia este link en Safari:\n${window.location.href}`);
       }
@@ -65,7 +65,7 @@ function IOSChromCard({ onDismiss }) {
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <div style={{ width: 44, height: 44, borderRadius: 12, background: '#96C800', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🎾</div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Instala Sierra Pádel</div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Instala Sierra Padel</div>
             <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>Recibe notificaciones de reservas y torneos</div>
           </div>
         </div>
@@ -75,7 +75,7 @@ function IOSChromCard({ onDismiss }) {
         <strong style={{ color: '#333', fontSize: 12 }}>Solo Safari puede instalar la app en iPhone:</strong>
         <div style={{ marginTop: 6 }}>1️⃣ Toca <strong>···</strong> arriba → <strong>"Abrir en Safari"</strong></div>
         <div>2️⃣ En Safari: toca <strong>Compartir</strong> (□↑)</div>
-        <div>3️⃣ Selecciona <strong>"Añadir a pantalla de inicio"</strong></div>
+        <div>3️⃣ Selecciona <strong>"Anadir a pantalla de inicio"</strong></div>
       </div>
       <button onClick={onDismiss} style={styles.btnOutline}>Ahora no</button>
     </div>
@@ -90,14 +90,14 @@ function IOSSafariCard({ onDismiss }) {
           <div style={{ width: 44, height: 44, borderRadius: 12, background: '#96C800', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🎾</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Instala la app en tu iPhone</div>
-            <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>Acceso rápido y notificaciones de torneos</div>
+            <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>Acceso rapido y notificaciones de torneos</div>
           </div>
         </div>
         <button onClick={onDismiss} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 20, padding: 4, lineHeight: 1 }}>✕</button>
       </div>
       <div style={styles.steps}>
-        <div>1️⃣ Toca el botón <strong>Compartir</strong> <span style={{ fontSize: 15 }}>□↑</span> en la barra inferior de Safari</div>
-        <div>2️⃣ Baja y selecciona <strong>"Añadir a pantalla de inicio"</strong></div>
+        <div>1️⃣ Toca el boton <strong>Compartir</strong> <span style={{ fontSize: 15 }}>□↑</span> en la barra inferior de Safari</div>
+        <div>2️⃣ Baja y selecciona <strong>"Anadir a pantalla de inicio"</strong></div>
         <div>3️⃣ Toca <strong>"Agregar"</strong> — listo 🎉</div>
       </div>
       <div style={{ marginTop: 10, fontSize: 11, color: '#999', textAlign: 'center' }}>Necesitas iOS 16.4 o superior para recibir notificaciones</div>
@@ -119,7 +119,7 @@ function AndroidInstallCard({ prompt, onDismiss, onInstalled }) {
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <div style={{ width: 44, height: 44, borderRadius: 12, background: '#96C800', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🎾</div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Instala Sierra Pádel</div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Instala Sierra Padel</div>
             <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>Notificaciones de reservas, torneos y puntos</div>
           </div>
         </div>
@@ -128,7 +128,7 @@ function AndroidInstallCard({ prompt, onDismiss, onInstalled }) {
       <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 12, color: '#555', lineHeight: 1.8 }}>
         <li>Acceso desde tu pantalla de inicio</li>
         <li>Notificaciones aunque tengas la app cerrada</li>
-        <li>No ocupa espacio en tu teléfono</li>
+        <li>No ocupa espacio en tu telefono</li>
       </ul>
       <button onClick={handleInstall} style={styles.btnGreen}>Instalar app gratis</button>
       <button onClick={onDismiss} style={styles.btnOutline}>Ahora no</button>
@@ -150,9 +150,9 @@ function AndroidOtherBrowserCard({ onDismiss }) {
         <button onClick={onDismiss} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 20, padding: 4, lineHeight: 1 }}>✕</button>
       </div>
       <div style={styles.steps}>
-        <div>1️⃣ Abre <strong>Google Chrome</strong> en tu teléfono</div>
+        <div>1️⃣ Abre <strong>Google Chrome</strong> en tu telefono</div>
         <div>2️⃣ Entra a <strong style={{ color: '#96C800' }}>sierra-padel-app.vercel.app</strong></div>
-        <div>3️⃣ Toca el menú <strong>⋮</strong> → <strong>"Instalar app"</strong></div>
+        <div>3️⃣ Toca el menu <strong>⋮</strong> → <strong>"Instalar app"</strong></div>
       </div>
       <button onClick={onDismiss} style={styles.btnOutline}>Ahora no</button>
     </div>
