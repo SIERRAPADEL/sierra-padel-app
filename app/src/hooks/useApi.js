@@ -23,7 +23,7 @@ export function useApi() {
         return { ok: false, error: `Error del servidor (${res.status})` };
       }
     } catch {
-      return { ok: false, error: 'Sin conexión. Verifica tu internet.' };
+      return { ok: false, error: 'Sin conexion. Verifica tu internet.' };
     }
   }
 
