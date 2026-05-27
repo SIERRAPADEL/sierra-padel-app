@@ -49,7 +49,7 @@ function usePushSubscription(apiFetch) {
         body: JSON.stringify(sub.toJSON()),
       });
       if (!result.ok) {
-        setError(result.error || 'No se pudo guardar la suscripción.');
+        setError(result.error || 'No se pudo guardar la suscripcion.');
         return false;
       }
       localStorage.setItem('pushSubscribed', '1');
@@ -76,12 +76,12 @@ function PermissionCard({ onAllow, onDismiss, loading, error }) {
         <div style={{ width: 46, height: 46, borderRadius: 13, background: '#96C800', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>🔔</div>
         <div>
           <div style={{ fontWeight: 700, fontSize: 15, color: '#111', lineHeight: 1.3 }}>Activa las notificaciones</div>
-          <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>Para no perderte nada de Sierra Pádel</div>
+          <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>Para no perderte nada de Sierra Padel</div>
         </div>
       </div>
       <div style={{ background: '#f9fafb', borderRadius: 12, padding: '10px 13px', marginBottom: 14 }}>
         {[
-          { icon: '📅', text: 'Confirmación de reservas al instante' },
+          { icon: '📅', text: 'Confirmacion de reservas al instante' },
           { icon: '🏆', text: 'Actualizaciones de tus torneos' },
           { icon: '⭐', text: 'Puntos acumulados y promociones' },
         ].map(({ icon, text }) => (
