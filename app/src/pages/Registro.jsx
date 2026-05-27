@@ -18,14 +18,14 @@ export default function Registro() {
   function handleDatos(e) {
     e.preventDefault();
     if (!nombre.trim()) return setError('Ingresa tu nombre');
-    if (telefono.length < 10) return setError('Ingresa tu número de 10 dígitos');
+    if (telefono.length < 10) return setError('Ingresa tu numero de 10 digitos');
     setError('');
     setStep(2);
   }
 
   async function handlePin(e) {
     e.preventDefault();
-    if (pin.length < 4) return setError('Ingresa un PIN de 4 dígitos');
+    if (pin.length < 4) return setError('Ingresa un PIN de 4 digitos');
     if (pin !== pinConfirm) return setError('Los PINs no coinciden');
     setLoading(true);
     setError('');
@@ -57,7 +57,7 @@ export default function Registro() {
               <input className="input-field" type="text" placeholder="Tu nombre" value={nombre} onChange={e => setNombre(e.target.value)} autoFocus />
             </div>
             <div>
-              <label className="text-sm text-gray-500 font-medium mb-1 block">Teléfono</label>
+              <label className="text-sm text-gray-500 font-medium mb-1 block">Telefono</label>
               <input className="input-field" type="tel" placeholder="664 123 4567" value={telefono} onChange={e => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))} />
             </div>
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
@@ -67,7 +67,7 @@ export default function Registro() {
         ) : (
           <form onSubmit={handlePin} className="w-full flex flex-col gap-5">
             <div>
-              <p className="text-center text-sm text-gray-500 mb-4">Crea un PIN de 4 dígitos</p>
+              <p className="text-center text-sm text-gray-500 mb-4">Crea un PIN de 4 digitos</p>
               <PinInput value={pin} onChange={setPin} />
             </div>
             <div>
@@ -79,7 +79,7 @@ export default function Registro() {
               {loading ? 'Creando cuenta...' : 'Crear cuenta'}
             </button>
             <button type="button" onClick={() => { setStep(1); setPin(''); setPinConfirm(''); setError(''); }} className="text-center text-gray-400 text-sm">
-              Atrás
+              Atras
             </button>
           </form>
         )}
