@@ -6,7 +6,7 @@ export default function PinInput({ value = '', onChange, length = 4 }) {
 
   return (
     <div className="flex gap-3 justify-center relative" style={{ height: '56px' }}>
-      {/* Input transparente que cubre todo el área — al tocarlo abre teclado numérico */}
+      {/* Input transparente que cubre todo el area — al tocarlo abre teclado numerico */}
       <input
         type="tel"
         inputMode="numeric"
@@ -27,7 +27,7 @@ export default function PinInput({ value = '', onChange, length = 4 }) {
           fontSize: '16px',
         }}
       />
-      {/* Cuadros visuales (solo decorativos, el input real está encima) */}
+      {/* Cuadros visuales (solo decorativos, el input real esta encima) */}
       {Array.from({ length }).map((_, i) => (
         <div
           key={i}
