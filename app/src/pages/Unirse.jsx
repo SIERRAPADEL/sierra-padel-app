@@ -49,17 +49,17 @@ export default function Unirse() {
         )}
 
         {estado === 'invalido' && (
-          <p className="text-red-500 text-sm text-center font-medium">Este enlace es inválido o ya expiró.</p>
+          <p className="text-red-500 text-sm text-center font-medium">Este enlace es invalido o ya expiro.</p>
         )}
 
         {estado === 'listo' && !exito && (
           <form onSubmit={handleUnirse} className="w-full flex flex-col gap-3">
             <div className="bg-sp-green-light rounded-xl p-3 text-center">
-              <p className="text-sp-green-dark text-sm font-semibold">🎾 Reserva válida</p>
-              <p className="text-sp-green-dark text-xs mt-0.5">Regístrate para recibir 1 punto de lealtad</p>
+              <p className="text-sp-green-dark text-sm font-semibold">🎾 Reserva valida</p>
+              <p className="text-sp-green-dark text-xs mt-0.5">Registrate para recibir 1 punto de lealtad</p>
             </div>
             <input className="input-field" placeholder="Tu nombre" value={nombre} onChange={e => setNombre(e.target.value)} />
-            <input className="input-field" type="tel" placeholder="Teléfono (10 dígitos)" value={telefono} onChange={e => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))} />
+            <input className="input-field" type="tel" placeholder="Telefono (10 digitos)" value={telefono} onChange={e => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))} />
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
             <button type="submit" disabled={loading} className="btn-green disabled:opacity-50">
               {loading ? 'Registrando...' : 'Recibir mis puntos'}
