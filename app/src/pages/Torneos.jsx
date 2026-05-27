@@ -32,7 +32,7 @@ function Spinner() {
   );
 }
 
-function BackBtn({ onClick, label = 'Atrás' }) {
+function BackBtn({ onClick, label = 'Atras' }) {
   return (
     <button onClick={onClick} className="flex items-center gap-1 text-white/80 text-sm mb-2 -ml-1">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -75,7 +75,7 @@ function RankingView({ torneoId, cats, apiFetch }) {
 
   return (
     <div className="flex flex-col gap-3 px-4 pb-6">
-      {/* Categoría pills */}
+      {/* Categoria pills */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
         {(cats || []).map(c => (
           <button
@@ -122,7 +122,7 @@ function RankingView({ torneoId, cats, apiFetch }) {
                 </tr>
               ))}
               {ranking.length === 0 && (
-                <tr><td colSpan={3} className="text-center text-gray-400 text-sm py-8">Sin resultados aún</td></tr>
+                <tr><td colSpan={3} className="text-center text-gray-400 text-sm py-8">Sin resultados aun</td></tr>
               )}
             </tbody>
           </table>
@@ -168,7 +168,7 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
 
   return (
     <div className="flex flex-col gap-3 px-4 pb-6">
-      {/* Categoría pills */}
+      {/* Categoria pills */}
       {cats.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
           {cats.map(c => (
@@ -209,7 +209,7 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
         <>
           {grupos.length === 0 && (
             <div className="card text-center py-10">
-              <p className="text-gray-400 text-sm">Sin grupos publicados aún</p>
+              <p className="text-gray-400 text-sm">Sin grupos publicados aun</p>
             </div>
           )}
           {grupos.map(g => (
@@ -261,7 +261,7 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
         <>
           {partidos.length === 0 && (
             <div className="card text-center py-10">
-              <p className="text-gray-400 text-sm">Sin partidos publicados aún</p>
+              <p className="text-gray-400 text-sm">Sin partidos publicados aun</p>
             </div>
           )}
           {(() => {
@@ -335,7 +335,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
 
   async function buscarPareja() {
     const digits = tel2.replace(/[^0-9]/g, '');
-    if (digits.length < 10) { setBusError('Ingresa 10 dígitos'); return; }
+    if (digits.length < 10) { setBusError('Ingresa 10 digitos'); return; }
     setBusError('');
     setBuscando(true);
     setPareja(null);
@@ -367,7 +367,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
     if (d?.ok) {
       setSuccess(true);
     } else {
-      setError(d?.error || 'No se pudo completar la inscripción');
+      setError(d?.error || 'No se pudo completar la inscripcion');
     }
   }
 
@@ -382,12 +382,12 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
           </svg>
         </div>
         <div>
-          <p className="text-xl font-black text-sp-gray">¡Inscripción enviada!</p>
+          <p className="text-xl font-black text-sp-gray">¡Inscripcion enviada!</p>
           <p className="text-gray-500 mt-1 text-sm">{torneo.nombre}</p>
           {catSelObj && <p className="text-gray-400 text-sm">{catSelObj.categoria}</p>}
         </div>
         <div className="bg-sp-green-light rounded-2xl px-5 py-4 text-sm text-sp-green-dark font-medium w-full max-w-xs space-y-1">
-          <p>📲 Tu pareja recibió una notificación por WhatsApp.</p>
+          <p>📲 Tu pareja recibio una notificacion por WhatsApp.</p>
           <p>💳 Acude al club para confirmar el pago y asegurar tu lugar.</p>
         </div>
         <button className="btn-green w-full max-w-xs" onClick={onDone}>
@@ -412,15 +412,15 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
         ))}
       </div>
 
-      {/* ── Step 1: Categoría ── */}
+      {/* ── Step 1: Categoria ── */}
       {step === 1 && (
         <>
-          <p className="text-sm font-bold text-sp-gray">Selecciona tu categoría</p>
+          <p className="text-sm font-bold text-sp-gray">Selecciona tu categoria</p>
           {cats.length === 0 && (
             <div className="card text-center py-8">
               <p className="text-3xl mb-3">🏆</p>
               <p className="text-gray-500 font-medium">Sin inscripciones abiertas</p>
-              <p className="text-gray-400 text-sm mt-1">Este torneo no tiene categorías disponibles en este momento</p>
+              <p className="text-gray-400 text-sm mt-1">Este torneo no tiene categorias disponibles en este momento</p>
             </div>
           )}
           {cats.map(c => (
@@ -456,9 +456,9 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
       {/* ── Step 2: Pareja ── */}
       {step === 2 && (
         <>
-          <button onClick={() => { setStep(1); setPareja(null); setTel2(''); }} className="text-sm text-sp-green font-semibold self-start">← Cambiar categoría</button>
+          <button onClick={() => { setStep(1); setPareja(null); setTel2(''); }} className="text-sm text-sp-green font-semibold self-start">← Cambiar categoria</button>
           <p className="text-sm font-bold text-sp-gray">Busca a tu pareja</p>
-          <p className="text-xs text-gray-400">Ingresa el número de WhatsApp de tu pareja (10 dígitos)</p>
+          <p className="text-xs text-gray-400">Ingresa el numero de WhatsApp de tu pareja (10 digitos)</p>
 
           <div className="card flex flex-col gap-3">
             <input
@@ -487,7 +487,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
               <p className="text-xs text-gray-500">{pareja.telefono}</p>
               <div className="mt-3 bg-white/60 rounded-xl px-3 py-2">
                 <p className="text-xs text-sp-green-dark font-medium">
-                  🔔 Tu pareja recibirá una notificación por WhatsApp al confirmar la inscripción.
+                  🔔 Tu pareja recibira una notificacion por WhatsApp al confirmar la inscripcion.
                 </p>
               </div>
             </div>
@@ -507,7 +507,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
               {nombre2.trim().length > 0 && (
                 <div className="mt-2 bg-white/60 rounded-xl px-3 py-2">
                   <p className="text-xs text-yellow-700 font-medium">
-                    🔔 Se enviará una notificación de WhatsApp a ese número.
+                    🔔 Se enviara una notificacion de WhatsApp a ese numero.
                   </p>
                 </div>
               )}
@@ -526,7 +526,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
       {step === 3 && (
         <>
           <button onClick={() => { setStep(2); setError(''); }} className="text-sm text-sp-green font-semibold self-start">← Cambiar pareja</button>
-          <p className="text-sm font-bold text-sp-gray">Confirmar inscripción</p>
+          <p className="text-sm font-bold text-sp-gray">Confirmar inscripcion</p>
 
           <div className="card space-y-3">
             <div>
@@ -539,7 +539,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
               )}
             </div>
             <div className="border-t border-gray-100 pt-3">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Categoría</p>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Categoria</p>
               <p className="font-bold text-sp-gray mt-0.5">{catSelObj?.categoria || '—'}</p>
             </div>
             <div className="border-t border-gray-100 pt-3">
@@ -552,7 +552,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
           <div className="bg-yellow-50 border border-yellow-200 rounded-2xl px-4 py-3">
             <p className="text-xs text-yellow-700 font-semibold">💳 Pago requerido en el club</p>
             <p className="text-xs text-yellow-600 mt-1">
-              Tu inscripción quedará pendiente hasta confirmar el pago presencialmente. Tu lugar no estará asegurado hasta completar el pago.
+              Tu inscripcion quedara pendiente hasta confirmar el pago presencialmente. Tu lugar no estara asegurado hasta completar el pago.
             </p>
           </div>
 
@@ -563,7 +563,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
           )}
 
           <button className="btn-green" onClick={handleInscribir} disabled={loading}>
-            {loading ? 'Enviando…' : 'Confirmar inscripción'}
+            {loading ? 'Enviando…' : 'Confirmar inscripcion'}
           </button>
         </>
       )}
@@ -605,7 +605,7 @@ export default function Torneos() {
   function goBack() { setView(null); setTorneoSel(null); }
 
   const headerLabel = view === 'inscripcion'
-    ? (torneoSel?.nombre || 'Inscripción')
+    ? (torneoSel?.nombre || 'Inscripcion')
     : view === 'detalle'
       ? (torneoSel?.nombre || 'Resultados')
       : 'Torneos';
@@ -655,7 +655,7 @@ export default function Torneos() {
             <div className="card text-center py-12">
               <p className="text-3xl mb-3">🏆</p>
               <p className="text-gray-500 font-medium">Sin torneos por ahora</p>
-              <p className="text-gray-400 text-sm mt-1">Pronto habrá novedades</p>
+              <p className="text-gray-400 text-sm mt-1">Pronto habra novedades</p>
             </div>
           )}
           {!loading && (torneos || []).map(t => (
@@ -706,7 +706,7 @@ export default function Torneos() {
             <div className="card text-center py-12 mx-4">
               <p className="text-3xl mb-3">📊</p>
               <p className="text-gray-500 font-medium">Sin datos de ranking</p>
-              <p className="text-gray-400 text-sm mt-1">Los resultados aparecerán aquí</p>
+              <p className="text-gray-400 text-sm mt-1">Los resultados apareceran aqui</p>
             </div>
           )}
           {!loading && torneoConResultados.length > 0 && (
