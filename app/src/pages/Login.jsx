@@ -6,13 +6,13 @@ import PinInput from '../components/PinInput';
 
 const API = 'https://sierra-padel-backend-production-a55f.up.railway.app/api';
 
-// Número de WhatsApp del bot del club (el que los usuarios escriben)
-// Cambiar si el número cambia
-const WA_BOT_NUMBER = '528662081434'; // WhatsApp del bot Sierra Pádel
+// Numero de WhatsApp del bot del club (el que los usuarios escriben)
+// Cambiar si el numero cambia
+const WA_BOT_NUMBER = '528662081434'; // WhatsApp del bot Sierra Padel
 
-// step 1 → teléfono
+// step 1 → telefono
 // step 2 → PIN
-// step 3 → forgot: instrucción de WA + solicitar código
+// step 3 → forgot: instruccion de WA + solicitar codigo
 // step 4 → forgot: ingresar OTP + nuevo PIN
 
 export default function Login() {
@@ -27,11 +27,11 @@ export default function Login() {
   const { login } = useAuth();
   const navigate  = useNavigate();
 
-  // ── Step 1: validar teléfono ──────────────────────────────────────────────
+  // ── Step 1: validar telefono ──────────────────────────────────────────────
   function handleTelefono(e) {
     e.preventDefault();
     const digits = telefono.replace(/[^0-9]/g, '');
-    if (digits.length < 10) return setError('Ingresa tu número de 10 dígitos');
+    if (digits.length < 10) return setError('Ingresa tu numero de 10 digitos');
     setError('');
     setTelefono(digits);
     setStep(2);
@@ -40,7 +40,7 @@ export default function Login() {
   // ── Step 2: login con PIN ─────────────────────────────────────────────────
   async function handlePin(e) {
     e.preventDefault();
-    if (pin.length < 4) return setError('Ingresa tu PIN de 4 dígitos');
+    if (pin.length < 4) return setError('Ingresa tu PIN de 4 digitos');
     setLoading(true);
     setError('');
     try {
@@ -54,14 +54,14 @@ export default function Login() {
     }
   }
 
-  // ── Step 3: instrucción de abrir WA antes de pedir el código ─────────────
+  // ── Step 3: instruccion de abrir WA antes de pedir el codigo ─────────────
   function handleAbrirWA() {
     const link = `https://wa.me/${WA_BOT_NUMBER}?text=Hola`;
     window.open(link, '_blank');
     setWaAbierto(true);
   }
 
-  // ── Step 3→4: solicitar OTP (solo después de que el usuario abrió WA) ───
+  // ── Step 3→4: solicitar OTP (solo despues de que el usuario abrio WA) ───
   async function handleSolicitarOTP() {
     setLoading(true);
     setError('');
@@ -72,7 +72,7 @@ export default function Login() {
         body: JSON.stringify({ telefono }),
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'No se pudo enviar el código. Intenta de nuevo.');
+      if (!data.ok) throw new Error(data.error || 'No se pudo enviar el codigo. Intenta de nuevo.');
       setStep(4);
     } catch (err) {
       setError(err.message);
@@ -84,8 +84,8 @@ export default function Login() {
   // ── Step 4: verificar OTP + establecer nuevo PIN ──────────────────────────
   async function handleVerifyOtp(e) {
     e.preventDefault();
-    if (otp.replace(/[^0-9]/g, '').length < 6) return setError('Ingresa el código de 6 dígitos que recibiste');
-    if (nuevoPin.length < 4) return setError('Ingresa tu nuevo PIN de 4 dígitos');
+    if (otp.replace(/[^0-9]/g, '').length < 6) return setError('Ingresa el codigo de 6 digitos que recibiste');
+    if (nuevoPin.length < 4) return setError('Ingresa tu nuevo PIN de 4 digitos');
     setLoading(true);
     setError('');
     try {
@@ -95,7 +95,7 @@ export default function Login() {
         body: JSON.stringify({ telefono, otp: otp.trim(), nuevo_pin: nuevoPin }),
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'El código es incorrecto o ya expiró. Solicita uno nuevo.');
+      if (!data.ok) throw new Error(data.error || 'El codigo es incorrecto o ya expiro. Solicita uno nuevo.');
       localStorage.setItem('sp_token', data.data.token);
       localStorage.setItem('sp_user', JSON.stringify(data.data.cliente));
       navigate('/home');
@@ -120,17 +120,17 @@ export default function Login() {
     <div className="min-h-screen bg-sp-green flex flex-col items-center justify-center px-6 gap-8">
       <Isotipo className="w-16 h-16" />
 
-      {/* ── STEP 1: Teléfono ── */}
+      {/* ── STEP 1: Telefono ── */}
       {step === 1 && (
         <form onSubmit={handleTelefono} className="w-full max-w-xs flex flex-col gap-4">
           <div className="text-center">
-            <p className="text-white font-black text-2xl">Sierra Pádel</p>
-            <p className="text-white/70 text-sm mt-1">Ingresa tu número de WhatsApp</p>
+            <p className="text-white font-black text-2xl">Sierra Padel</p>
+            <p className="text-white/70 text-sm mt-1">Ingresa tu numero de WhatsApp</p>
           </div>
           <input
             type="tel"
             inputMode="numeric"
-            placeholder="10 dígitos (ej. 6641234567)"
+            placeholder="10 digitos (ej. 6641234567)"
             value={telefono}
             onChange={e => { setTelefono(e.target.value.replace(/[^0-9]/g, '').slice(0, 10)); setError(''); }}
             className="input-field text-center text-lg tracking-widest"
@@ -147,7 +147,7 @@ export default function Login() {
           </button>
           <p className="text-white/50 text-xs text-center">
             ¿No tienes cuenta?{' '}
-            <a href="/registro" className="text-white font-semibold underline">Regístrate aquí</a>
+            <a href="/registro" className="text-white font-semibold underline">Registrate aqui</a>
           </p>
         </form>
       )}
@@ -175,32 +175,32 @@ export default function Login() {
               onClick={() => { setStep(3); setError(''); setWaAbierto(false); }}
               className="text-white/60 text-sm underline"
             >
-              Olvidé mi PIN
+              Olvide mi PIN
             </button>
             <button
               onClick={() => { setStep(1); setPin(''); setError(''); }}
               className="text-white/40 text-xs"
             >
-              Cambiar número
+              Cambiar numero
             </button>
           </div>
         </div>
       )}
 
-      {/* ── STEP 3: Instrucción WA ── */}
+      {/* ── STEP 3: Instruccion WA ── */}
       {step === 3 && (
         <div className="w-full max-w-xs flex flex-col gap-5">
           <div className="text-center">
             <p className="text-white font-black text-xl">Recuperar PIN</p>
-            <p className="text-white/60 text-sm mt-1">Te enviaremos un código por WhatsApp</p>
+            <p className="text-white/60 text-sm mt-1">Te enviaremos un codigo por WhatsApp</p>
           </div>
 
           <div className="bg-white/10 rounded-2xl p-4 flex flex-col gap-3">
             <p className="text-white text-sm font-semibold">
-              📱 Paso 1: Abre el chat de Sierra Pádel en WhatsApp
+              📱 Paso 1: Abre el chat de Sierra Padel en WhatsApp
             </p>
             <p className="text-white/70 text-xs">
-              Para enviarte el código necesitamos que primero nos escribas. Si ya tienes una conversación activa con nosotros, puedes omitir este paso.
+              Para enviarte el codigo necesitamos que primero nos escribas. Si ya tienes una conversacion activa con nosotros, puedes omitir este paso.
             </p>
             <button
               onClick={handleAbrirWA}
@@ -213,7 +213,7 @@ export default function Login() {
               Abrir WhatsApp del club
             </button>
             {waAbierto && (
-              <p className="text-green-300 text-xs text-center">✓ Listo, ya puedes solicitar tu código</p>
+              <p className="text-green-300 text-xs text-center">✓ Listo, ya puedes solicitar tu codigo</p>
             )}
           </div>
 
@@ -228,7 +228,7 @@ export default function Login() {
             }`}
             disabled={loading}
           >
-            {loading ? 'Enviando código…' : waAbierto ? 'Enviar código de verificación' : 'Paso 2: Solicitar código'}
+            {loading ? 'Enviando codigo…' : waAbierto ? 'Enviar codigo de verificacion' : 'Paso 2: Solicitar codigo'}
           </button>
 
           <button onClick={volverAlPin} className="text-white/40 text-xs text-center">
@@ -241,15 +241,15 @@ export default function Login() {
       {step === 4 && (
         <form onSubmit={handleVerifyOtp} className="w-full max-w-xs flex flex-col gap-5">
           <div className="text-center">
-            <p className="text-white font-black text-xl">Código enviado ✓</p>
+            <p className="text-white font-black text-xl">Codigo enviado ✓</p>
             <p className="text-white/60 text-sm mt-1">
-              Revisa tu WhatsApp en el número {telefono}
+              Revisa tu WhatsApp en el numero {telefono}
             </p>
           </div>
 
           <div className="flex flex-col gap-3">
             <div>
-              <p className="text-white/80 text-xs font-semibold mb-2 ml-1">Código de 6 dígitos</p>
+              <p className="text-white/80 text-xs font-semibold mb-2 ml-1">Codigo de 6 digitos</p>
               <input
                 type="tel"
                 inputMode="numeric"
@@ -262,7 +262,7 @@ export default function Login() {
               />
             </div>
             <div>
-              <p className="text-white/80 text-xs font-semibold mb-2 ml-1">Nuevo PIN de 4 dígitos</p>
+              <p className="text-white/80 text-xs font-semibold mb-2 ml-1">Nuevo PIN de 4 digitos</p>
               <PinInput value={nuevoPin} onChange={setNuevoPin} />
             </div>
           </div>
@@ -282,7 +282,7 @@ export default function Login() {
             onClick={() => { setStep(3); setWaAbierto(true); setOtp(''); setError(''); }}
             className="text-white/50 text-xs text-center underline"
           >
-            No recibí el código — volver a solicitar
+            No recibi el codigo — volver a solicitar
           </button>
         </form>
       )}
