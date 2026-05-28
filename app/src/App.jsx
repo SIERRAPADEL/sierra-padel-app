@@ -11,6 +11,7 @@ import Torneos from './pages/Torneos';
 import Puntos from './pages/Puntos';
 import Perfil from './pages/Perfil';
 import Unirse from './pages/Unirse';
+import Noticias from './pages/Noticias';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -32,6 +33,7 @@ function AppRoutes() {
       <Route path="/torneos" element={<ProtectedRoute><Torneos /></ProtectedRoute>} />
       <Route path="/puntos" element={<ProtectedRoute><Puntos /></ProtectedRoute>} />
       <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
+      <Route path="/noticias" element={<ProtectedRoute><Noticias /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
