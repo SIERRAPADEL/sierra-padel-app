@@ -49,7 +49,7 @@ function BackBtn({ onBack, label = 'Perfil' }) {
   );
 }
 
-// ââ Pantalla: Mi informaciÃ³n ââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ââ Pantalla: Mi informacion ââââââââââââââââââââââââââââââââââââââââââââââââââ
 function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
   const [nombre, setNombre]   = useState(user?.nombre || '');
   const [loading, setLoading] = useState(false);
@@ -87,7 +87,7 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
         <BackBtn onBack={onBack} />
-        <p className="text-white font-black text-lg">Mi informaciÃ³n</p>
+        <p className="text-white font-black text-lg">Mi informacion</p>
       </div>
 
       <div className="px-4 py-5 flex flex-col gap-4">
@@ -103,9 +103,9 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
             />
           </div>
           <div>
-            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">TelÃ©fono</p>
-            <p className="text-sp-gray font-semibold px-1">{user?.telefono || 'â'}</p>
-            <p className="text-xs text-gray-400 px-1">El telÃ©fono no se puede cambiar</p>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Telefono</p>
+            <p className="text-sp-gray font-semibold px-1">{user?.telefono || '-'}</p>
+            <p className="text-xs text-gray-400 px-1">El telefono no se puede cambiar</p>
           </div>
         </div>
 
@@ -117,7 +117,7 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
 
         {saved && (
           <div className="bg-sp-green-light border border-sp-green/20 rounded-2xl px-4 py-3">
-            <p className="text-sp-green-dark text-sm font-medium">â Nombre actualizado correctamente</p>
+            <p className="text-sp-green-dark text-sm font-medium">✓ Nombre actualizado correctamente</p>
           </div>
         )}
 
@@ -130,7 +130,7 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
               : 'bg-gray-100 text-gray-400'
           }`}
         >
-          {loading ? 'Guardandoâ¦' : 'Guardar cambios'}
+          {loading ? 'Guardando...' : 'Guardar cambios'}
         </button>
       </div>
     </div>
@@ -203,7 +203,7 @@ function CambiarPin({ apiFetch, onBack }) {
             </svg>
           </div>
           <p className="text-xl font-black text-sp-gray text-center">PIN actualizado</p>
-          <p className="text-gray-500 text-sm text-center">Tu nuevo PIN estÃ¡ activo. Ãsalo la prÃ³xima vez que entres a la app.</p>
+          <p className="text-gray-500 text-sm text-center">Tu nuevo PIN esta activo. Usalo la proxima vez que entres a la app.</p>
           <button className="btn-green w-full max-w-xs" onClick={onBack}>Volver a perfil</button>
         </div>
       </div>
@@ -226,7 +226,7 @@ function CambiarPin({ apiFetch, onBack }) {
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${
                 s === pinStep ? 'bg-sp-green text-white' :
                 s < pinStep  ? 'bg-sp-green/20 text-sp-green' : 'bg-gray-100 text-gray-400'
-              }`}>{s < pinStep ? 'â' : s}</div>
+              }`}>{s < pinStep ? '✓' : s}</div>
               {s < 3 && <div className={`w-8 h-0.5 ${s < pinStep ? 'bg-sp-green/40' : 'bg-gray-200'}`} />}
             </div>
           ))}
@@ -235,7 +235,7 @@ function CambiarPin({ apiFetch, onBack }) {
         <div className="text-center">
           <p className="text-sp-gray font-black text-lg">{labels[pinStep - 1]}</p>
           {pinStep === 1 && <p className="text-gray-400 text-sm mt-1">Ingresa tu PIN actual para continuar</p>}
-          {pinStep === 2 && <p className="text-gray-400 text-sm mt-1">Elige un PIN de 4 dÃ­gitos nuevo</p>}
+          {pinStep === 2 && <p className="text-gray-400 text-sm mt-1">Elige un PIN de 4 digitos nuevo</p>}
           {pinStep === 3 && <p className="text-gray-400 text-sm mt-1">Repite el nuevo PIN para confirmar</p>}
         </div>
 
@@ -243,7 +243,7 @@ function CambiarPin({ apiFetch, onBack }) {
         {pinStep === 2 && <PinInput value={pinNuevo} onChange={handlePinNuevoChange} />}
         {pinStep === 3 && <PinInput value={pinConfirm} onChange={handlePinConfirmChange} />}
 
-        {loading && <p className="text-sp-green text-sm font-semibold">Guardandoâ¦</p>}
+        {loading && <p className="text-sp-green text-sm font-semibold">Guardando...</p>}
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 w-full max-w-xs">
@@ -301,11 +301,11 @@ function Notificaciones({ apiFetch, onBack }) {
       localStorage.setItem('pushSubscribed', '1');
       setSubscribed(true);
       setPermission(Notification.permission);
-      setSuccess('Â¡Notificaciones activadas correctamente!');
+      setSuccess('Notificaciones activadas correctamente!');
     } catch (err) {
       if (err.name === 'NotAllowedError') {
         setPermission('denied');
-        setError('Permiso denegado. ActÃ­valo desde la configuraciÃ³n de tu dispositivo.');
+        setError('Permiso denegado. Activalo desde la configuracion de tu dispositivo.');
       } else {
         setError(err.message || 'Error al activar notificaciones.');
       }
@@ -346,7 +346,7 @@ function Notificaciones({ apiFetch, onBack }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div style={{ width: 44, height: 44, borderRadius: 12, background: isActive ? '#96C800' : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
-                ð
+                🔔
               </div>
               <div>
                 <p className="text-sp-gray font-bold text-sm">Notificaciones push</p>
@@ -372,9 +372,9 @@ function Notificaciones({ apiFetch, onBack }) {
 
           <div style={{ background: '#f9fafb', borderRadius: 10, padding: '10px 12px' }}>
             {[
-              { icon: 'ð', text: 'ConfirmaciÃ³n de reservas al instante' },
-              { icon: 'ð', text: 'Novedades de tus torneos' },
-              { icon: 'â­', text: 'Puntos y promociones del club' },
+              { icon: '📅', text: 'Confirmacion de reservas al instante' },
+              { icon: '🏆', text: 'Novedades de tus torneos' },
+              { icon: '⭐', text: 'Puntos y promociones del club' },
             ].map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-2 py-1" style={{ fontSize: 12, color: '#555' }}>
                 <span style={{ fontSize: 14 }}>{icon}</span>
@@ -391,7 +391,7 @@ function Notificaciones({ apiFetch, onBack }) {
         )}
         {success && (
           <div className="rounded-2xl px-4 py-3" style={{ background: '#f0f9e8', border: '1px solid #c5e68c' }}>
-            <p className="text-sm font-medium" style={{ color: '#5a8a00' }}>â {success}</p>
+            <p className="text-sm font-medium" style={{ color: '#5a8a00' }}>✓ {success}</p>
           </div>
         )}
 
@@ -402,7 +402,7 @@ function Notificaciones({ apiFetch, onBack }) {
         ) : permission === 'denied' ? (
           <div className="card text-center py-4 flex flex-col gap-2">
             <p className="text-gray-500 text-sm font-medium">Permiso bloqueado</p>
-            <p className="text-gray-400 text-xs">Ve a ConfiguraciÃ³n â Safari / Chrome â Notificaciones y actÃ­valas para Sierra PÃ¡del.</p>
+            <p className="text-gray-400 text-xs">Ve a Configuracion > Safari / Chrome > Notificaciones y activalas para Sierra Padel.</p>
           </div>
         ) : isActive ? (
           <button
@@ -410,7 +410,7 @@ function Notificaciones({ apiFetch, onBack }) {
             disabled={loading}
             className="w-full py-3 rounded-2xl font-bold text-sm border border-red-200 text-red-500 bg-red-50 active:bg-red-100 transition-all"
           >
-            {loading ? 'Desactivandoâ¦' : 'Desactivar notificaciones'}
+            {loading ? 'Desactivando...' : 'Desactivar notificaciones'}
           </button>
         ) : (
           <button
@@ -419,7 +419,7 @@ function Notificaciones({ apiFetch, onBack }) {
             className="w-full py-3 rounded-2xl font-black text-base transition-all"
             style={{ background: loading ? '#c8e87a' : '#96C800', color: '#111' }}
           >
-            {loading ? 'Activandoâ¦' : 'Activar notificaciones'}
+            {loading ? 'Activando...' : 'Activar notificaciones'}
           </button>
         )}
       </div>
@@ -499,7 +499,7 @@ export default function Perfil() {
           >
             <div className="flex items-center gap-3">
               <Icon d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" />
-              <span className="text-sp-gray font-semibold text-sm">Mi informaciÃ³n</span>
+              <span className="text-sp-gray font-semibold text-sm">Mi informacion</span>
             </div>
             <ChevronRight />
           </button>
@@ -542,11 +542,11 @@ export default function Perfil() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
           </svg>
-          <span className="text-red-500 font-semibold text-sm">Cerrar sesiÃ³n</span>
+          <span className="text-red-500 font-semibold text-sm">Cerrar sesion</span>
         </button>
       </div>
 
-      <p className="text-center text-xs text-gray-300 mt-4">Sierra PÃ¡del v1.0</p>
+      <p className="text-center text-xs text-gray-300 mt-4">Sierra Padel v1.0</p>
     </div>
   );
 }
