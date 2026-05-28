@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Isotipo from '../components/Isotipo';
+// logo-sierra.png used directly
 import PinInput from '../components/PinInput';
 
 const API = 'https://sierra-padel-backend-production-a55f.up.railway.app/api';
@@ -118,7 +118,7 @@ export default function Login() {
   // ── UI ────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-sp-green flex flex-col items-center justify-center px-6 gap-8">
-      <Isotipo size={64} color="white" />
+      <img src="/logo-sierra.png" alt="Sierra Padel" style={{width: "260px", margin: "0 auto", display: "block"}} />
 
       {/* ── STEP 1: Telefono ── */}
       {step === 1 && (
