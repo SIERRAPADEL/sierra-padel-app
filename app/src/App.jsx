@@ -12,6 +12,7 @@ import Puntos from './pages/Puntos';
 import Perfil from './pages/Perfil';
 import Unirse from './pages/Unirse';
 import Noticias from './pages/Noticias';
+import Pedir from './pages/Pedir';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -34,6 +35,7 @@ function AppRoutes() {
       <Route path="/puntos" element={<ProtectedRoute><Puntos /></ProtectedRoute>} />
       <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
       <Route path="/noticias" element={<ProtectedRoute><Noticias /></ProtectedRoute>} />
+      <Route path="/pedir" element={<ProtectedRoute><Pedir /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
