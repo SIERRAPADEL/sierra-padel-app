@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
-// isotipo.png used directly
+import Isotipo from '../components/Isotipo';
 
-// ââ Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function formatFecha(str) {
   if (!str) return '';
   const d = new Date(str);
@@ -16,7 +16,7 @@ function formatHora(str) {
   return str.slice(0, 5); // "HH:MM"
 }
 
-// ââ Seccion: Mis proximas reservas ââââââââââââââââââââââââââââââââââââââââââââ
+// ── Seccion: Mis proximas reservas ────────────────────────────────────────────
 function MisReservas({ apiFetch, navigate }) {
   const [reservas, setReservas] = useState(null);
   const [loading, setLoading]  = useState(true);
@@ -72,7 +72,7 @@ function MisReservas({ apiFetch, navigate }) {
                   {r.cancha_nombre || r.cancha || `Cancha ${r.cancha_id || ''}`}
                 </p>
                 <p className="text-gray-400 text-xs">
-                  {formatHora(r.hora_inicio)}  -  {formatHora(r.hora_fin)}
+                  {formatHora(r.hora_inicio)} – {formatHora(r.hora_fin)}
                 </p>
               </div>
               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
@@ -93,7 +93,7 @@ function MisReservas({ apiFetch, navigate }) {
             className="mt-2 text-sm font-bold"
             style={{ color: '#96C800' }}
           >
-            Reservar ahora >
+            Reservar ahora →
           </button>
         </div>
       )}
@@ -101,7 +101,7 @@ function MisReservas({ apiFetch, navigate }) {
   );
 }
 
-// ââ Seccion: Proximos torneos âââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Seccion: Proximos torneos ─────────────────────────────────────────────────
 function ProximosTorneos({ apiFetch, navigate }) {
   const [torneos, setTorneos] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -111,6 +111,7 @@ function ProximosTorneos({ apiFetch, navigate }) {
       .then(d => {
         if (d.ok) {
           const lista = d.data?.torneos || d.data?.data || d.torneos || [];
+          // Show upcoming/active tournaments, max 3
           const proximos = lista
             .filter(t => t.estado !== 'finalizado')
             .slice(0, 3);
@@ -173,7 +174,7 @@ function ProximosTorneos({ apiFetch, navigate }) {
   );
 }
 
-// ââ Seccion: Standings del Circuito ââââââââââââââââââââââââââââââââââââââââââ
+// ── Seccion: Standings del Circuito ──────────────────────────────────────────
 function StandingsCircuito({ apiFetch, navigate }) {
   const [ligas, setLigas]   = useState(null);
   const [ranking, setRanking] = useState(null);
@@ -233,7 +234,7 @@ function StandingsCircuito({ apiFetch, navigate }) {
                   {p.nombre || p.cliente?.nombre || `Jugador ${i + 1}`}
                 </p>
                 <span className="text-xs font-black" style={{ color: '#96C800' }}>
-                  {p.puntos ?? p.total_puntos ?? '-'} pts
+                  {p.puntos ?? p.total_puntos ?? '—'} pts
                 </span>
               </div>
             ))}
@@ -248,7 +249,114 @@ function StandingsCircuito({ apiFetch, navigate }) {
   );
 }
 
-// ââ Seccion: Promociones ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Seccion: Promociones ──────────────────────────────────────────────────────
+// ── Promo Express Banner ──────────────────────────────────────────────────────
+const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://sierra-padel-backend-production-a55f.up.railway.app';
+
+function PromoExpressBanner({ navigate }) {
+  const { user } = useAuth();
+  const [promo, setPromo]       = useState(null);
+  const [segundos, setSegundos] = useState(0);
+  const [reclamado, setReclamado] = useState(null); // codigo generado
+  const [reclamando, setReclamando] = useState(false);
+
+  useEffect(() => {
+    fetchPromoActiva();
+    const poll = setInterval(fetchPromoActiva, 30000);
+    return () => clearInterval(poll);
+  }, []);
+
+  // Countdown
+  useEffect(() => {
+    if (!promo) return;
+    const calcSeg = () => {
+      const diff = Math.max(0, Math.floor((new Date(promo.fin_at) - Date.now()) / 1000));
+      setSegundos(diff);
+      if (diff === 0) setPromo(null);
+    };
+    calcSeg();
+    const t = setInterval(calcSeg, 1000);
+    return () => clearInterval(t);
+  }, [promo]);
+
+  async function fetchPromoActiva() {
+    try {
+      const r = await fetch(`${BACKEND}/api/promos-express/activa`);
+      const d = await r.json();
+      if (d.ok && d.data) setPromo(d.data);
+      else setPromo(null);
+    } catch { }
+  }
+
+  async function reclamar() {
+    if (!promo || reclamando) return;
+    setReclamando(true);
+    try {
+      const token = JSON.parse(sessionStorage.getItem('cliente') || '{}')?.token
+                 || JSON.parse(localStorage.getItem('sp_user') || '{}')?.token;
+      const r = await fetch(`${BACKEND}/api/promos-express/${promo.id}/reclamar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+      });
+      const d = await r.json();
+      if (d.ok) setReclamado(d.data);
+      else alert(d.error || 'No se pudo reclamar la promo');
+    } catch { alert('Error de conexion'); }
+    setReclamando(false);
+  }
+
+  if (!promo && !reclamado) return null;
+
+  const mm = String(Math.floor(segundos / 60)).padStart(2, '0');
+  const ss = String(segundos % 60).padStart(2, '0');
+  const pct = promo ? (segundos / (promo.duracion_min * 60)) * 100 : 0;
+
+  // Pantalla de codigo reclamado
+  if (reclamado) {
+    return (
+      <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 20, padding: '20px 20px', marginBottom: 4 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Tu codigo promo</p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: '#eeeef5', marginBottom: 16 }}>{reclamado.promo_descripcion || promo?.titulo}</p>
+        <div style={{ background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', borderRadius: 12, padding: '16px', textAlign: 'center', marginBottom: 12 }}>
+          <p style={{ fontSize: 32, fontWeight: 900, letterSpacing: '0.15em', color: '#96C800' }}>{reclamado.codigo}</p>
+          <p style={{ fontSize: 11, color: '#9090a8', marginTop: 4 }}>Muestra este codigo al encargado</p>
+        </div>
+        <p style={{ fontSize: 11, color: '#5e5e78', textAlign: 'center' }}>El encargado ya recibio tu codigo en caja</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid rgba(150,200,0,.5)', borderRadius: 20, padding: '18px 20px', marginBottom: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Promo express</p>
+          <p style={{ fontSize: 15, fontWeight: 800, color: '#eeeef5', lineHeight: 1.3 }}>{promo.titulo}</p>
+          <p style={{ fontSize: 12, color: '#9090a8', marginTop: 4 }}>{promo.descripcion}</p>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+          <p style={{ fontSize: 26, fontWeight: 900, color: segundos < 120 ? '#f97316' : '#96C800', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>{mm}:{ss}</p>
+          <p style={{ fontSize: 9, color: '#5e5e78', fontWeight: 700 }}>restantes</p>
+        </div>
+      </div>
+      {/* Barra de progreso */}
+      <div style={{ height: 3, background: 'rgba(255,255,255,.08)', borderRadius: 99, marginBottom: 14, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: segundos < 120 ? '#f97316' : '#96C800', borderRadius: 99, transition: 'width 1s linear' }} />
+      </div>
+      <button
+        onClick={reclamar}
+        disabled={reclamando}
+        style={{ width: '100%', padding: '12px', background: '#96C800', color: '#0a1a00', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
+      >
+        {reclamando ? 'Generando codigo...' : 'Reclamar ahora'}
+      </button>
+    </div>
+  );
+}
+
 function Promociones({ navigate }) {
   const promos = [
     {
@@ -285,7 +393,7 @@ function Promociones({ navigate }) {
                 <p style={{ color: 'white', fontWeight: 800, fontSize: 14 }}>{p.title}</p>
                 <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 }}>{p.desc}</p>
               </div>
-              <span style={{ color: '#96C800', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{p.cta} ></span>
+              <span style={{ color: '#96C800', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{p.cta} →</span>
             </div>
           </button>
         ))}
@@ -294,7 +402,7 @@ function Promociones({ navigate }) {
   );
 }
 
-// ââ Pagina principal ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Pagina principal ──────────────────────────────────────────────────────────
 export default function Home() {
   const { user }    = useAuth();
   const { apiFetch } = useApi();
@@ -313,26 +421,26 @@ export default function Home() {
 
   return (
     <div className="page safe-bottom">
-      {/* ââ Header ââ */}
+      {/* ── Header ── */}
       <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-5">
         <div className="flex items-center justify-between pt-3">
           <div>
             <p className="text-white/75 text-sm font-medium">{hora},</p>
             <p className="text-white text-xl font-black">{user?.nombre?.split(' ')[0] || 'Jugador'}</p>
           </div>
-          <img src="/isotipo.png" alt="Sierra Padel" style={{width:32,height:32,objectFit:"contain"}} />
+          <Isotipo size={32} color="white" />
         </div>
         <div className="mt-3 inline-flex items-center gap-2 bg-black/20 rounded-full px-3 py-1.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none">
             <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
           </svg>
           <span className="text-white text-sm font-bold">
-            {puntos !== null ? `${puntos} puntos` : '- puntos'}
+            {puntos !== null ? `${puntos} puntos` : '— puntos'}
           </span>
         </div>
       </div>
 
-      {/* ââ Contenido ââ */}
+      {/* ── Contenido ── */}
       <div className="px-4 py-4 flex flex-col gap-5">
         {/* Hero CTA */}
         <button
@@ -370,6 +478,9 @@ export default function Home() {
 
         {/* Standings */}
         <StandingsCircuito apiFetch={apiFetch} navigate={navigate} />
+
+        {/* Promo Express (banner con countdown — solo aparece cuando hay una activa) */}
+        <PromoExpressBanner navigate={navigate} />
 
         {/* Promociones */}
         <Promociones navigate={navigate} />
