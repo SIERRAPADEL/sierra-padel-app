@@ -16,7 +16,7 @@ function formatHora(str) {
   return str.slice(0, 5); // "HH:MM"
 }
 
-// ââ SecciÃ³n: Mis prÃ³ximas reservas ââââââââââââââââââââââââââââââââââââââââââââ
+// ââ Seccion: Mis proximas reservas ââââââââââââââââââââââââââââââââââââââââââââ
 function MisReservas({ apiFetch, navigate }) {
   const [reservas, setReservas] = useState(null);
   const [loading, setLoading]  = useState(true);
@@ -45,7 +45,7 @@ function MisReservas({ apiFetch, navigate }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between px-1">
-        <p className="text-sp-gray font-black text-sm">Mis prÃ³ximas reservas</p>
+        <p className="text-sp-gray font-black text-sm">Mis proximas reservas</p>
         <button onClick={() => navigate('/reservar')} className="text-xs font-semibold" style={{ color: '#96C800' }}>
           Ver todas
         </button>
@@ -87,7 +87,7 @@ function MisReservas({ apiFetch, navigate }) {
         </div>
       ) : (
         <div className="card py-5 text-center">
-          <p className="text-gray-400 text-sm">No tienes reservas prÃ³ximas</p>
+          <p className="text-gray-400 text-sm">No tienes reservas proximas</p>
           <button
             onClick={() => navigate('/reservar')}
             className="mt-2 text-sm font-bold"
@@ -101,7 +101,7 @@ function MisReservas({ apiFetch, navigate }) {
   );
 }
 
-// ââ SecciÃ³n: PrÃ³ximos torneos âââââââââââââââââââââââââââââââââââââââââââââââââ
+// ââ Seccion: Proximos torneos âââââââââââââââââââââââââââââââââââââââââââââââââ
 function ProximosTorneos({ apiFetch, navigate }) {
   const [torneos, setTorneos] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -126,7 +126,7 @@ function ProximosTorneos({ apiFetch, navigate }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between px-1">
-        <p className="text-sp-gray font-black text-sm">PrÃ³ximos torneos</p>
+        <p className="text-sp-gray font-black text-sm">Proximos torneos</p>
         <button onClick={() => navigate('/torneos')} className="text-xs font-semibold" style={{ color: '#96C800' }}>
           Ver todos
         </button>
@@ -151,7 +151,7 @@ function ProximosTorneos({ apiFetch, navigate }) {
                 <p className="text-sp-gray font-bold text-sm truncate">{t.nombre}</p>
                 <p className="text-gray-400 text-xs">
                   {t.fecha_inicio ? formatFecha(t.fecha_inicio) : 'Fecha por confirmar'}
-                  {t.torneo_categorias?.length > 0 && ` Â· ${t.torneo_categorias.length} categorÃ­as`}
+                  {t.torneo_categorias?.length > 0 && ` · ${t.torneo_categorias.length} categorias`}
                 </p>
               </div>
               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
@@ -159,21 +159,21 @@ function ProximosTorneos({ apiFetch, navigate }) {
                   ? 'bg-green-50 text-green-600'
                   : 'bg-blue-50 text-blue-500'
               }`}>
-                {t.estado === 'activo' || t.estado === 'en_curso' ? 'En curso' : 'PrÃ³ximo'}
+                {t.estado === 'activo' || t.estado === 'en_curso' ? 'En curso' : 'Proximo'}
               </span>
             </div>
           ))}
         </div>
       ) : (
         <div className="card py-5 text-center">
-          <p className="text-gray-400 text-sm">No hay torneos prÃ³ximos por ahora</p>
+          <p className="text-gray-400 text-sm">No hay torneos proximos por ahora</p>
         </div>
       )}
     </div>
   );
 }
 
-// ââ SecciÃ³n: Standings del Circuito ââââââââââââââââââââââââââââââââââââââââââ
+// ââ Seccion: Standings del Circuito ââââââââââââââââââââââââââââââââââââââââââ
 function StandingsCircuito({ apiFetch, navigate }) {
   const [ligas, setLigas]   = useState(null);
   const [ranking, setRanking] = useState(null);
@@ -215,7 +215,7 @@ function StandingsCircuito({ apiFetch, navigate }) {
           <>
             {ligas && (
               <div className="px-4 py-2 border-b border-gray-50" style={{ background: '#f9fafb' }}>
-                <p className="text-xs font-semibold text-gray-500">{ligas.nombre || 'Circuito Sierra PÃ¡del'}</p>
+                <p className="text-xs font-semibold text-gray-500">{ligas.nombre || 'Circuito Sierra Padel'}</p>
               </div>
             )}
             {ranking.map((p, i) => (
@@ -248,7 +248,7 @@ function StandingsCircuito({ apiFetch, navigate }) {
   );
 }
 
-// ââ SecciÃ³n: Promociones ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ââ Seccion: Promociones ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function Promociones({ navigate }) {
   const promos = [
     {
@@ -262,7 +262,7 @@ function Promociones({ navigate }) {
     {
       icon: 'ð¯',
       title: 'Programa de puntos',
-      desc: 'Acumula puntos y canjÃ©alos por premios exclusivos',
+      desc: 'Acumula puntos y canjealos por premios exclusivos',
       color: '#263238',
       action: () => navigate('/puntos'),
       cta: 'Ver mis puntos',
@@ -294,7 +294,7 @@ function Promociones({ navigate }) {
   );
 }
 
-// ââ PÃ¡gina principal ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ââ Pagina principal ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 export default function Home() {
   const { user }    = useAuth();
   const { apiFetch } = useApi();
@@ -302,7 +302,7 @@ export default function Home() {
   const [puntos, setPuntos] = useState(null);
   const [hora] = useState(() => {
     const h = new Date().getHours();
-    if (h < 12) return 'Buenos dÃ­as';
+    if (h < 12) return 'Buenos dias';
     if (h < 19) return 'Buenas tardes';
     return 'Buenas noches';
   });
@@ -349,7 +349,7 @@ export default function Home() {
           }}
         >
           <div>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 4 }}>Sierra PÃ¡del</p>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 4 }}>Sierra Padel</p>
             <p style={{ color: 'white', fontWeight: 900, fontSize: 22, lineHeight: 1.1 }}>Reservar</p>
             <p style={{ color: 'white', fontWeight: 900, fontSize: 22, lineHeight: 1.1 }}>una cancha</p>
             <div style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#96C800', borderRadius: 100, padding: '6px 14px' }}>
