@@ -124,7 +124,6 @@ export default function Login() {
       {step === 1 && (
         <form onSubmit={handleTelefono} className="w-full max-w-xs flex flex-col gap-4">
           <div className="text-center">
-            <p className="text-white font-black text-2xl">Sierra Padel</p>
             <p className="text-white/70 text-sm mt-1">Ingresa tu numero de WhatsApp</p>
           </div>
           <input
