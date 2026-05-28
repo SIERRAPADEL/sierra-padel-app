@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
-import Isotipo from '../components/Isotipo';
+// isotipo.png used directly
 
 // ââ Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function formatFecha(str) {
@@ -320,7 +320,7 @@ export default function Home() {
             <p className="text-white/75 text-sm font-medium">{hora},</p>
             <p className="text-white text-xl font-black">{user?.nombre?.split(' ')[0] || 'Jugador'}</p>
           </div>
-          <Isotipo size={32} color="white" />
+          <img src="/isotipo.png" alt="Sierra Padel" style={{width:32,height:32,objectFit:"contain"}} />
         </div>
         <div className="mt-3 inline-flex items-center gap-2 bg-black/20 rounded-full px-3 py-1.5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none">
