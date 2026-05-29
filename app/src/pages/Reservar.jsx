@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 
 // ── Mis Reservas ─────────────────────────────────────────────────────────────
@@ -162,6 +163,15 @@ function formatDate(iso) {
 
 export default function Reservar() {
   const { apiFetch } = useApi();
+  const location = useLocation();
+
+  // Leer promo express desde URL params (tipo 2)
+  const urlParams      = new URLSearchParams(location.search);
+  const promoCodigo    = urlParams.get('promo') || null;
+  const promoTitulo    = urlParams.get('titulo') || null;
+  const promoPrecio    = urlParams.get('precio') ? parseFloat(urlParams.get('precio')) : null;
+  const tienePromo     = !!promoCodigo;
+
   const [mainTab, setMainTab] = useState('nueva'); // 'nueva' | 'mis'
   const [tipo, setTipo] = useState('cancha'); // 'cancha' | 'clase'
 
@@ -218,6 +228,13 @@ export default function Reservar() {
     const body = tipo === 'cancha'
       ? { fecha, hora, tipo: 'renta', cancha }
       : { fecha: fechaClase, hora: horaSel, tipo: 'clase', instructor: coachSel };
+
+    // Adjuntar código de promo express si viene de tipo 2
+    if (tienePromo) {
+      body.promo_codigo = promoCodigo;
+      if (promoPrecio) body.promo_precio = promoPrecio;
+    }
+
     const data = await apiFetch('/reservas/solicitar', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -228,6 +245,7 @@ export default function Reservar() {
         fecha:   tipo === 'cancha' ? fecha      : fechaClase,
         hora:    tipo === 'cancha' ? hora       : horaSel,
         detalle: tipo === 'cancha' ? `Cancha ${cancha}` : `Clase con ${coachSel}`,
+        promo:   tienePromo ? { codigo: promoCodigo, precio: promoPrecio, titulo: promoTitulo } : null,
       });
     } else {
       setError(data.error || 'No se pudo enviar la solicitud');
@@ -261,6 +279,14 @@ export default function Reservar() {
             Tu solicitud llego al panel del club. El equipo te confirmara a la brevedad.
           </p>
         </div>
+        {done.promo && (
+          <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Promo Express aplicada</p>
+            <p style={{ fontSize: 22, fontWeight: 900, letterSpacing: '0.12em', color: '#96C800' }}>{done.promo.codigo}</p>
+            {done.promo.precio && <p style={{ fontSize: 13, color: '#9090a8', marginTop: 4 }}>Precio preferencial: <strong style={{ color: '#eeeef5' }}>${done.promo.precio}</strong></p>}
+            <p style={{ fontSize: 11, color: '#5e5e78', marginTop: 4 }}>El encargado vera este codigo al revisar la reserva</p>
+          </div>
+        )}
         <button className="btn-green w-full max-w-xs" onClick={reset}>Nueva solicitud</button>
       </div>
     );
@@ -271,6 +297,16 @@ export default function Reservar() {
     <div className="page safe-bottom">
       <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-0">
         <p className="text-white font-black text-lg pt-3 mb-3">Reservar</p>
+        {/* Banner promo express tipo 2 */}
+        {tienePromo && (
+          <div style={{ background: 'rgba(0,0,0,.25)', borderRadius: 12, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20 }}>⚡</span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 12, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{promoTitulo || 'Promo Express activa'}</p>
+              {promoPrecio && <p style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginTop: 2 }}>Precio preferencial: <strong>${promoPrecio}</strong> · Codigo: {promoCodigo}</p>}
+            </div>
+          </div>
+        )}
         {/* Main tabs */}
         <div className="flex gap-1">
           {[['nueva','Nueva reserva'],['mis','Mis reservas']].map(([v,label]) => (
@@ -476,3 +512,4 @@ export default function Reservar() {
     </div>
   );
 }
+  

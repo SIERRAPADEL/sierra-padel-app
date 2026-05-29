@@ -299,8 +299,20 @@ function PromoExpressBanner({ navigate }) {
         body: JSON.stringify({ ubicacion }),
       });
       const d = await r.json();
-      if (d.ok) setReclamado(d.data);
-      else alert(d.error || 'No se pudo reclamar la promo');
+      if (d.ok) {
+        setReclamado(d.data);
+        // Tipo 2: redirigir a reservar con código y precio en params
+        if (d.tipo === '2') {
+          const params = new URLSearchParams({
+            promo:  d.data.codigo,
+            titulo: promo.titulo,
+            precio: d.precio_preferencial || '',
+          });
+          navigate(`/reservar?${params.toString()}`);
+        }
+      } else {
+        alert(d.error || 'No se pudo reclamar la promo');
+      }
     } catch { alert('Error de conexion'); }
     setReclamando(false);
   }
@@ -312,15 +324,18 @@ function PromoExpressBanner({ navigate }) {
   const pct = promo ? (segundos / (promo.duracion_min * 60)) * 100 : 0;
 
   if (reclamado) {
+    const tipo = promo?.tipo || '1';
     return (
       <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 20, padding: '20px', marginBottom: 4 }}>
         <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Promo reclamada</p>
         <div style={{ background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', borderRadius: 12, padding: '16px', textAlign: 'center', marginBottom: 12 }}>
           <p style={{ fontSize: 32, fontWeight: 900, letterSpacing: '0.15em', color: '#96C800' }}>{reclamado.codigo}</p>
-          <p style={{ fontSize: 11, color: '#9090a8', marginTop: 4 }}>Tu pedido ya llego a caja</p>
+          <p style={{ fontSize: 11, color: '#9090a8', marginTop: 4 }}>
+            {tipo === '2' ? 'Usa este codigo al reservar tu cancha o clase' : 'Tu pedido ya llego a caja'}
+          </p>
         </div>
         <div style={{ background: 'rgba(255,255,255,.04)', borderRadius: 8, padding: '8px 12px' }}>
-          <p style={{ fontSize: 12, color: '#9090a8' }}>📍 <strong style={{ color: '#eeeef5' }}>{ubicacion}</strong> · 🎯 <strong style={{ color: '#eeeef5' }}>{promo?.titulo}</strong></p>
+          <p style={{ fontSize: 12, color: '#9090a8' }}>📍 <strong style={{ color: '#eeeef5' }}>{tipo === '2' ? 'Reserva tu cancha' : ubicacion}</strong> · 🎯 <strong style={{ color: '#eeeef5' }}>{promo?.titulo}</strong></p>
         </div>
       </div>
     );

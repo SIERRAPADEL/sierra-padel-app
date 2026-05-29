@@ -51,8 +51,19 @@ function PromoExpressBanner() {
         body: JSON.stringify({ ubicacion }),
       });
       const d = await r.json();
-      if (d.ok) setReclamado(d.data);
-      else alert(d.error || 'No se pudo reclamar');
+      if (d.ok) {
+        setReclamado(d.data);
+        if (d.tipo === '2') {
+          const params = new URLSearchParams({
+            promo:  d.data.codigo,
+            titulo: promo.titulo,
+            precio: d.precio_preferencial || '',
+          });
+          navigate(`/reservar?${params.toString()}`);
+        }
+      } else {
+        alert(d.error || 'No se pudo reclamar');
+      }
     } catch { alert('Error de conexion'); }
     setReclamando(false);
   }
