@@ -64,17 +64,23 @@ self.addEventListener('push', event => {
 // ── Notification click: abrir / enfocar app ───────────────────────────────────
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+  const rawUrl = (event.notification.data && event.notification.data.url) || '/';
+  // Siempre construir URL absoluta — client.navigate y openWindow la requieren
+  const targetUrl = rawUrl.startsWith('http')
+    ? rawUrl
+    : new URL(rawUrl, self.registration.scope).href;
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
-      for (const client of windowClients) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.navigate(targetUrl);
-          return client.focus();
-        }
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      // Buscar una ventana ya abierta de la app
+      const existing = windowClients.find(c =>
+        c.url.startsWith(self.registration.scope) || c.url.includes(self.location.origin)
+      );
+      if (existing) {
+        return existing.focus().then(fc => fc.navigate(targetUrl));
       }
-      return clients.openWindow(targetUrl);
+      // Si la app está cerrada, abrir nueva ventana
+      return self.clients.openWindow(targetUrl);
     })
   );
 });
