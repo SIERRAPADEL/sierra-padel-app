@@ -1,6 +1,101 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://sierra-padel-backend-production-a55f.up.railway.app';
+
+// ── Banner de Promo Express activa ────────────────────────────────────────────
+function PromoExpressBanner() {
+  const navigate = useNavigate();
+  const [promo, setPromo]       = useState(null);
+  const [segundos, setSegundos] = useState(0);
+  const [reclamado, setReclamado] = useState(null);
+  const [reclamando, setReclamando] = useState(false);
+
+  useEffect(() => {
+    fetchPromo();
+    const poll = setInterval(fetchPromo, 30000);
+    return () => clearInterval(poll);
+  }, []);
+
+  useEffect(() => {
+    if (!promo) return;
+    const t = setInterval(() => {
+      const diff = Math.max(0, Math.floor((new Date(promo.fin_at) - Date.now()) / 1000));
+      setSegundos(diff);
+      if (diff === 0) setPromo(null);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [promo]);
+
+  async function fetchPromo() {
+    try {
+      const r = await fetch(`${BACKEND}/api/promos-express/activa`);
+      const d = await r.json();
+      setPromo(d.ok && d.data ? d.data : null);
+    } catch { }
+  }
+
+  async function reclamar() {
+    if (!promo || reclamando) return;
+    setReclamando(true);
+    try {
+      const token = JSON.parse(sessionStorage.getItem('cliente') || '{}')?.token
+                 || JSON.parse(localStorage.getItem('sp_user') || '{}')?.token;
+      const r = await fetch(`${BACKEND}/api/promos-express/${promo.id}/reclamar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+      });
+      const d = await r.json();
+      if (d.ok) setReclamado(d.data);
+      else alert(d.error || 'No se pudo reclamar');
+    } catch { alert('Error de conexion'); }
+    setReclamando(false);
+  }
+
+  if (!promo && !reclamado) return null;
+
+  const mm = String(Math.floor(segundos / 60)).padStart(2, '0');
+  const ss = String(segundos % 60).padStart(2, '0');
+
+  if (reclamado) {
+    return (
+      <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 14, padding: '16px', marginBottom: 16 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Tu codigo promo</p>
+        <div style={{ background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', borderRadius: 10, padding: '14px', textAlign: 'center', marginBottom: 8 }}>
+          <p style={{ fontSize: 28, fontWeight: 900, letterSpacing: '0.15em', color: '#96C800' }}>{reclamado.codigo}</p>
+          <p style={{ fontSize: 11, color: '#9090a8', marginTop: 4 }}>Muestra este codigo al encargado · Ya lo recibio en caja</p>
+        </div>
+        <button onClick={() => navigate('/pedir')} style={{ width: '100%', padding: '11px', background: '#96C800', color: '#0a1a00', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Ir a pedir ahora →
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid rgba(150,200,0,.5)', borderRadius: 14, padding: '16px', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Promo express</p>
+          <p style={{ fontSize: 15, fontWeight: 800, color: '#eeeef5', lineHeight: 1.3 }}>{promo.titulo}</p>
+          <p style={{ fontSize: 12, color: '#9090a8', marginTop: 3 }}>{promo.descripcion}</p>
+        </div>
+        <div style={{ textAlign: 'right', marginLeft: 12, flexShrink: 0 }}>
+          <p style={{ fontSize: 24, fontWeight: 900, color: segundos < 120 ? '#f97316' : '#96C800', fontVariantNumeric: 'tabular-nums' }}>{mm}:{ss}</p>
+          <p style={{ fontSize: 9, color: '#5e5e78', fontWeight: 700 }}>restantes</p>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={reclamar} disabled={reclamando} style={{ flex: 1, padding: '11px', background: '#96C800', color: '#0a1a00', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+          {reclamando ? 'Generando...' : 'Reclamar promo'}
+        </button>
+        <button onClick={() => navigate('/pedir')} style={{ padding: '11px 14px', background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', borderRadius: 10, color: '#96C800', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Pedir →
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // Formatea fecha relativa (hoy, ayer, hace X dias...)
 function fmtRelativa(iso) {
@@ -60,6 +155,8 @@ export default function Noticias() {
 
       {/* CONTENT */}
       <div className="px-4 pt-4">
+        {/* Promo Express activa (aparece si hay una corriendo) */}
+        <PromoExpressBanner />
         {loading && (
           <div className="flex flex-col gap-3">
             {[1,2,3].map(i => (
