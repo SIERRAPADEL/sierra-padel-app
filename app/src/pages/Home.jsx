@@ -253,12 +253,15 @@ function StandingsCircuito({ apiFetch, navigate }) {
 // ── Promo Express Banner ──────────────────────────────────────────────────────
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://sierra-padel-backend-production-a55f.up.railway.app';
 
+const UBICACIONES_HOME = ['Cancha 1','Cancha 2','Cancha 3','Cancha 4','Cancha 5','Cancha 6','Bar / Mesa','Terraza','Recepcion'];
+
 function PromoExpressBanner({ navigate }) {
-  const { user } = useAuth();
-  const [promo, setPromo]       = useState(null);
-  const [segundos, setSegundos] = useState(0);
-  const [reclamado, setReclamado] = useState(null); // codigo generado
-  const [reclamando, setReclamando] = useState(false);
+  const [promo, setPromo]             = useState(null);
+  const [segundos, setSegundos]       = useState(0);
+  const [reclamado, setReclamado]     = useState(null);
+  const [reclamando, setReclamando]   = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+  const [ubicacion, setUbicacion]     = useState('');
 
   useEffect(() => {
     fetchPromoActiva();
@@ -266,16 +269,13 @@ function PromoExpressBanner({ navigate }) {
     return () => clearInterval(poll);
   }, []);
 
-  // Countdown
   useEffect(() => {
     if (!promo) return;
-    const calcSeg = () => {
+    const t = setInterval(() => {
       const diff = Math.max(0, Math.floor((new Date(promo.fin_at) - Date.now()) / 1000));
       setSegundos(diff);
       if (diff === 0) setPromo(null);
-    };
-    calcSeg();
-    const t = setInterval(calcSeg, 1000);
+    }, 1000);
     return () => clearInterval(t);
   }, [promo]);
 
@@ -283,22 +283,20 @@ function PromoExpressBanner({ navigate }) {
     try {
       const r = await fetch(`${BACKEND}/api/promos-express/activa`);
       const d = await r.json();
-      if (d.ok && d.data) setPromo(d.data);
-      else setPromo(null);
+      setPromo(d.ok && d.data ? d.data : null);
     } catch { }
   }
 
-  async function reclamar() {
-    if (!promo || reclamando) return;
+  async function confirmarYReclamar() {
+    if (!promo || reclamando || !ubicacion) return;
     setReclamando(true);
+    setConfirmando(false);
     try {
       const token = localStorage.getItem('sp_token');
       const r = await fetch(`${BACKEND}/api/promos-express/${promo.id}/reclamar`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ ubicacion }),
       });
       const d = await r.json();
       if (d.ok) setReclamado(d.data);
@@ -309,50 +307,79 @@ function PromoExpressBanner({ navigate }) {
 
   if (!promo && !reclamado) return null;
 
-  const mm = String(Math.floor(segundos / 60)).padStart(2, '0');
-  const ss = String(segundos % 60).padStart(2, '0');
+  const mm  = String(Math.floor(segundos / 60)).padStart(2, '0');
+  const ss  = String(segundos % 60).padStart(2, '0');
   const pct = promo ? (segundos / (promo.duracion_min * 60)) * 100 : 0;
 
-  // Pantalla de codigo reclamado
   if (reclamado) {
     return (
-      <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 20, padding: '20px 20px', marginBottom: 4 }}>
-        <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Tu codigo promo</p>
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#eeeef5', marginBottom: 16 }}>{reclamado.promo_descripcion || promo?.titulo}</p>
+      <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 20, padding: '20px', marginBottom: 4 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Promo reclamada</p>
         <div style={{ background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', borderRadius: 12, padding: '16px', textAlign: 'center', marginBottom: 12 }}>
           <p style={{ fontSize: 32, fontWeight: 900, letterSpacing: '0.15em', color: '#96C800' }}>{reclamado.codigo}</p>
-          <p style={{ fontSize: 11, color: '#9090a8', marginTop: 4 }}>Muestra este codigo al encargado</p>
+          <p style={{ fontSize: 11, color: '#9090a8', marginTop: 4 }}>Tu pedido ya llego a caja</p>
         </div>
-        <p style={{ fontSize: 11, color: '#5e5e78', textAlign: 'center' }}>El encargado ya recibio tu codigo en caja</p>
+        <div style={{ background: 'rgba(255,255,255,.04)', borderRadius: 8, padding: '8px 12px' }}>
+          <p style={{ fontSize: 12, color: '#9090a8' }}>📍 <strong style={{ color: '#eeeef5' }}>{ubicacion}</strong> · 🎯 <strong style={{ color: '#eeeef5' }}>{promo?.titulo}</strong></p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid rgba(150,200,0,.5)', borderRadius: 20, padding: '18px 20px', marginBottom: 4 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Promo express</p>
-          <p style={{ fontSize: 15, fontWeight: 800, color: '#eeeef5', lineHeight: 1.3 }}>{promo.titulo}</p>
-          <p style={{ fontSize: 12, color: '#9090a8', marginTop: 4 }}>{promo.descripcion}</p>
+    <>
+      {confirmando && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.85)', zIndex: 200, display: 'flex', alignItems: 'flex-end', padding: '0 0 24px' }}>
+          <div style={{ background: '#0e0e1a', border: '1px solid #27273a', borderRadius: '20px 20px 16px 16px', padding: '24px 20px', width: '100%', maxWidth: 480, margin: '0 auto' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Confirmar promo</p>
+            <p style={{ fontSize: 17, fontWeight: 800, color: '#eeeef5', marginBottom: 4 }}>{promo.titulo}</p>
+            <p style={{ fontSize: 13, color: '#9090a8', marginBottom: 20 }}>{promo.descripcion}</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#9090a8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>¿Donde estas?</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
+              {UBICACIONES_HOME.map(u => (
+                <button key={u} onClick={() => setUbicacion(u)} style={{
+                  padding: '10px 8px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                  fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+                  background: ubicacion === u ? '#96C800' : 'rgba(255,255,255,.06)',
+                  color: ubicacion === u ? '#0a1a00' : '#9090a8',
+                }}>{u}</button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => { setConfirmando(false); setUbicacion(''); }}
+                style={{ flex: 1, padding: '13px', background: 'rgba(255,255,255,.06)', border: '1px solid #27273a', borderRadius: 12, color: '#9090a8', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Cancelar
+              </button>
+              <button onClick={confirmarYReclamar} disabled={!ubicacion}
+                style={{ flex: 2, padding: '13px', background: ubicacion ? '#96C800' : '#1e1e2e', color: ubicacion ? '#0a1a00' : '#5e5e78', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 14, cursor: ubicacion ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+                {ubicacion ? 'Confirmar y reclamar ✓' : 'Selecciona ubicacion'}
+              </button>
+            </div>
+          </div>
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-          <p style={{ fontSize: 26, fontWeight: 900, color: segundos < 120 ? '#f97316' : '#96C800', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>{mm}:{ss}</p>
-          <p style={{ fontSize: 9, color: '#5e5e78', fontWeight: 700 }}>restantes</p>
+      )}
+
+      <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid rgba(150,200,0,.5)', borderRadius: 20, padding: '18px 20px', marginBottom: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Promo express</p>
+            <p style={{ fontSize: 15, fontWeight: 800, color: '#eeeef5', lineHeight: 1.3 }}>{promo.titulo}</p>
+            <p style={{ fontSize: 12, color: '#9090a8', marginTop: 4 }}>{promo.descripcion}</p>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+            <p style={{ fontSize: 26, fontWeight: 900, color: segundos < 120 ? '#f97316' : '#96C800', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>{mm}:{ss}</p>
+            <p style={{ fontSize: 9, color: '#5e5e78', fontWeight: 700 }}>restantes</p>
+          </div>
         </div>
+        <div style={{ height: 3, background: 'rgba(255,255,255,.08)', borderRadius: 99, marginBottom: 14, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${pct}%`, background: segundos < 120 ? '#f97316' : '#96C800', borderRadius: 99, transition: 'width 1s linear' }} />
+        </div>
+        <button onClick={() => setConfirmando(true)} disabled={reclamando}
+          style={{ width: '100%', padding: '12px', background: '#96C800', color: '#0a1a00', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+          {reclamando ? 'Procesando...' : 'Reclamar ahora'}
+        </button>
       </div>
-      {/* Barra de progreso */}
-      <div style={{ height: 3, background: 'rgba(255,255,255,.08)', borderRadius: 99, marginBottom: 14, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: segundos < 120 ? '#f97316' : '#96C800', borderRadius: 99, transition: 'width 1s linear' }} />
-      </div>
-      <button
-        onClick={reclamar}
-        disabled={reclamando}
-        style={{ width: '100%', padding: '12px', background: '#96C800', color: '#0a1a00', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
-      >
-        {reclamando ? 'Generando codigo...' : 'Reclamar ahora'}
-      </button>
-    </div>
+    </>
   );
 }
 

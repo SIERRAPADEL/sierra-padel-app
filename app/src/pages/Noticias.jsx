@@ -3,13 +3,17 @@ import { useNavigate } from 'react-router-dom';
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://sierra-padel-backend-production-a55f.up.railway.app';
 
+const UBICACIONES = ['Cancha 1','Cancha 2','Cancha 3','Cancha 4','Cancha 5','Cancha 6','Bar / Mesa','Terraza','Recepcion'];
+
 // ── Banner de Promo Express activa ────────────────────────────────────────────
 function PromoExpressBanner() {
   const navigate = useNavigate();
-  const [promo, setPromo]       = useState(null);
-  const [segundos, setSegundos] = useState(0);
-  const [reclamado, setReclamado] = useState(null);
+  const [promo, setPromo]           = useState(null);
+  const [segundos, setSegundos]     = useState(0);
+  const [reclamado, setReclamado]   = useState(null);
   const [reclamando, setReclamando] = useState(false);
+  const [confirmando, setConfirmando] = useState(false); // modal abierto
+  const [ubicacion, setUbicacion]   = useState('');
 
   useEffect(() => {
     fetchPromo();
@@ -35,14 +39,16 @@ function PromoExpressBanner() {
     } catch { }
   }
 
-  async function reclamar() {
-    if (!promo || reclamando) return;
+  async function confirmarYReclamar() {
+    if (!promo || reclamando || !ubicacion) return;
     setReclamando(true);
+    setConfirmando(false);
     try {
       const token = localStorage.getItem('sp_token');
       const r = await fetch(`${BACKEND}/api/promos-express/${promo.id}/reclamar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ ubicacion }),
       });
       const d = await r.json();
       if (d.ok) setReclamado(d.data);
@@ -56,43 +62,83 @@ function PromoExpressBanner() {
   const mm = String(Math.floor(segundos / 60)).padStart(2, '0');
   const ss = String(segundos % 60).padStart(2, '0');
 
+  // ── Pantalla post-reclamo ──────────────────────────────────────────────────
   if (reclamado) {
     return (
       <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 14, padding: '16px', marginBottom: 16 }}>
-        <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Tu codigo promo</p>
-        <div style={{ background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', borderRadius: 10, padding: '14px', textAlign: 'center', marginBottom: 8 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Promo reclamada</p>
+        <div style={{ background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', borderRadius: 10, padding: '14px', textAlign: 'center', marginBottom: 10 }}>
           <p style={{ fontSize: 28, fontWeight: 900, letterSpacing: '0.15em', color: '#96C800' }}>{reclamado.codigo}</p>
-          <p style={{ fontSize: 11, color: '#9090a8', marginTop: 4 }}>Muestra este codigo al encargado · Ya lo recibio en caja</p>
+          <p style={{ fontSize: 11, color: '#9090a8', marginTop: 4 }}>Tu pedido ya llego a caja · El encargado lo esta procesando</p>
         </div>
-        <button onClick={() => navigate('/pedir')} style={{ width: '100%', padding: '11px', background: '#96C800', color: '#0a1a00', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-          Ir a pedir ahora →
+        <div style={{ background: 'rgba(255,255,255,.04)', borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
+          <p style={{ fontSize: 12, color: '#9090a8' }}>📍 <strong style={{ color: '#eeeef5' }}>{ubicacion}</strong></p>
+          <p style={{ fontSize: 12, color: '#9090a8', marginTop: 2 }}>🎯 <strong style={{ color: '#eeeef5' }}>{promo?.titulo}</strong></p>
+        </div>
+        <button onClick={() => navigate('/pedir')} style={{ width: '100%', padding: '11px', background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', color: '#96C800', borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Hacer otro pedido →
         </button>
       </div>
     );
   }
 
+  // ── Banner con countdown ───────────────────────────────────────────────────
   return (
-    <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid rgba(150,200,0,.5)', borderRadius: 14, padding: '16px', marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Promo express</p>
-          <p style={{ fontSize: 15, fontWeight: 800, color: '#eeeef5', lineHeight: 1.3 }}>{promo.titulo}</p>
-          <p style={{ fontSize: 12, color: '#9090a8', marginTop: 3 }}>{promo.descripcion}</p>
+    <>
+      {/* Modal de confirmación */}
+      {confirmando && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.85)', zIndex: 200, display: 'flex', alignItems: 'flex-end', padding: '0 0 24px' }}>
+          <div style={{ background: '#0e0e1a', border: '1px solid #27273a', borderRadius: '20px 20px 16px 16px', padding: '24px 20px', width: '100%', maxWidth: 480, margin: '0 auto' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Confirmar promo</p>
+            <p style={{ fontSize: 17, fontWeight: 800, color: '#eeeef5', marginBottom: 4 }}>{promo.titulo}</p>
+            <p style={{ fontSize: 13, color: '#9090a8', marginBottom: 20 }}>{promo.descripcion}</p>
+
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#9090a8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>¿Donde estas?</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
+              {UBICACIONES.map(u => (
+                <button key={u} onClick={() => setUbicacion(u)} style={{
+                  padding: '10px 8px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                  fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+                  background: ubicacion === u ? '#96C800' : 'rgba(255,255,255,.06)',
+                  color: ubicacion === u ? '#0a1a00' : '#9090a8',
+                }}>
+                  {u}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => { setConfirmando(false); setUbicacion(''); }}
+                style={{ flex: 1, padding: '13px', background: 'rgba(255,255,255,.06)', border: '1px solid #27273a', borderRadius: 12, color: '#9090a8', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Cancelar
+              </button>
+              <button onClick={confirmarYReclamar} disabled={!ubicacion}
+                style={{ flex: 2, padding: '13px', background: ubicacion ? '#96C800' : '#1e1e2e', color: ubicacion ? '#0a1a00' : '#5e5e78', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 14, cursor: ubicacion ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+                {ubicacion ? 'Confirmar y reclamar ✓' : 'Selecciona tu ubicacion'}
+              </button>
+            </div>
+          </div>
         </div>
-        <div style={{ textAlign: 'right', marginLeft: 12, flexShrink: 0 }}>
-          <p style={{ fontSize: 24, fontWeight: 900, color: segundos < 120 ? '#f97316' : '#96C800', fontVariantNumeric: 'tabular-nums' }}>{mm}:{ss}</p>
-          <p style={{ fontSize: 9, color: '#5e5e78', fontWeight: 700 }}>restantes</p>
+      )}
+
+      <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid rgba(150,200,0,.5)', borderRadius: 14, padding: '16px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Promo express</p>
+            <p style={{ fontSize: 15, fontWeight: 800, color: '#eeeef5', lineHeight: 1.3 }}>{promo.titulo}</p>
+            <p style={{ fontSize: 12, color: '#9090a8', marginTop: 3 }}>{promo.descripcion}</p>
+          </div>
+          <div style={{ textAlign: 'right', marginLeft: 12, flexShrink: 0 }}>
+            <p style={{ fontSize: 24, fontWeight: 900, color: segundos < 120 ? '#f97316' : '#96C800', fontVariantNumeric: 'tabular-nums' }}>{mm}:{ss}</p>
+            <p style={{ fontSize: 9, color: '#5e5e78', fontWeight: 700 }}>restantes</p>
+          </div>
         </div>
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={reclamar} disabled={reclamando} style={{ flex: 1, padding: '11px', background: '#96C800', color: '#0a1a00', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-          {reclamando ? 'Generando...' : 'Reclamar promo'}
-        </button>
-        <button onClick={() => navigate('/pedir')} style={{ padding: '11px 14px', background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', borderRadius: 10, color: '#96C800', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-          Pedir →
+        <button onClick={() => setConfirmando(true)} disabled={reclamando}
+          style={{ width: '100%', padding: '12px', background: '#96C800', color: '#0a1a00', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+          {reclamando ? 'Procesando...' : 'Reclamar promo'}
         </button>
       </div>
-    </div>
+    </>
   );
 }
 
