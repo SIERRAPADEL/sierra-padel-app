@@ -92,8 +92,7 @@ export default function Pedir() {
 
     setEnviando(true);
     try {
-      const token = JSON.parse(sessionStorage.getItem('cliente') || '{}')?.token
-                 || JSON.parse(localStorage.getItem('sp_user') || '{}')?.token;
+      const token = localStorage.getItem('sp_token');
 
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;

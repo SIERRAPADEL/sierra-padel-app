@@ -292,8 +292,7 @@ function PromoExpressBanner({ navigate }) {
     if (!promo || reclamando) return;
     setReclamando(true);
     try {
-      const token = JSON.parse(sessionStorage.getItem('cliente') || '{}')?.token
-                 || JSON.parse(localStorage.getItem('sp_user') || '{}')?.token;
+      const token = localStorage.getItem('sp_token');
       const r = await fetch(`${BACKEND}/api/promos-express/${promo.id}/reclamar`, {
         method: 'POST',
         headers: {
