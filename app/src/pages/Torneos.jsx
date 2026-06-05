@@ -332,6 +332,10 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [success, setSuccess] = useState(false);
+  const [aceptoReglamento, setAceptoReglamento] = useState(false);
+
+  // El torneo exige aceptar reglamento solo si está configurado (versión + URL/texto).
+  const reglamentoActivo = !!(torneo.reglamento_version && (torneo.reglamento_url || torneo.reglamento_texto));
 
   async function buscarPareja() {
     const digits = tel2.replace(/[^0-9]/g, '');
@@ -358,6 +362,9 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
     const body = {
       jugador2_telefono: pareja.telefono,
       jugador2_nombre: nombre2 || pareja.nombre,
+      // El usuario autenticado es el jugador 1; acepta el reglamento por sí mismo.
+      acepto_reglamento_j1: aceptoReglamento,
+      acepto_reglamento_j2: false,
     };
     const d = await apiFetch(`/torneos/${torneo.id}/categorias/${catSel}/inscripciones`, {
       method: 'POST',
@@ -556,13 +563,33 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
             </p>
           </div>
 
+          {reglamentoActivo && (
+            <label className="flex items-start gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={aceptoReglamento}
+                onChange={e => setAceptoReglamento(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span className="text-xs text-gray-600">
+                Acepto el reglamento del torneo
+                {torneo.reglamento_version ? ` (v${torneo.reglamento_version})` : ''}.{' '}
+                {torneo.reglamento_url && (
+                  <a href={torneo.reglamento_url} target="_blank" rel="noopener noreferrer" className="text-sp-green font-semibold underline">
+                    Ver reglamento
+                  </a>
+                )}
+              </span>
+            </label>
+          )}
+
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
               <p className="text-red-600 text-sm font-medium">{error}</p>
             </div>
           )}
 
-          <button className="btn-green" onClick={handleInscribir} disabled={loading}>
+          <button className="btn-green" onClick={handleInscribir} disabled={loading || (reglamentoActivo && !aceptoReglamento)}>
             {loading ? 'Enviando…' : 'Confirmar inscripcion'}
           </button>
         </>
