@@ -16,6 +16,15 @@ export function useApi() {
           ...options.headers,
         },
       });
+      // Token expirado/inválido: si habíamos enviado token y el server responde 401,
+      // la sesión ya no sirve → cerrarla y recargar para volver al login (antes la app
+      // quedaba en limbo: toda llamada fallaba pero seguía "logueada").
+      if (res.status === 401 && token) {
+        localStorage.removeItem('sp_token');
+        localStorage.removeItem('sp_user');
+        if (typeof window !== 'undefined') window.location.reload();
+        return { ok: false, error: 'Tu sesión expiró. Inicia sesión de nuevo.' };
+      }
       const text = await res.text();
       try {
         return JSON.parse(text);

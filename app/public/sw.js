@@ -1,7 +1,7 @@
 // ── Sierra Padel Service Worker ──────────────────────────────────────────────
 // Maneja: push notifications, notificationclick, cache básico offline
 
-const CACHE_NAME = 'sierra-padel-v1';
+const CACHE_NAME = 'sierra-padel-v2';
 const OFFLINE_URLS = ['/', '/index.html'];
 
 // ── Install: pre-cache shell ──────────────────────────────────────────────────
@@ -22,21 +22,42 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// ── Fetch: network-first, fallback a cache ────────────────────────────────────
+// ── Fetch ────────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  // Solo cachear mismo origen (no API de Railway)
+  // Solo mismo origen (no API de Railway: nunca cachear respuestas autenticadas)
   if (url.origin !== self.location.origin) return;
 
+  // Navegación (documento HTML): NETWORK-FIRST. Si hay red, siempre la versión nueva
+  // (evita servir un index.html viejo que apunte a bundles JS que ya no existen).
+  // Solo cae al shell cacheado cuando de verdad no hay conexión.
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request)
+        .then(resp => {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(c => c.put('/index.html', clone));
+          return resp;
+        })
+        .catch(() => caches.match('/index.html').then(r => r || caches.match('/')))
+    );
+    return;
+  }
+
+  // Resto (assets con hash, imágenes, fuentes): CACHE-FIRST con refresco en segundo
+  // plano. Los bundles llevan hash en el nombre, así que el cache nunca queda obsoleto.
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        return response;
-      })
-      .catch(() => caches.match(event.request).then(r => r || caches.match('/index.html')))
+    caches.match(event.request).then(cached => {
+      const fetchPromise = fetch(event.request).then(resp => {
+        if (resp && resp.status === 200) {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+        }
+        return resp;
+      }).catch(() => cached);
+      return cached || fetchPromise;
+    })
   );
 });
 
