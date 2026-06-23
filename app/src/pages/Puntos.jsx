@@ -93,7 +93,7 @@ export default function Puntos() {
   const [tab, setTab]           = useState(() => {
     const qTab = new URLSearchParams(location.search).get('tab');     // viene del push (/puntos?tab=promos)
     const t = qTab || location.state?.tab || 'beneficios';
-    return ['beneficios', 'promos', 'consumo', 'historial'].includes(t) ? t : 'beneficios';
+    return ['beneficios', 'promos', 'historial'].includes(t) ? t : 'beneficios';
   });
   const [ticket, setTicket]     = useState('');
   const [monto, setMonto]       = useState('');
@@ -352,7 +352,7 @@ export default function Puntos() {
 
       {/* Tabs */}
       <div className="mx-4 mt-3 flex gap-2">
-        {[['beneficios', 'Beneficios'], ['promos', 'Promos'], ['consumo', 'Consumo'], ['historial', 'Historial']].map(([val, label]) => (
+        {[['beneficios', 'Beneficios'], ['promos', 'Promos'], ['historial', 'Historial']].map(([val, label]) => (
           <button
             key={val}
             onClick={() => setTab(val)}

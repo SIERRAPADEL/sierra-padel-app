@@ -408,22 +408,6 @@ function Promociones({ navigate }) {
       action: () => navigate('/puntos', { state: { tab: 'promos' } }),
       cta: 'Ver promos',
     },
-    {
-      icon: '🍽️',
-      title: 'Restaurante',
-      desc: 'Gana 1 punto por cada $50 de consumo',
-      color: '#1a1a2e',
-      action: () => navigate('/puntos', { state: { tab: 'consumo' } }),
-      cta: 'Registrar consumo',
-    },
-    {
-      icon: '🎯',
-      title: 'Programa de puntos',
-      desc: 'Acumula puntos y canjealos por premios exclusivos',
-      color: '#263238',
-      action: () => navigate('/puntos'),
-      cta: 'Ver mis puntos',
-    },
   ];
 
   return (
@@ -519,14 +503,38 @@ export default function Home() {
           <div style={{ fontSize: 64, lineHeight: 1 }}>🎾</div>
         </button>
 
+        {/* Pedir al bar — botón grande y llamativo */}
+        <button
+          onClick={() => navigate('/pedir')}
+          className="active:scale-[0.98] transition-transform"
+          style={{
+            background: 'linear-gradient(135deg, #96C800 0%, #7BA600 100%)',
+            borderRadius: 20,
+            padding: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 20px rgba(150,200,0,0.35)',
+          }}
+        >
+          <div>
+            <p style={{ color: '#0a1a00', fontWeight: 900, fontSize: 22, lineHeight: 1.1 }}>Pedir al bar</p>
+            <p style={{ color: 'rgba(10,26,0,0.7)', fontSize: 13, marginTop: 4, fontWeight: 600 }}>Bebidas, snacks y más — directo a tu cancha</p>
+            <div style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#0a1a00', borderRadius: 100, padding: '7px 16px' }}>
+              <span style={{ color: '#96C800', fontWeight: 800, fontSize: 14 }}>Pedir ahora</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+          <div style={{ fontSize: 60, lineHeight: 1 }}>🍺</div>
+        </button>
+
         {/* Mis reservas */}
         <MisReservas apiFetch={apiFetch} navigate={navigate} />
 
         {/* Torneos */}
         <ProximosTorneos apiFetch={apiFetch} navigate={navigate} />
-
-        {/* Standings */}
-        <StandingsCircuito apiFetch={apiFetch} navigate={navigate} />
 
         {/* Promo Express (banner con countdown — solo aparece cuando hay una activa) */}
         <PromoExpressBanner navigate={navigate} />

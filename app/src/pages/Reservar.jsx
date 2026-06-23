@@ -172,7 +172,7 @@ export default function Reservar() {
   const promoPrecio    = urlParams.get('precio') ? parseFloat(urlParams.get('precio')) : null;
   const tienePromo     = !!promoCodigo;
 
-  const [mainTab, setMainTab] = useState('nueva'); // 'nueva' | 'mis'
+  const [mainTab, setMainTab] = useState(location.state?.tab === 'mis' ? 'mis' : 'nueva'); // 'nueva' | 'mis' (puede venir de "Mi cuenta")
   const [tipo, setTipo] = useState('cancha'); // 'cancha' | 'clase'
 
   // --- Cancha ---

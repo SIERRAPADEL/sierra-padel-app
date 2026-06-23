@@ -3,9 +3,9 @@ import { NavLink } from 'react-router-dom';
 const tabs = [
   { to: '/home',    icon: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10', label: 'Inicio' },
   { to: '/reservar',icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', label: 'Reservar' },
+  { to: '/torneos', icon: 'M6 9H4.5a2.5 2.5 0 010-5H6 M18 9h1.5a2.5 2.5 0 000-5H18 M4 22h16 M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22 M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22 M18 2H6v7a6 6 0 0012 0V2z', label: 'Torneos' },
   { to: '/pedir',   icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z', label: 'Pedir' },
-  { to: '/noticias',icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z', label: 'Noticias' },
-  { to: '/perfil',  icon: 'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2 M12 3a4 4 0 100 8 4 4 0 000-8z', label: 'Perfil' },
+  { to: '/perfil',  icon: 'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2 M12 3a4 4 0 100 8 4 4 0 000-8z', label: 'Mi cuenta' },
 ];
 
 export default function BottomNav() {
@@ -27,8 +27,8 @@ export default function BottomNav() {
           {({ isActive }) => (
             <>
               <svg
-                width="22"
-                height="22"
+                width="25"
+                height="25"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -38,7 +38,7 @@ export default function BottomNav() {
               >
                 <path d={tab.icon} />
               </svg>
-              <span className="text-[10px] font-semibold">{tab.label}</span>
+              <span className="text-[11px] font-semibold">{tab.label}</span>
             </>
           )}
         </NavLink>

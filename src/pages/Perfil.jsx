@@ -479,7 +479,7 @@ export default function Perfil() {
   return (
     <div className="page safe-bottom">
       <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-6">
-        <p className="text-white font-black text-lg pt-3">Perfil</p>
+        <p className="text-white font-black text-xl pt-3">Mi cuenta</p>
         <div className="flex items-center gap-4 mt-4">
           <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
             <span className="text-white font-black text-2xl">{inicial}</span>
@@ -491,7 +491,48 @@ export default function Perfil() {
         </div>
       </div>
 
-      <div className="px-4 py-4 flex flex-col gap-2">
+      <div className="px-4 py-4 flex flex-col gap-3">
+        {/* Mis puntos y promos — lo primero y lo más grande */}
+        <button
+          onClick={() => navigate('/puntos')}
+          className="w-full text-left active:scale-[0.98] transition-transform"
+          style={{ background: 'linear-gradient(135deg,#1f3309,#0f1a05)', border: '1px solid rgba(150,200,0,0.45)', borderRadius: 18, padding: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        >
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: 32, flexShrink: 0 }}>🎁</span>
+            <div>
+              <p style={{ color: 'white', fontWeight: 900, fontSize: 17 }}>Mis puntos y promos</p>
+              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, marginTop: 2 }}>Tus puntos, niveles y promociones</p>
+            </div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+        </button>
+
+        {/* Mis reservas + Novedades */}
+        <div className="card p-0 overflow-hidden">
+          <button
+            onClick={() => navigate('/reservar', { state: { tab: 'mis' } })}
+            className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-50 active:bg-gray-50"
+          >
+            <div className="flex items-center gap-3">
+              <Icon d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <span className="text-sp-gray font-semibold text-base">Mis reservas</span>
+            </div>
+            <ChevronRight />
+          </button>
+          <button
+            onClick={() => navigate('/noticias')}
+            className="w-full flex items-center justify-between px-4 py-4 active:bg-gray-50"
+          >
+            <div className="flex items-center gap-3">
+              <Icon d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+              <span className="text-sp-gray font-semibold text-base">Novedades</span>
+            </div>
+            <ChevronRight />
+          </button>
+        </div>
+
+        {/* Datos y seguridad */}
         <div className="card p-0 overflow-hidden">
           <button
             onClick={() => setSubScreen('info')}
@@ -499,7 +540,7 @@ export default function Perfil() {
           >
             <div className="flex items-center gap-3">
               <Icon d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" />
-              <span className="text-sp-gray font-semibold text-sm">Mi informacion</span>
+              <span className="text-sp-gray font-semibold text-base">Mi informacion</span>
             </div>
             <ChevronRight />
           </button>
@@ -510,7 +551,7 @@ export default function Perfil() {
           >
             <div className="flex items-center gap-3">
               <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              <span className="text-sp-gray font-semibold text-sm">Cambiar PIN</span>
+              <span className="text-sp-gray font-semibold text-base">Cambiar PIN</span>
             </div>
             <ChevronRight />
           </button>
@@ -521,7 +562,7 @@ export default function Perfil() {
           >
             <div className="flex items-center gap-3">
               <Icon d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
-              <span className="text-sp-gray font-semibold text-sm">Notificaciones</span>
+              <span className="text-sp-gray font-semibold text-base">Notificaciones</span>
             </div>
             <div className="flex items-center gap-2">
               {notifStatus === 'on' && (
@@ -542,7 +583,7 @@ export default function Perfil() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
           </svg>
-          <span className="text-red-500 font-semibold text-sm">Cerrar sesion</span>
+          <span className="text-red-500 font-semibold text-base">Cerrar sesion</span>
         </button>
       </div>
 
