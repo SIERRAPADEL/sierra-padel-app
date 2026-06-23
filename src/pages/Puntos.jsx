@@ -90,7 +90,11 @@ export default function Puntos() {
   const [niveles, setNiveles]   = useState([]);
   const [saldo, setSaldo]       = useState(null);
   const [historial, setHistorial] = useState([]);
-  const [tab, setTab]           = useState(location.state?.tab === 'consumo' ? 'consumo' : 'beneficios');
+  const [tab, setTab]           = useState(() => {
+    const qTab = new URLSearchParams(location.search).get('tab');     // viene del push (/puntos?tab=promos)
+    const t = qTab || location.state?.tab || 'beneficios';
+    return ['beneficios', 'promos', 'consumo', 'historial'].includes(t) ? t : 'beneficios';
+  });
   const [ticket, setTicket]     = useState('');
   const [monto, setMonto]       = useState('');
   const [msg, setMsg]           = useState(null);

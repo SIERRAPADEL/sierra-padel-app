@@ -401,6 +401,14 @@ function PromoExpressBanner({ navigate }) {
 function Promociones({ navigate }) {
   const promos = [
     {
+      icon: '🎁',
+      title: 'Promos para ti',
+      desc: 'Reclama tus promociones y úsalas en la caja',
+      color: '#1b2e1b',
+      action: () => navigate('/puntos', { state: { tab: 'promos' } }),
+      cta: 'Ver promos',
+    },
+    {
       icon: '🍽️',
       title: 'Restaurante',
       desc: 'Gana 1 punto por cada $50 de consumo',
