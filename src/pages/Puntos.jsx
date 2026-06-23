@@ -96,6 +96,12 @@ export default function Puntos() {
   const [msg, setMsg]           = useState(null);
   const [loadingConsumption, setLoadingConsumption] = useState(false);
 
+  // Promos reclamables (motor de beneficios)
+  const [promosDisp, setPromosDisp] = useState([]);
+  const [promosMias, setPromosMias] = useState([]);
+  const [promoMsg, setPromoMsg]     = useState(null);
+  const [loadingPromo, setLoadingPromo] = useState('');
+
   // Canje flow
   const [canjeModal, setCanjeModal] = useState(null);  // { tipo }
   const [canjeActivo, setCanjeActivo] = useState(null); // { codigo, descripcion, expires_at, puntos_usados }
@@ -116,6 +122,31 @@ export default function Puntos() {
   }, [user?.id]);
 
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
+
+  // Promos reclamables: las que el cliente puede reclamar + las que ya reclamó.
+  const cargarPromos = useCallback(async () => {
+    const [disp, mias] = await Promise.all([
+      apiFetch('/beneficios/app/disponibles'),
+      apiFetch('/beneficios/app/mias'),
+    ]);
+    if (disp.ok) setPromosDisp(disp.data || []);
+    if (mias.ok) setPromosMias(mias.data || []);
+  }, []);
+
+  useEffect(() => { cargarPromos(); }, [cargarPromos]);
+
+  async function reclamarPromo(id) {
+    setLoadingPromo(id);
+    setPromoMsg(null);
+    const data = await apiFetch(`/beneficios/app/reclamar/${id}`, { method: 'POST' });
+    setLoadingPromo('');
+    if (data.ok) {
+      setPromoMsg({ ok: true, text: '¡Promo reclamada! Se aplicará sola en la caja cuando el cajero te identifique.' });
+      await cargarPromos();
+    } else {
+      setPromoMsg({ ok: false, text: data.error || 'No se pudo reclamar' });
+    }
+  }
 
   // Si el codigo expiro, limpiar
   useEffect(() => {
@@ -317,7 +348,7 @@ export default function Puntos() {
 
       {/* Tabs */}
       <div className="mx-4 mt-3 flex gap-2">
-        {[['beneficios', 'Beneficios'], ['consumo', 'Consumo'], ['historial', 'Historial']].map(([val, label]) => (
+        {[['beneficios', 'Beneficios'], ['promos', 'Promos'], ['consumo', 'Consumo'], ['historial', 'Historial']].map(([val, label]) => (
           <button
             key={val}
             onClick={() => setTab(val)}
@@ -404,6 +435,64 @@ export default function Puntos() {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Tab: Promos reclamables */}
+      {tab === 'promos' && (
+        <div className="mx-4 mt-3 flex flex-col gap-3 pb-24">
+          {promoMsg && (
+            <p className={`text-sm text-center font-medium ${promoMsg.ok ? 'text-sp-green' : 'text-red-500'}`}>{promoMsg.text}</p>
+          )}
+
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Promos para ti</p>
+          {promosDisp.length === 0 && (
+            <div className="card text-center text-gray-400 text-sm py-6">No hay promos disponibles ahora</div>
+          )}
+          {promosDisp.map(p => (
+            <div key={p.id} className="card flex items-center justify-between gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-bold text-sp-gray">{p.nombre}</p>
+                <p className="text-xs text-sp-green font-semibold">{p.valor}</p>
+                {(p.monto_minimo || p.valido_hasta) && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {p.monto_minimo ? `Mínimo $${p.monto_minimo}` : ''}
+                    {p.monto_minimo && p.valido_hasta ? ' · ' : ''}
+                    {p.valido_hasta ? `Hasta ${String(p.valido_hasta).slice(0, 10)}` : ''}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => reclamarPromo(p.id)}
+                disabled={loadingPromo === p.id}
+                className="py-2 px-4 rounded-xl text-xs font-bold text-white active:scale-95 transition-transform disabled:opacity-50"
+                style={{ background: nivel.color }}
+              >
+                {loadingPromo === p.id ? '...' : 'Reclamar'}
+              </button>
+            </div>
+          ))}
+
+          {promosMias.length > 0 && (
+            <>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mt-2">Mis promos</p>
+              {promosMias.map(p => (
+                <div key={p.id} className="card flex items-center justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-sp-gray">{p.nombre}</p>
+                    <p className="text-xs text-sp-green font-semibold">{p.valor}</p>
+                  </div>
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${p.estado === 'usada' ? 'bg-gray-100 text-gray-400' : 'bg-sp-green-light text-sp-green-dark'}`}>
+                    {p.estado === 'usada' ? 'Usada' : 'Lista'}
+                  </span>
+                </div>
+              ))}
+            </>
+          )}
+
+          <p className="text-xs text-gray-400 text-center mt-2">
+            Las promos que reclames se aplican solas cuando el cajero te identifica en la caja.
+          </p>
         </div>
       )}
 
