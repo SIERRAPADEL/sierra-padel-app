@@ -38,7 +38,7 @@ export default function BottomNav() {
               >
                 <path d={tab.icon} />
               </svg>
-              <span className="text-[11px] font-semibold">{tab.label}</span>
+              <span className="text-[13px] font-semibold">{tab.label}</span>
             </>
           )}
         </NavLink>
