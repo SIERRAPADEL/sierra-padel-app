@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Fragment } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 
@@ -128,6 +128,123 @@ function RankingView({ torneoId, cats, apiFetch }) {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────
+// CircuitoRankingView — ranking acumulado del circuito (temporada) con puntos
+// (partidos + donas + fase jugada) y línea de corte del Masters (top N).
+function ordenCatCircuito(a, b) {
+  const info = s => {
+    const t = (s || '').toLowerCase();
+    const gen = /femenil/.test(t) ? 1 : 0;
+    let niv = /libre/.test(t) ? 0 : 99;
+    const m = t.match(/(\d{1,2})/);
+    if (m && !/libre/.test(t)) niv = parseInt(m[1], 10);
+    return { gen, niv };
+  };
+  const A = info(a.categoria), B = info(b.categoria);
+  if (A.gen !== B.gen) return A.gen - B.gen;
+  return A.niv - B.niv;
+}
+
+function CircuitoRankingView({ apiFetch }) {
+  const [cats, setCats]   = useState(null);
+  const [catSel, setCatSel] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    apiFetch('/torneos/circuito/ranking?temporada=2026')
+      .then(d => {
+        if (d.ok) {
+          const arr = (d.categorias || []).filter(c => (c.total || 0) > 0).sort(ordenCatCircuito);
+          setCats(arr);
+          if (arr.length) setCatSel(arr[0].categoria);
+        } else setCats([]);
+      })
+      .catch(() => setCats([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <Spinner />;
+  if (!cats || !cats.length) return (
+    <div className="card text-center py-12 mx-4">
+      <p className="text-3xl mb-3">📊</p>
+      <p className="text-gray-500 font-medium">Aún no hay puntos en el ranking</p>
+      <p className="text-gray-400 text-sm mt-1">Se irá llenando con cada resultado</p>
+    </div>
+  );
+
+  const c = cats.find(x => x.categoria === catSel) || cats[0];
+  const medals = ['🥇','🥈','🥉'];
+
+  return (
+    <div className="flex flex-col gap-3 px-4 pb-6">
+      {/* Categoria pills */}
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
+        {cats.map(cat => (
+          <button
+            key={cat.categoria}
+            onClick={() => setCatSel(cat.categoria)}
+            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${
+              c.categoria === cat.categoria ? 'bg-sp-green text-white' : 'bg-white text-sp-gray border border-gray-200'
+            }`}
+          >
+            {cat.categoria}
+          </button>
+        ))}
+      </div>
+
+      {/* Nota Masters */}
+      <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800">
+        <span>🎾</span>
+        <span>Clasifican al <b>Masters</b> los primeros <b>{c.cupos}</b> de cada categoría.</span>
+      </div>
+
+      {/* Tabla */}
+      <div className="card overflow-hidden p-0">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-100">
+              <th className="text-left text-xs text-gray-400 font-semibold px-4 py-2 w-8">#</th>
+              <th className="text-left text-xs text-gray-400 font-semibold px-2 py-2">Jugador</th>
+              <th className="text-right text-xs text-gray-400 font-semibold px-4 py-2">Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            {c.jugadores.map((p, i) => (
+              <Fragment key={(p.jugador_id || '') + i}>
+                {i === c.cupos && c.jugadores.length > c.cupos && (
+                  <tr>
+                    <td colSpan={3} className="bg-amber-50 text-amber-700 text-[11px] font-bold uppercase tracking-wide px-4 py-1.5 border-y border-dashed border-amber-300">
+                      🎾 Línea Masters (top {c.cupos})
+                    </td>
+                  </tr>
+                )}
+                <tr className={`border-b border-gray-50 last:border-0 ${p.clasifica ? 'bg-amber-50/50' : ''}`}>
+                  <td className={`px-4 py-3 text-center font-bold ${p.clasifica ? 'text-amber-500' : 'text-gray-400'}`}>
+                    {medals[i] || p.posicion}
+                  </td>
+                  <td className="px-2 py-3">
+                    <p className="font-semibold text-sp-gray">{p.nombre}</p>
+                    <p className="text-xs text-gray-400">
+                      {p.partidos_ganados}G de {p.partidos_jugados}
+                      {p.clasifica
+                        ? <span className="text-amber-600 font-bold"> · Clasifica</span>
+                        : (p.pts_para_clasificar > 0 ? <span> · a {p.pts_para_clasificar} pts</span> : '')}
+                    </p>
+                  </td>
+                  <td className={`px-4 py-3 text-right font-black text-base ${p.clasifica ? 'text-amber-500' : 'text-sp-green'}`}>
+                    {p.puntos_total}
+                  </td>
+                </tr>
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -725,43 +842,14 @@ export default function Torneos() {
         </div>
       )}
 
-      {/* ── RANKING ── */}
+      {/* ── RANKING DEL CIRCUITO (rumbo al Masters) ── */}
       {!view && mainTab === 'ranking' && (
         <div className="py-4 overflow-y-auto">
-          {loading && <Spinner />}
-          {!loading && torneoConResultados.length === 0 && (
-            <div className="card text-center py-12 mx-4">
-              <p className="text-3xl mb-3">📊</p>
-              <p className="text-gray-500 font-medium">Sin datos de ranking</p>
-              <p className="text-gray-400 text-sm mt-1">Los resultados apareceran aqui</p>
-            </div>
-          )}
-          {!loading && torneoConResultados.length > 0 && (
-            <>
-              {torneoConResultados.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-2 px-4 mb-3">
-                  {torneoConResultados.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => setRankTorneo(t)}
-                      className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${
-                        (rankTorneo || torneoConResultados[0]).id === t.id
-                          ? 'bg-sp-green text-white'
-                          : 'bg-white text-sp-gray border border-gray-200'
-                      }`}
-                    >
-                      {t.nombre}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <RankingView
-                torneoId={(rankTorneo || torneoConResultados[0]).id}
-                cats={(rankTorneo || torneoConResultados[0]).torneo_categorias || []}
-                apiFetch={apiFetch}
-              />
-            </>
-          )}
+          <div className="px-4 mb-1">
+            <p className="text-lg font-black text-sp-gray leading-tight">Ranking del Circuito 2026</p>
+            <p className="text-xs text-gray-400">Puntos por partidos ganados, donas y fase alcanzada.</p>
+          </div>
+          <CircuitoRankingView apiFetch={apiFetch} />
         </div>
       )}
     </div>
