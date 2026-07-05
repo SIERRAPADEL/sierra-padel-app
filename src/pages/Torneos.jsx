@@ -136,17 +136,18 @@ function RankingView({ torneoId, cats, apiFetch }) {
 // CircuitoRankingView — ranking acumulado del circuito (temporada) con puntos
 // (partidos + donas + fase jugada) y línea de corte del Masters (top N).
 function ordenCatCircuito(a, b) {
+  // MUJERES primero, luego HOMBRES; dentro de cada género de número MAYOR a MENOR
+  // (6ta,5ta,4ta,3ra) y "Libre" al final.
   const info = s => {
     const t = (s || '').toLowerCase();
-    const gen = /femenil/.test(t) ? 1 : 0;
-    let niv = /libre/.test(t) ? 0 : 99;
-    const m = t.match(/(\d{1,2})/);
-    if (m && !/libre/.test(t)) niv = parseInt(m[1], 10);
-    return { gen, niv };
+    const gen = /femenil|femenino|damas|mujer/.test(t) ? 0 : 1;
+    let num = 0;
+    if (!/libre/.test(t)) { const m = t.match(/(\d{1,2})/); if (m) num = parseInt(m[1], 10); }
+    return { gen, num };
   };
   const A = info(a.categoria), B = info(b.categoria);
   if (A.gen !== B.gen) return A.gen - B.gen;
-  return A.niv - B.niv;
+  return B.num - A.num;
 }
 
 function CircuitoRankingView({ apiFetch }) {
