@@ -1,12 +1,14 @@
+import { useCallback } from 'react';
+
 const BASE = 'https://sierra-padel-backend-production-a55f.up.railway.app/api';
 
 export function useApi() {
-  function getToken() {
-    return localStorage.getItem('sp_token');
-  }
-
-  async function apiFetch(path, options = {}) {
-    const token = getToken();
+  // apiFetch debe tener IDENTIDAD ESTABLE: varias pantallas lo usan como dependencia de
+  // useCallback/useEffect (p.ej. Torneos `load`). Sin memoizar, cada render creaba un
+  // apiFetch nuevo → el efecto se re-disparaba sin fin (bucle: spinner infinito + API
+  // machacada ~7 req/s). useCallback([]) lo estabiliza. Solo lee localStorage, sin deps.
+  const apiFetch = useCallback(async (path, options = {}) => {
+    const token = localStorage.getItem('sp_token');
     try {
       const res = await fetch(`${BASE}${path}`, {
         ...options,
@@ -34,7 +36,7 @@ export function useApi() {
     } catch {
       return { ok: false, error: 'Sin conexion. Verifica tu internet.' };
     }
-  }
+  }, []);
 
   return { apiFetch };
 }
