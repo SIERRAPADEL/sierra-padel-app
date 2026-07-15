@@ -25,8 +25,45 @@ export default function Pedir() {
   const [pedidoOk, setPedidoOk]   = useState(null); // pedido enviado
   const [catActiva, setCatActiva] = useState('');
   const [habitos, setHabitos]     = useState(null); // { frecuentes, ultimo, total_pedidos }
+  const [seguim, setSeguim]       = useState(null); // estado EN VIVO del pedido enviado
 
   useEffect(() => { fetchMenu(); fetchHabitos(); }, []);
+
+  // Seguimiento en vivo del pedido enviado: sondea /mis-pedidos hasta que el encargado
+  // lo acepte (preparando) / marque listo/entregado, o lo rechace (cancelado + motivo).
+  useEffect(() => {
+    if (!pedidoOk?.id) return;
+    const token = localStorage.getItem('sp_token');
+    if (!token) return; // invitado sin sesión: no hay a quién seguir
+    let vivo = true;
+    const TERMINALES = ['entregado', 'cancelado'];
+    async function tick() {
+      try {
+        const r = await fetch(`${BACKEND}/api/pedidos/mis-pedidos`, { headers: { Authorization: `Bearer ${token}` } });
+        const d = await r.json();
+        if (!vivo || !d.ok) return;
+        const p = (d.data || []).find(x => x.id === pedidoOk.id);
+        if (p) {
+          setSeguim(p);
+          if (TERMINALES.includes(p.estado)) clearInterval(iv);
+        }
+      } catch { }
+    }
+    tick();
+    const iv = setInterval(tick, 5000);
+    return () => { vivo = false; clearInterval(iv); };
+  }, [pedidoOk?.id]);
+
+  // Presentación del estado del pedido para el cliente (amigable, texto grande).
+  function vistaEstado(estado, motivo) {
+    switch (estado) {
+      case 'preparando': return { icon: '👨‍🍳', tint: '#96C800', label: 'Pedido aceptado', titulo: '¡Tu pedido fue aceptado!', sub: 'Lo estan preparando.' };
+      case 'listo':      return { icon: '🛎️', tint: '#96C800', label: 'Pedido listo', titulo: '¡Tu pedido esta listo!', sub: 'En un momento te lo llevan.' };
+      case 'entregado':  return { icon: '✅', tint: '#96C800', label: 'Entregado', titulo: '¡Entregado!', sub: '¡Buen provecho!' };
+      case 'cancelado':  return { icon: '❌', tint: '#ff6b6b', label: 'Pedido rechazado', titulo: 'Tu pedido fue rechazado', sub: motivo || 'El encargado no pudo tomar tu pedido. Acercate al bar si tienes dudas.' };
+      default:           return { icon: '⏳', tint: '#e0b341', label: 'Pedido enviado', titulo: 'Pedido enviado', sub: 'Esperando que el encargado lo confirme…' };
+    }
+  }
 
   async function fetchMenu() {
     setLoading(true);
@@ -165,6 +202,7 @@ export default function Pedir() {
       });
       const d = await r.json();
       if (!d.ok) throw new Error(d.error);
+      setSeguim(null);
       setPedidoOk(d.data);
       setCarrito({});
       setNotas('');
@@ -174,23 +212,60 @@ export default function Pedir() {
     setEnviando(false);
   }
 
-  // ── PANTALLA: PEDIDO CONFIRMADO ──────────────────────────────────────────
+  // ── PANTALLA: PEDIDO ENVIADO + SEGUIMIENTO EN VIVO ────────────────────────
   if (pedidoOk) {
+    const estActual = seguim?.estado || 'pendiente';
+    const v = vistaEstado(estActual, seguim?.motivo_rechazo);
+    const rechazado = estActual === 'cancelado';
+    const enCurso   = !['entregado', 'cancelado'].includes(estActual);
+    // Pasos visuales del avance (no aplica si fue rechazado)
+    const PASOS = [
+      { k: 'pendiente',  t: 'Enviado' },
+      { k: 'preparando', t: 'Aceptado' },
+      { k: 'listo',      t: 'Listo' },
+      { k: 'entregado',  t: 'Entregado' },
+    ];
+    const idxActual = PASOS.findIndex(p => p.k === estActual);
     return (
       <div className="min-h-screen pb-20" style={{ background: '#080810' }}>
-        <div style={{ padding: '80px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Pedido enviado</p>
+        <div style={{ padding: '64px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>{v.icon}</div>
+          <p style={{ fontSize: 11, fontWeight: 700, color: v.tint, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>{v.label}</p>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: '#eeeef5', marginBottom: 12 }}>
-            Tu pedido esta en camino
+            {v.titulo}
           </h2>
-          <p style={{ fontSize: 14, color: '#9090a8', marginBottom: 6 }}>
+          <p style={{ fontSize: 15, color: rechazado ? '#ffb4b4' : '#c4c4d8', marginBottom: 6, lineHeight: 1.45 }}>
+            {v.sub}
+          </p>
+          <p style={{ fontSize: 14, color: '#9090a8', marginBottom: 24 }}>
             Ubicacion: <strong style={{ color: '#eeeef5' }}>{pedidoOk.ubicacion}</strong>
           </p>
-          <p style={{ fontSize: 13, color: '#9090a8', marginBottom: 32 }}>
-            El encargado recibio tu pedido y lo preparara en breve.
-          </p>
-          <div style={{ background: '#0e0e1a', border: '1px solid #1e1e2e', borderRadius: 14, padding: 20, marginBottom: 24, textAlign: 'left' }}>
+
+          {/* Barra de avance (oculta si fue rechazado) */}
+          {!rechazado && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, marginBottom: 26 }}>
+              {PASOS.map((p, i) => {
+                const hecho = i <= idxActual;
+                return (
+                  <div key={p.k} style={{ display: 'flex', alignItems: 'center', flex: i < PASOS.length - 1 ? 1 : '0 0 auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <div style={{ width: 14, height: 14, borderRadius: 99, background: hecho ? '#96C800' : '#27273a', border: hecho ? 'none' : '1px solid #3a3a52', flex: '0 0 auto' }} />
+                      <span style={{ fontSize: 10.5, fontWeight: 700, color: hecho ? '#96C800' : '#6a6a82', whiteSpace: 'nowrap' }}>{p.t}</span>
+                    </div>
+                    {i < PASOS.length - 1 && (
+                      <div style={{ flex: 1, height: 2, background: i < idxActual ? '#96C800' : '#27273a', margin: '0 4px', marginBottom: 16 }} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {enCurso && (
+            <p style={{ fontSize: 12, color: '#6a6a82', marginBottom: 22 }}>Actualizando en vivo…</p>
+          )}
+
+          <div style={{ background: '#0e0e1a', border: '1px solid #1e1e2e', borderRadius: 14, padding: 20, marginBottom: 24, textAlign: 'left', opacity: rechazado ? 0.6 : 1 }}>
             {pedidoOk.items.map((it, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < pedidoOk.items.length - 1 ? '1px solid #1e1e2e' : 'none' }}>
                 <span style={{ color: '#eeeef5' }}><span style={{ color: '#96C800', fontWeight: 800 }}>{it.cantidad}x</span> {it.nombre}</span>
@@ -203,10 +278,10 @@ export default function Pedir() {
             </div>
           </div>
           <button
-            onClick={() => setPedidoOk(null)}
-            style={{ background: '#96C800', color: '#0a1a00', border: 'none', padding: '14px 32px', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}
+            onClick={() => { setSeguim(null); setPedidoOk(null); }}
+            style={{ background: rechazado ? '#96C800' : 'rgba(255,255,255,.06)', color: rechazado ? '#0a1a00' : '#eeeef5', border: rechazado ? 'none' : '1px solid #27273a', padding: '14px 32px', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}
           >
-            Hacer otro pedido
+            {rechazado ? 'Intentar de nuevo' : 'Hacer otro pedido'}
           </button>
         </div>
       </div>

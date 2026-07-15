@@ -50,6 +50,16 @@ function pairName(insc) {
   return `${n1} / ${n2}`;
 }
 
+// El torneo NO tiene un estado único: cada categoría avanza por su cuenta (el backend expone
+// `estado_global` + `torneo_categorias[].estado`). Derivamos un estado "de tarjeta" para decidir
+// qué mostrar: inscripción abierta → Inscribirme; hay calendario/partidos → Ver partidos.
+function torneoEstado(t) {
+  const est = (t?.torneo_categorias || []).map(c => c.estado);
+  if (est.some(e => e === 'inscripciones')) return 'inscripciones';
+  if (est.some(e => ['draw_generado', 'calendario_publicado', 'en_curso', 'finalizado'].includes(e))) return 'calendario_publicado';
+  return t?.estado_global || 'borrador';
+}
+
 // ──────────────────────────────────────────────────────────
 // RankingView
 // ──────────────────────────────────────────────────────────
@@ -742,7 +752,7 @@ export default function Torneos() {
 
   // Torneos con resultados disponibles
   const torneoConResultados = (torneos || []).filter(t =>
-    ['draw_generado','calendario_publicado','en_curso','finalizado'].includes(t.estado)
+    ['draw_generado','calendario_publicado','en_curso','finalizado'].includes(torneoEstado(t))
   );
 
   const miTelefono = user?.telefono || '';
@@ -815,13 +825,13 @@ export default function Torneos() {
                     </p>
                   )}
                 </div>
-                <EstadoBadge estado={t.estado} />
+                <EstadoBadge estado={torneoEstado(t)} />
               </div>
               {t.descripcion && (
                 <p className="text-sm text-gray-500 mb-3">{t.descripcion}</p>
               )}
               <div className="flex gap-2">
-                {['draw_generado','calendario_publicado','en_curso','finalizado'].includes(t.estado) && (
+                {['draw_generado','calendario_publicado','en_curso','finalizado'].includes(torneoEstado(t)) && (
                   <button
                     className="flex-1 py-2 rounded-xl text-sm font-semibold border border-sp-green text-sp-green"
                     onClick={() => { setTorneoSel(t); setView('detalle'); }}
@@ -829,7 +839,7 @@ export default function Torneos() {
                     Ver partidos
                   </button>
                 )}
-                {t.estado === 'inscripciones' && (
+                {torneoEstado(t) === 'inscripciones' && (
                   <button
                     className="flex-1 btn-green py-2 text-sm"
                     onClick={() => { setTorneoSel(t); setView('inscripcion'); }}
