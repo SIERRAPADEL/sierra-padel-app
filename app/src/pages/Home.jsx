@@ -5,7 +5,7 @@ import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
 import PromoExpressBanner from '../components/PromoExpressBanner';
 import { BACKEND } from '../lib/constants';
-import { formatFecha, formatHora, fmtRelativa } from '../lib/format';
+import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/format';
 
 // ── Encabezado de sección con acción "Ver todas" ─────────────────────────────
 function SectionHeader({ title, actionLabel, onAction }) {
@@ -67,10 +67,10 @@ function MisReservas({ apiFetch, navigate }) {
             <div key={i} className="card flex items-center gap-3 py-3">
               <div style={{ width: 44, height: 44, borderRadius: 10, background: '#EDF7D6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <span style={{ fontSize: 15, fontWeight: 800, color: '#5a8a00', lineHeight: 1 }}>
-                  {new Date(r.fecha).toLocaleDateString('es-MX', { day: 'numeric' })}
+                  {parseLocalDate(r.fecha).toLocaleDateString('es-MX', { day: 'numeric' })}
                 </span>
                 <span style={{ fontSize: 10, fontWeight: 700, color: '#7aaa00', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  {new Date(r.fecha).toLocaleDateString('es-MX', { month: 'short' })}
+                  {parseLocalDate(r.fecha).toLocaleDateString('es-MX', { month: 'short' })}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
@@ -116,8 +116,15 @@ function ProximosTorneos({ apiFetch, navigate }) {
       .then(d => {
         if (d.ok) {
           const lista = d.data?.torneos || d.data?.data || d.torneos || [];
+          // Solo eventos vigentes: el backend no marca 'finalizado' de forma confiable
+          // (estado_global se queda en 'borrador'), así que la señal real son las fechas.
+          const hoy = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD local
           const proximos = lista
-            .filter(t => t.estado !== 'finalizado')
+            .filter(t => {
+              const fin = (t.fecha_fin || t.fecha_inicio || '').slice(0, 10);
+              return fin && fin >= hoy;
+            })
+            .sort((a, b) => (a.fecha_inicio || '').localeCompare(b.fecha_inicio || ''))
             .slice(0, 3);
           setTorneos(proximos);
         } else {
@@ -139,31 +146,35 @@ function ProximosTorneos({ apiFetch, navigate }) {
         <CardSpinner />
       ) : (
         <div className="flex flex-col gap-2">
-          {torneos.map((t, i) => (
-            <div
-              key={i}
-              className="card flex items-center gap-3 py-3 active:scale-[0.98] transition-transform cursor-pointer"
-              onClick={() => navigate('/torneos')}
-            >
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
-                🏆
+          {torneos.map((t, i) => {
+            // "En curso" si hoy ya está dentro de las fechas del torneo (el filtro
+            // de arriba garantiza que aún no termina)
+            const hoy = new Date().toLocaleDateString('sv-SE');
+            const enCurso = (t.fecha_inicio || '').slice(0, 10) <= hoy;
+            return (
+              <div
+                key={i}
+                className="card flex items-center gap-3 py-3 active:scale-[0.98] transition-transform cursor-pointer"
+                onClick={() => navigate('/torneos')}
+              >
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
+                  🏆
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sp-gray font-bold text-[15px] truncate">{t.nombre}</p>
+                  <p className="text-gray-400 text-[13px]">
+                    {t.fecha_inicio ? formatFecha(t.fecha_inicio) : 'Fecha por confirmar'}
+                    {t.torneo_categorias?.length > 0 && ` · ${t.torneo_categorias.length} categorias`}
+                  </p>
+                </div>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                  enCurso ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-500'
+                }`}>
+                  {enCurso ? 'En curso' : 'Proximo'}
+                </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sp-gray font-bold text-[15px] truncate">{t.nombre}</p>
-                <p className="text-gray-400 text-[13px]">
-                  {t.fecha_inicio ? formatFecha(t.fecha_inicio) : 'Fecha por confirmar'}
-                  {t.torneo_categorias?.length > 0 && ` · ${t.torneo_categorias.length} categorias`}
-                </p>
-              </div>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                t.estado === 'activo' || t.estado === 'en_curso'
-                  ? 'bg-green-50 text-green-600'
-                  : 'bg-blue-50 text-blue-500'
-              }`}>
-                {t.estado === 'activo' || t.estado === 'en_curso' ? 'En curso' : 'Proximo'}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
