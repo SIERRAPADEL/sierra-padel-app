@@ -44,6 +44,14 @@ export function AuthProvider({ children }) {
     return data.data;
   }
 
+  // Adopta una sesión ya emitida por el backend (p.ej. tras recuperar PIN con OTP):
+  // guarda token+cliente y actualiza el contexto para que las rutas protegidas entren sin recargar.
+  function adoptarSesion(token, cliente) {
+    localStorage.setItem('sp_token', token);
+    localStorage.setItem('sp_user', JSON.stringify(cliente));
+    setUser(cliente);
+  }
+
   function logout() {
     localStorage.removeItem('sp_token');
     localStorage.removeItem('sp_user');
@@ -61,7 +69,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, registro, logout, getToken, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, registro, logout, getToken, updateUser, adoptarSesion }}>
       {children}
     </AuthContext.Provider>
   );
