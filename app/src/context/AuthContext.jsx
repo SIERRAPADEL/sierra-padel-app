@@ -30,11 +30,12 @@ export function AuthProvider({ children }) {
     return data.data;
   }
 
-  async function registro(nombre, telefono, pin) {
+  // extra: { categoria, acepto_terminos, acepta_avisos } — datos nuevos del registro
+  async function registro(nombre, telefono, pin, extra = {}) {
     const res = await fetch(`${API}/auth/registro`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, telefono, pin }),
+      body: JSON.stringify({ nombre, telefono, pin, ...extra }),
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);

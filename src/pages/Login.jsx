@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Isotipo from '../components/Isotipo';
 import PinInput from '../components/PinInput';
@@ -24,7 +24,7 @@ export default function Login() {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
   const [waAbierto, setWaAbierto] = useState(false);
-  const { login } = useAuth();
+  const { login, adoptarSesion } = useAuth();
   const navigate  = useNavigate();
 
   // ── Step 1: validar telefono ──────────────────────────────────────────────
@@ -38,13 +38,17 @@ export default function Login() {
   }
 
   // ── Step 2: login con PIN ─────────────────────────────────────────────────
-  async function handlePin(e) {
-    e.preventDefault();
-    if (pin.length < 4) return setError('Ingresa tu PIN de 4 digitos');
+  // Acepta pinDirecto para el auto-envío al completar los 4 dígitos (el estado
+  // `pin` aún no está actualizado en ese momento).
+  async function handlePin(e, pinDirecto) {
+    e?.preventDefault?.();
+    const pinFinal = pinDirecto || pin;
+    if (loading) return;
+    if (pinFinal.length < 4) return setError('Ingresa tu PIN de 4 digitos');
     setLoading(true);
     setError('');
     try {
-      await login(telefono, pin);
+      await login(telefono, pinFinal);
       navigate('/home');
     } catch (err) {
       setError(err.message || 'PIN incorrecto. Verifica e intenta de nuevo.');
@@ -96,8 +100,7 @@ export default function Login() {
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'El codigo es incorrecto o ya expiro. Solicita uno nuevo.');
-      localStorage.setItem('sp_token', data.data.token);
-      localStorage.setItem('sp_user', JSON.stringify(data.data.cliente));
+      adoptarSesion(data.data.token, data.data.cliente);
       navigate('/home');
     } catch (err) {
       setError(err.message);
@@ -147,7 +150,7 @@ export default function Login() {
           </button>
           <p className="text-white/50 text-xs text-center">
             ¿No tienes cuenta?{' '}
-            <a href="/registro" className="text-white font-semibold underline">Registrate aqui</a>
+            <Link to="/registro" className="text-white font-semibold underline">Registrate aqui</Link>
           </p>
         </form>
       )}
@@ -160,7 +163,7 @@ export default function Login() {
             <p className="text-white/60 text-sm mt-1">{telefono}</p>
           </div>
           <form onSubmit={handlePin} className="flex flex-col gap-4">
-            <PinInput value={pin} onChange={setPin} onComplete={handlePin} />
+            <PinInput value={pin} onChange={setPin} onComplete={v => handlePin(null, v)} />
             {error && <p className="text-yellow-300 text-sm text-center font-medium">{error}</p>}
             <button
               type="submit"

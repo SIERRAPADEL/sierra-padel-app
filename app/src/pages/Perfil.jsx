@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import PinInput from '../components/PinInput';
+import NivelSelector from '../components/NivelSelector';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
@@ -52,11 +53,16 @@ function BackBtn({ onBack, label = 'Perfil' }) {
 // ── Pantalla: Mi informacion ──────────────────────────────────────────────────
 function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
   const [nombre, setNombre]   = useState(user?.nombre || '');
+  const [nivel, setNivel]     = useState(user?.categoria || null);
+  const [avisos, setAvisos]   = useState(user?.acepta_avisos !== false);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [saved, setSaved]     = useState(false);
 
-  const changed = nombre.trim() !== (user?.nombre || '').trim() && nombre.trim().length > 0;
+  const changed =
+    (nombre.trim() !== (user?.nombre || '').trim() && nombre.trim().length > 0) ||
+    (nivel && nivel !== (user?.categoria || null)) ||
+    (avisos !== (user?.acepta_avisos !== false));
 
   async function handleSave() {
     if (!changed) return;
@@ -64,14 +70,16 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
     setLoading(true);
     setError('');
     try {
+      const body = { nombre: nombre.trim() };
+      if (nivel) body.categoria = nivel;
+      body.acepta_avisos = avisos;
       const d = await apiFetch('/auth/profile', {
         method: 'PATCH',
-        body: JSON.stringify({ nombre: nombre.trim() }),
+        body: JSON.stringify(body),
       });
       if (!d.ok) throw new Error(d.error || 'No se pudo guardar. Intenta de nuevo.');
       if (d.data?.token) {
         localStorage.setItem('sp_token', d.data.token);
-        localStorage.setItem('sp_user', JSON.stringify(d.data.cliente));
       }
       setSaved(true);
       onUpdate && onUpdate(d.data?.cliente);
@@ -107,6 +115,38 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
             <p className="text-sp-gray font-semibold px-1">{user?.telefono || '—'}</p>
             <p className="text-xs text-gray-400 px-1">El telefono no se puede cambiar</p>
           </div>
+        </div>
+
+        {/* Nivel de juego */}
+        <div className="card">
+          <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">Mi nivel de juego</p>
+          <NivelSelector value={nivel} onChange={n => { setNivel(n); setError(''); setSaved(false); }} compact />
+        </div>
+
+        {/* Avisos del club */}
+        <div className="card flex items-center justify-between gap-3">
+          <div className="flex-1">
+            <p className="text-sp-gray font-bold text-sm">Avisos del club</p>
+            <p className="text-xs text-gray-400 mt-0.5">Retas de tu nivel, promociones y novedades</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setAvisos(v => !v); setError(''); setSaved(false); }}
+            aria-label="Avisos del club"
+            style={{
+              width: 44, height: 26, borderRadius: 13,
+              background: avisos ? '#96C800' : '#E5E7EB',
+              position: 'relative', transition: 'background 0.2s',
+              display: 'flex', alignItems: 'center', padding: '0 3px', border: 'none', cursor: 'pointer',
+            }}
+          >
+            <div style={{
+              width: 20, height: 20, borderRadius: '50%', background: 'white',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+              transform: avisos ? 'translateX(18px)' : 'translateX(0)',
+              transition: 'transform 0.2s',
+            }} />
+          </button>
         </div>
 
         {error && (

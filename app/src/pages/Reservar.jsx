@@ -27,10 +27,63 @@ function EstadoPill({ estado, source }) {
   return <span className="text-xs font-bold px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">{estado}</span>;
 }
 
+// Comparte el link de la reta por WhatsApp (o el share nativo del teléfono).
+function invitarReta(r) {
+  const link  = `${window.location.origin}/unirse/${r.join_token}`;
+  const texto = `🎾 ¡Únete a mi reta en Sierra Padel!\n📅 ${fmtFecha(r.fecha)} · ${String(r.hora_inicio || '').slice(0, 5)} hrs · Cancha ${r.cancha}\nApúntate aquí: ${link}`;
+  if (navigator.share) {
+    navigator.share({ text: texto }).catch(() => {});
+  } else {
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+  }
+}
+
+// Roster de la reta dentro de la tarjeta de una renta confirmada.
+function RosterReta({ r, onInvitar }) {
+  const cupo = r.cupo || 4;
+  const jugadores = r.jugadores || [];
+  const libres = Math.max(0, cupo - jugadores.length);
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-50">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">
+          Jugadores {jugadores.length}/{cupo}
+        </p>
+        {r.join_token && libres > 0 && (
+          <button
+            onClick={onInvitar}
+            className="text-[13px] font-bold text-white bg-[#25D366] px-3 py-1.5 rounded-full active:scale-95 transition-transform"
+          >
+            Invitar por WhatsApp
+          </button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {jugadores.map((j, i) => (
+          <span key={i} className="px-2.5 py-1 bg-sp-green-light text-sp-green-dark rounded-full text-xs font-semibold">
+            {String(j.nombre || 'Jugador').split(' ')[0]}
+          </span>
+        ))}
+        {Array.from({ length: libres }).map((_, i) => (
+          <span key={`l-${i}`} className="px-2.5 py-1 border border-dashed border-gray-300 text-gray-300 rounded-full text-xs">
+            Libre
+          </span>
+        ))}
+      </div>
+      {jugadores.length === 0 && (
+        <p className="text-xs text-gray-400 mt-1.5">Invita a los que juegan contigo: check-in más rápido y cada quien su cuenta.</p>
+      )}
+    </div>
+  );
+}
+
 function MisReservas({ apiFetch }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('proximas'); // 'proximas' | 'historial'
+  const [cancelando, setCancelando] = useState(null);   // id en confirmación de cancelar
+  const [cancelMsg, setCancelMsg] = useState(null);     // { ok, text }
+  const [cancelBusy, setCancelBusy] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -41,6 +94,24 @@ function MisReservas({ apiFetch }) {
   }, [apiFetch]);
 
   useEffect(() => { load(); }, [load]);
+
+  async function cancelar(r) {
+    if (cancelBusy) return;
+    setCancelBusy(true);
+    setCancelMsg(null);
+    const path = r._source === 'pre'
+      ? `/reservas/solicitud/${r.id}/cancelar`
+      : `/reservas/reserva/${r.id}/cancelar`;
+    const d = await apiFetch(path, { method: 'POST' });
+    setCancelBusy(false);
+    setCancelando(null);
+    if (d.ok) {
+      setCancelMsg({ ok: true, text: r._source === 'pre' ? 'Solicitud cancelada.' : 'Reserva cancelada.' });
+      load();
+    } else {
+      setCancelMsg({ ok: false, text: d.error || 'No se pudo cancelar. Intenta de nuevo.' });
+    }
+  }
 
   const proximas = [
     ...(data?.pendientes || []),
@@ -77,6 +148,12 @@ function MisReservas({ apiFetch }) {
         ))}
       </div>
 
+      {cancelMsg && (
+        <p className={`text-sm text-center font-medium ${cancelMsg.ok ? 'text-sp-green' : 'text-red-500'}`}>
+          {cancelMsg.text}
+        </p>
+      )}
+
       {tab === 'proximas' && (
         <>
           {proximas.length === 0 && (
@@ -86,27 +163,69 @@ function MisReservas({ apiFetch }) {
               <p className="text-gray-400 text-sm mt-1">Haz tu primera solicitud arriba</p>
             </div>
           )}
-          {proximas.map(r => (
-            <div key={`${r._source}-${r.id}`} className="card">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-black text-sp-gray">
-                    {r.tipo === 'renta' ? `Cancha ${r.cancha}` :
-                     r.tipo === 'clase' ? `Clase con ${r.instructor}` : r.tipo}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-0.5 capitalize">
-                    {fmtFecha(r.fecha)} · {r.hora_inicio}
-                  </p>
+          {proximas.map(r => {
+            const esRentaConf = r._source === 'reservacion' && r.tipo === 'renta' && r.estado === 'confirmada';
+            const cancelable  = r._source === 'pre' || r.estado === 'confirmada';
+            return (
+              <div key={`${r._source}-${r.id}`} className="card">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-black text-sp-gray">
+                      {r.tipo === 'renta' ? `Cancha ${r.cancha}` :
+                       r.tipo === 'clase' ? `Clase con ${r.instructor}` : r.tipo}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-0.5 capitalize">
+                      {fmtFecha(r.fecha)} · {String(r.hora_inicio || '').slice(0, 5)}
+                      {r.duracion_minutos ? ` · ${r.duracion_minutos} min` : ''}
+                    </p>
+                  </div>
+                  <EstadoPill estado={r.estado} source={r._source} />
                 </div>
-                <EstadoPill estado={r.estado} source={r._source} />
+
+                {r._source === 'pre' && (
+                  <p className="text-xs text-yellow-600 mt-2 bg-yellow-50 rounded-lg px-3 py-1.5">
+                    ⏳ Esperando confirmacion del club
+                  </p>
+                )}
+
+                {/* Roster + invitar (solo rentas confirmadas) */}
+                {esRentaConf && <RosterReta r={r} onInvitar={() => invitarReta(r)} />}
+
+                {/* Cancelar (dos taps) */}
+                {cancelable && (
+                  <div className="mt-3">
+                    {cancelando === `${r._source}-${r.id}` ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => cancelar(r)}
+                          disabled={cancelBusy}
+                          className="flex-1 py-2 rounded-xl text-xs font-bold bg-red-50 text-red-500 border border-red-200"
+                        >
+                          {cancelBusy ? 'Cancelando…' : 'Si, cancelar'}
+                        </button>
+                        <button
+                          onClick={() => setCancelando(null)}
+                          className="flex-1 py-2 rounded-xl text-xs font-bold bg-gray-50 text-gray-500 border border-gray-200"
+                        >
+                          No, conservar
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setCancelando(`${r._source}-${r.id}`); setCancelMsg(null); }}
+                        className="text-xs text-gray-400 underline"
+                      >
+                        {r._source === 'pre' ? 'Cancelar solicitud' : 'Cancelar reserva'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
-              {r._source === 'pre' && (
-                <p className="text-xs text-yellow-600 mt-2 bg-yellow-50 rounded-lg px-3 py-1.5">
-                  ⏳ Esperando confirmacion del club
-                </p>
-              )}
-            </div>
-          ))}
+            );
+          })}
+          <p className="text-xs text-gray-400 text-center px-4">
+            Las reservas confirmadas se pueden cancelar hasta 4 horas antes. Con menos tiempo, escríbenos por WhatsApp.
+          </p>
         </>
       )}
 
@@ -126,7 +245,7 @@ function MisReservas({ apiFetch }) {
                      r.tipo === 'clase' ? `Clase con ${r.instructor}` : r.tipo}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 capitalize">
-                    {fmtFecha(r.fecha)} · {r.hora_inicio}
+                    {fmtFecha(r.fecha)} · {String(r.hora_inicio || '').slice(0, 5)}
                   </p>
                 </div>
                 <EstadoPill estado={r.estado} source={r._source} />
@@ -172,15 +291,20 @@ export default function Reservar() {
   const promoPrecio    = urlParams.get('precio') ? parseFloat(urlParams.get('precio')) : null;
   const tienePromo     = !!promoCodigo;
 
-  const [mainTab, setMainTab] = useState(location.state?.tab === 'mis' ? 'mis' : 'nueva'); // 'nueva' | 'mis' (puede venir de "Mi cuenta")
+  // Puede venir a "Mis reservas" desde Mi cuenta (state) o desde un push (?tab=mis)
+  const [mainTab, setMainTab] = useState(
+    (location.state?.tab === 'mis' || urlParams.get('tab') === 'mis') ? 'mis' : 'nueva'
+  );
   const [tipo, setTipo] = useState('cancha'); // 'cancha' | 'clase'
 
   // --- Cancha ---
   const [fecha, setFecha]             = useState(hoyISO());
   const [hora, setHora]               = useState(null);
+  const [horasDisp, setHorasDisp]     = useState(null);   // [{hora, libres}] del backend
   const [canchasDisp, setCanchasDisp] = useState(null);
   const [loadingCanchas, setLoadingCanchas] = useState(false);
   const [cancha, setCancha]           = useState(null);
+  const [tarifa, setTarifa]           = useState(null);   // { precio, tipo } estimado
 
   // --- Clase ---
   const [fechaClase, setFechaClase]   = useState(hoyISO());
@@ -194,6 +318,16 @@ export default function Reservar() {
   const [error, setError]     = useState('');
   const [done, setDone]       = useState(null);
 
+  // Horas con disponibilidad (oculta pasadas si es hoy, marca llenas)
+  useEffect(() => {
+    if (!fecha) { setHorasDisp(null); return; }
+    setHorasDisp(null);
+    apiFetch(`/reservas/horas-disponibles?fecha=${fecha}`)
+      .then(d => setHorasDisp(d.ok ? d.horas : null))
+      .catch(() => setHorasDisp(null));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fecha]);
+
   // Fetch canchas disponibles cuando se elige fecha + hora
   useEffect(() => {
     if (!fecha || !hora) { setCanchasDisp(null); return; }
@@ -205,6 +339,15 @@ export default function Reservar() {
       .finally(() => setLoadingCanchas(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fecha, hora]);
+
+  // Precio estimado al tener cancha + hora (misma tarifa que usa la caja)
+  useEffect(() => {
+    if (!cancha || !hora) { setTarifa(null); return; }
+    apiFetch(`/reservas/tarifa?hora=${hora}&cancha=${cancha}`)
+      .then(d => setTarifa(d.ok ? d.data : null))
+      .catch(() => setTarifa(null));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cancha, hora]);
 
   // Fetch coaches disponibles cuando cambia la fecha (tab clase)
   useEffect(() => {
@@ -255,10 +398,16 @@ export default function Reservar() {
   function reset() {
     setDone(null); setHora(null); setCanchasDisp(null);
     setCancha(null); setCoachSel(null); setHoraSel(null); setError('');
+    setTarifa(null);
   }
 
   const puedeConfirmarCancha = cancha && hora && fecha;
   const puedeConfirmarClase  = coachSel && horaSel && fechaClase;
+
+  // Grid de horas: usa la disponibilidad del backend; si no cargó, el grid fijo de siempre.
+  const gridHoras = horasDisp
+    ? horasDisp
+    : HORARIOS.map(h => ({ hora: h, libres: null }));
 
   // ─── Pantalla de exito ────────────────────────────────────────────────────
   if (done) {
@@ -276,7 +425,7 @@ export default function Reservar() {
         </div>
         <div className="bg-sp-green-light rounded-2xl px-5 py-4 text-center w-full max-w-xs">
           <p className="text-sp-green-dark text-sm font-medium">
-            Tu solicitud llego al panel del club. El equipo te confirmara a la brevedad.
+            Tu solicitud llego al panel del club. Te avisaremos en cuanto quede confirmada — al confirmarse podras invitar a tus jugadores.
           </p>
         </div>
         {done.promo && (
@@ -361,22 +510,32 @@ export default function Reservar() {
             </div>
 
             <div className="card">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">Horario</p>
-              <div className="grid grid-cols-4 gap-2">
-                {HORARIOS.map(h => (
-                  <button
-                    key={h}
-                    onClick={() => setHora(h)}
-                    className={`py-2 rounded-xl text-sm font-semibold border transition-all active:scale-95 ${
-                      hora === h
-                        ? 'bg-sp-green text-white border-sp-green'
-                        : 'bg-white text-sp-gray border-gray-200'
-                    }`}
-                  >
-                    {h}
-                  </button>
-                ))}
-              </div>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">Horario · renta 90 min</p>
+              {gridHoras.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">Ya no hay horarios para hoy</p>
+              ) : (
+                <div className="grid grid-cols-4 gap-2">
+                  {gridHoras.map(({ hora: h, libres }) => {
+                    const lleno = libres === 0;
+                    return (
+                      <button
+                        key={h}
+                        onClick={() => !lleno && setHora(h)}
+                        disabled={lleno}
+                        className={`py-2 rounded-xl text-sm font-semibold border transition-all active:scale-95 ${
+                          hora === h
+                            ? 'bg-sp-green text-white border-sp-green'
+                            : lleno
+                              ? 'bg-gray-50 text-gray-300 border-gray-100 line-through'
+                              : 'bg-white text-sp-gray border-gray-200'
+                        }`}
+                      >
+                        {h}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {hora && (
@@ -415,8 +574,21 @@ export default function Reservar() {
             {puedeConfirmarCancha && (
               <div className="card bg-sp-green-light border-0">
                 <p className="text-xs text-sp-green-dark font-semibold uppercase tracking-wide mb-2">Resumen</p>
-                <p className="font-black text-sp-gray text-base">Cancha {cancha}</p>
-                <p className="text-sm text-gray-500 capitalize">{formatDate(fecha)} · {hora}</p>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-black text-sp-gray text-base">Cancha {cancha}</p>
+                    <p className="text-sm text-gray-500 capitalize">{formatDate(fecha)} · {hora} · 90 min</p>
+                  </div>
+                  {tarifa?.precio != null && (
+                    <div className="text-right">
+                      <p className="font-black text-sp-green-dark text-xl">${tarifa.precio}</p>
+                      <p className="text-[10px] text-gray-400">precio de lista</p>
+                    </div>
+                  )}
+                </div>
+                {tienePromo && promoPrecio && (
+                  <p className="text-xs text-sp-green-dark mt-1 font-semibold">⚡ Con tu promo: ${promoPrecio}</p>
+                )}
                 <button
                   className="btn-green w-full mt-4"
                   onClick={handleConfirmar}
@@ -464,7 +636,7 @@ export default function Reservar() {
                     </div>
                     <div>
                       <p className="font-black text-sp-gray">{coach.nombre}</p>
-                      <p className="text-xs text-gray-400">{coach.horarios?.length || 0} horarios disponibles</p>
+                      <p className="text-xs text-gray-400">{coach.horarios?.length || 0} horarios disponibles · clase 60 min</p>
                     </div>
                   </div>
                   {coachSel === coach.nombre && coach.horarios?.length > 0 && (
@@ -494,7 +666,7 @@ export default function Reservar() {
               <div className="card bg-sp-green-light border-0">
                 <p className="text-xs text-sp-green-dark font-semibold uppercase tracking-wide mb-2">Resumen</p>
                 <p className="font-black text-sp-gray text-base">Clase con {coachSel}</p>
-                <p className="text-sm text-gray-500 capitalize">{formatDate(fechaClase)} · {horaSel}</p>
+                <p className="text-sm text-gray-500 capitalize">{formatDate(fechaClase)} · {horaSel} · 60 min</p>
                 <button
                   className="btn-green w-full mt-4"
                   onClick={handleConfirmar}
@@ -512,4 +684,3 @@ export default function Reservar() {
     </div>
   );
 }
-  

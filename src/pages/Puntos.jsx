@@ -95,11 +95,6 @@ export default function Puntos() {
     const t = qTab || location.state?.tab || 'beneficios';
     return ['beneficios', 'promos', 'historial'].includes(t) ? t : 'beneficios';
   });
-  const [ticket, setTicket]     = useState('');
-  const [monto, setMonto]       = useState('');
-  const [msg, setMsg]           = useState(null);
-  const [loadingConsumption, setLoadingConsumption] = useState(false);
-
   // Promos reclamables (motor de beneficios)
   const [promosDisp, setPromosDisp] = useState([]);
   const [promosMias, setPromosMias] = useState([]);
@@ -193,25 +188,6 @@ export default function Puntos() {
       setCanjeModal(null);
     } else {
       setCanjeError(data.error || 'Error al generar codigo');
-    }
-  }
-
-  async function handleConsumo(e) {
-    e.preventDefault();
-    if (!ticket || !monto) return;
-    setLoadingConsumption(true);
-    setMsg(null);
-    const data = await apiFetch('/loyalty/consumo', {
-      method: 'POST',
-      body: JSON.stringify({ ticket_numero: ticket, telefono: user.telefono, monto: parseFloat(monto) }),
-    });
-    setLoadingConsumption(false);
-    if (data.ok) {
-      setMsg({ ok: true, text: `✓ ${data.data.puntos_acreditados} puntos acreditados` });
-      setTicket(''); setMonto('');
-      await cargarDatos();
-    } else {
-      setMsg({ ok: false, text: data.error });
     }
   }
 
@@ -498,30 +474,6 @@ export default function Puntos() {
             Las promos que reclames se aplican solas cuando el cajero te identifica en la caja.
           </p>
         </div>
-      )}
-
-      {/* Tab: Consumo */}
-      {tab === 'consumo' && (
-        <form onSubmit={handleConsumo} className="mx-4 mt-3 card flex flex-col gap-3 pb-4 mb-24">
-          <p className="text-sm text-gray-500">Ingresa los datos de tu ticket del restaurante para acreditar puntos.</p>
-          <div>
-            <label className="text-xs text-gray-500 font-medium mb-1 block">Numero de ticket</label>
-            <input className="input-field" placeholder="Ej: 1842" value={ticket} onChange={e => setTicket(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 font-medium mb-1 block">Monto total ($)</label>
-            <input className="input-field" type="number" placeholder="0.00" step="0.01" min="1" value={monto} onChange={e => setMonto(e.target.value)} />
-            {monto && parseFloat(monto) >= 50 && (
-              <p className="text-xs text-sp-green mt-1 font-medium">
-                = {Math.floor(parseFloat(monto) / 50)} punto(s) de restaurante
-              </p>
-            )}
-          </div>
-          {msg && <p className={`text-sm text-center font-medium ${msg.ok ? 'text-sp-green' : 'text-red-500'}`}>{msg.text}</p>}
-          <button type="submit" disabled={!ticket || !monto || loadingConsumption} className="btn-green disabled:opacity-50">
-            {loadingConsumption ? 'Registrando...' : 'Acreditar puntos'}
-          </button>
-        </form>
       )}
 
       {/* Tab: Historial */}

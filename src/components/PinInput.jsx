@@ -1,7 +1,10 @@
-export default function PinInput({ value = '', onChange, length = 4 }) {
+export default function PinInput({ value = '', onChange, length = 4, onComplete }) {
   function handleChange(e) {
     const val = e.target.value.replace(/\D/g, '').slice(0, length);
     onChange(val);
+    // Al completar los dígitos avisamos con el valor final (el estado del padre
+    // aún no se actualizó en este tick, por eso se pasa `val` directo).
+    if (val.length === length && onComplete) onComplete(val);
   }
 
   return (

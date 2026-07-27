@@ -13,6 +13,7 @@ import Perfil from './pages/Perfil';
 import Unirse from './pages/Unirse';
 import Noticias from './pages/Noticias';
 import Pedir from './pages/Pedir';
+import Terminos from './pages/Terminos';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -29,6 +30,7 @@ function AppRoutes() {
       <Route path="/login" element={user ? <Navigate to="/home" replace /> : <Login />} />
       <Route path="/registro" element={user ? <Navigate to="/home" replace /> : <Registro />} />
       <Route path="/unirse/:token" element={<Unirse />} />
+      <Route path="/terminos" element={<Terminos />} />
       <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route path="/reservar" element={<ProtectedRoute><Reservar /></ProtectedRoute>} />
       <Route path="/torneos" element={<ProtectedRoute><Torneos /></ProtectedRoute>} />

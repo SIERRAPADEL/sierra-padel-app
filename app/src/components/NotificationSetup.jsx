@@ -240,7 +240,11 @@ export default function NotificationSetup() {
   useEffect(() => {
     if (!user || done) return;
     if (!isPushSupported()) return;
-    if (!isStandalone()) return; // Solo en app instalada
+    // Recién registrado: la casilla de avisos ya quedó aceptada → ofrecer activar push
+    // de inmediato, aunque aún no esté instalada como PWA (Android soporta push en pestaña;
+    // en iOS isPushSupported ya filtra hasta que instalen).
+    const recienRegistrado = localStorage.getItem('recienRegistrado') === '1';
+    if (!isStandalone() && !recienRegistrado) return; // fuera del registro: solo en app instalada
 
     const permission = Notification.permission;
 
@@ -262,10 +266,14 @@ export default function NotificationSetup() {
 
     // Permiso 'default' → verificar si el usuario ya descarto el card
     const dismissed = localStorage.getItem('notifCard_dismissed');
-    if (dismissed) return;
+    if (dismissed && !recienRegistrado) return;
 
-    // Mostrar el card despues de 3 segundos (dejar que la app cargue primero)
-    const timer = setTimeout(() => setShowCard(true), 3000);
+    // Recién registrado: card inmediato (ya aceptó avisos, solo falta el permiso del sistema).
+    // Resto: después de 3 segundos (dejar que la app cargue primero).
+    const timer = setTimeout(() => {
+      setShowCard(true);
+      localStorage.removeItem('recienRegistrado');
+    }, recienRegistrado ? 400 : 3000);
     return () => clearTimeout(timer);
   }, [user, done, subscribe]);
 

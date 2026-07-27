@@ -4,8 +4,50 @@ import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
 import PromoExpressBanner from '../components/PromoExpressBanner';
+import NivelSelector from '../components/NivelSelector';
 import { BACKEND } from '../lib/constants';
 import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/format';
+
+// ── Modal: completa tu perfil (cuentas creadas antes de que el nivel fuera requisito) ──
+function NivelModal({ apiFetch, updateUser, onClose }) {
+  const [nivel, setNivel]     = useState(null);
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState('');
+
+  async function guardar() {
+    if (!nivel || saving) return;
+    setSaving(true);
+    setError('');
+    const d = await apiFetch('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ categoria: nivel }),
+    });
+    setSaving(false);
+    if (d.ok) {
+      updateUser({ categoria: d.data?.cliente?.categoria || nivel });
+      onClose();
+    } else {
+      setError(d.error || 'No se pudo guardar. Intenta de nuevo.');
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 px-4 pb-6">
+      <div className="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4 max-h-[85vh] overflow-y-auto">
+        <div className="text-center">
+          <p className="text-xl font-black text-sp-gray">🎾 ¿Cual es tu nivel de juego?</p>
+          <p className="text-sm text-gray-400 mt-1">Con esto te avisamos de retas y torneos de tu nivel</p>
+        </div>
+        <NivelSelector value={nivel} onChange={setNivel} compact />
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        <button onClick={guardar} disabled={!nivel || saving} className="btn-green disabled:opacity-50">
+          {saving ? 'Guardando…' : 'Guardar mi nivel'}
+        </button>
+        <button onClick={onClose} className="text-gray-400 text-sm text-center">Lo hago despues</button>
+      </div>
+    </div>
+  );
+}
 
 // ── Encabezado de sección con acción "Ver todas" ─────────────────────────────
 function SectionHeader({ title, actionLabel, onAction }) {
@@ -225,10 +267,14 @@ function Novedades({ navigate }) {
 
 // ── Pagina principal ──────────────────────────────────────────────────────────
 export default function Home() {
-  const { user }    = useAuth();
+  const { user, updateUser } = useAuth();
   const { apiFetch } = useApi();
   const navigate    = useNavigate();
   const [puntos, setPuntos] = useState(null);
+  // Pedir el nivel UNA vez por sesión a cuentas que aún no lo tienen
+  const [pedirNivel, setPedirNivel] = useState(() =>
+    !sessionStorage.getItem('nivelPromptVisto')
+  );
   const [hora] = useState(() => {
     const h = new Date().getHours();
     if (h < 12) return 'Buenos dias';
@@ -242,6 +288,14 @@ export default function Home() {
 
   return (
     <div className="page safe-bottom">
+      {/* Completa tu perfil: nivel de juego (cuentas previas al requisito) */}
+      {pedirNivel && user && !user.categoria && (
+        <NivelModal
+          apiFetch={apiFetch}
+          updateUser={updateUser}
+          onClose={() => { sessionStorage.setItem('nivelPromptVisto', '1'); setPedirNivel(false); }}
+        />
+      )}
       {/* ── Header ── */}
       <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-4">
         <div className="flex items-center justify-between pt-3">

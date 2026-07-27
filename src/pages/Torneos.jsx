@@ -61,88 +61,6 @@ function torneoEstado(t) {
 }
 
 // ──────────────────────────────────────────────────────────
-// RankingView
-// ──────────────────────────────────────────────────────────
-function RankingView({ torneoId, cats, apiFetch }) {
-  const [catSel, setCatSel]   = useState(null);
-  const [ranking, setRanking] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (cats?.length && !catSel) setCatSel(cats[0].id);
-  }, [cats]);
-
-  useEffect(() => {
-    if (!catSel) return;
-    setLoading(true);
-    setRanking(null);
-    apiFetch(`/torneos/${torneoId}/categorias/${catSel}/ranking`)
-      .then(d => { if (d.ok) setRanking(d.ranking); })
-      .finally(() => setLoading(false));
-  }, [catSel, torneoId]);
-
-  const medals = ['🥇','🥈','🥉'];
-
-  return (
-    <div className="flex flex-col gap-3 px-4 pb-6">
-      {/* Categoria pills */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
-        {(cats || []).map(c => (
-          <button
-            key={c.id}
-            onClick={() => setCatSel(c.id)}
-            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${
-              catSel === c.id
-                ? 'bg-sp-green text-white'
-                : 'bg-white text-sp-gray border border-gray-200'
-            }`}
-          >
-            {c.categoria || c.nombre}
-          </button>
-        ))}
-      </div>
-
-      {loading && <Spinner />}
-
-      {!loading && ranking && (
-        <div className="card overflow-hidden p-0">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left text-xs text-gray-400 font-semibold px-4 py-2 w-8">#</th>
-                <th className="text-left text-xs text-gray-400 font-semibold px-2 py-2">Pareja</th>
-                <th className="text-right text-xs text-gray-400 font-semibold px-4 py-2">Pts</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ranking.map((row, i) => (
-                <tr key={row.inscripcion_id} className="border-b border-gray-50 last:border-0">
-                  <td className="px-4 py-3 text-center font-bold text-sp-gray">
-                    {medals[i] || i + 1}
-                  </td>
-                  <td className="px-2 py-3 font-medium text-sp-gray">
-                    <p>{row.jugador1_nombre?.split(' ')[0]} / {row.jugador2_nombre?.split(' ')[0]}</p>
-                    <p className="text-xs text-gray-400">
-                      {row.pj}J · {row.pg}G · {row.pp}P
-                    </p>
-                  </td>
-                  <td className="px-4 py-3 text-right font-black text-sp-green text-base">
-                    {row.puntos ?? '-'}
-                  </td>
-                </tr>
-              ))}
-              {ranking.length === 0 && (
-                <tr><td colSpan={3} className="text-center text-gray-400 text-sm py-8">Sin resultados aun</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ──────────────────────────────────────────────────────────
 // CircuitoRankingView — ranking acumulado del circuito (temporada) con puntos
 // (partidos + donas + fase jugada) y línea de corte del Masters (top N).
 function ordenCatCircuito(a, b) {
@@ -738,7 +656,6 @@ export default function Torneos() {
   const [loading, setLoading]     = useState(true);
   const [view, setView]           = useState(null); // null | 'inscripcion' | 'detalle'
   const [torneoSel, setTorneoSel] = useState(null);
-  const [rankTorneo, setRankTorneo] = useState(null);
 
   const load = useCallback(() => {
     setLoading(true);
