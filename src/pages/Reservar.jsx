@@ -77,6 +77,97 @@ function RosterReta({ r, onInvitar }) {
   );
 }
 
+// Controles de la reta en la tarjeta de una renta confirmada: anunciarla en el
+// feed (de mi nivel o abierta a todos) para que el sistema ayude a llenarla,
+// o dejar de anunciarla. El estado viene en r.reta desde mis-reservas.
+function RetaControls({ r, apiFetch, onChanged, setMsg }) {
+  const [eligiendo, setEligiendo] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function abrir(nivel) {
+    if (busy) return;
+    setBusy(true);
+    setMsg(null);
+    const d = await apiFetch(`/reta/reserva-propia/${r.id}/abrir`, {
+      method: 'POST',
+      body: JSON.stringify({ nivel }),
+    });
+    setBusy(false);
+    setEligiendo(false);
+    if (d.ok) {
+      setMsg({ ok: true, text: '📣 Tu reta quedó anunciada. Avisamos a los jugadores compatibles.' });
+      onChanged();
+    } else {
+      setMsg({ ok: false, text: d.error || 'No se pudo anunciar la reta.' });
+    }
+  }
+
+  async function cerrar() {
+    if (busy) return;
+    setBusy(true);
+    setMsg(null);
+    const d = await apiFetch(`/reta/reserva-propia/${r.id}/cerrar`, { method: 'POST' });
+    setBusy(false);
+    if (d.ok) { setMsg({ ok: true, text: 'Tu reta ya no se anuncia.' }); onChanged(); }
+    else setMsg({ ok: false, text: d.error || 'No se pudo. Intenta de nuevo.' });
+  }
+
+  if (r.reta?.estado === 'completa') {
+    return (
+      <div className="mt-2 bg-sp-green-light rounded-xl px-3 py-2">
+        <p className="text-xs text-sp-green-dark font-bold">✅ ¡Reta completa! Nos vemos en la cancha.</p>
+      </div>
+    );
+  }
+
+  if (r.reta?.estado === 'abierta') {
+    return (
+      <div className="mt-2 flex items-center justify-between gap-2 bg-sp-green-light rounded-xl px-3 py-2">
+        <p className="text-xs text-sp-green-dark font-bold">
+          📣 Anunciada en retas · {r.reta.nivel_objetivo ? `${r.reta.nivel_objetivo} (±1)` : 'abierta a todos'}
+        </p>
+        <button onClick={cerrar} disabled={busy} className="text-xs text-gray-400 underline flex-shrink-0">
+          {busy ? '…' : 'Dejar de anunciar'}
+        </button>
+      </div>
+    );
+  }
+
+  if (eligiendo) {
+    return (
+      <div className="mt-2 flex flex-col gap-2">
+        <p className="text-xs text-gray-400 font-semibold">¿A quién avisamos?</p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => abrir('mi')}
+            disabled={busy}
+            className="flex-1 py-2 rounded-xl text-xs font-bold bg-sp-green text-white disabled:opacity-50"
+          >
+            🎯 De mi nivel (±1)
+          </button>
+          <button
+            onClick={() => abrir('todos')}
+            disabled={busy}
+            className="flex-1 py-2 rounded-xl text-xs font-bold bg-white text-sp-gray border border-gray-200 disabled:opacity-50"
+          >
+            🌎 Abierta a todos
+          </button>
+          <button onClick={() => setEligiendo(false)} className="px-2 text-xs text-gray-400">✕</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setEligiendo(true)}
+      className="mt-2 w-full py-2 rounded-xl text-xs font-bold bg-sp-gray text-white active:scale-[0.98] transition-transform"
+    >
+      📣 Buscar jugadores (anunciar reta)
+    </button>
+  );
+}
+
 function MisReservas({ apiFetch }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -190,6 +281,9 @@ function MisReservas({ apiFetch }) {
 
                 {/* Roster + invitar (solo rentas confirmadas) */}
                 {esRentaConf && <RosterReta r={r} onInvitar={() => invitarReta(r)} />}
+                {esRentaConf && (r.reta || (r.jugadores?.length || 0) < (r.cupo || 4)) && (
+                  <RetaControls r={r} apiFetch={apiFetch} onChanged={load} setMsg={setCancelMsg} />
+                )}
 
                 {/* Cancelar (dos taps) */}
                 {cancelable && (

@@ -148,6 +148,75 @@ function MisReservas({ apiFetch, navigate }) {
   );
 }
 
+// ── Seccion: Retas abiertas (matchmaking) ─────────────────────────────────────
+function RetasAbiertas({ apiFetch, navigate }) {
+  const [retas, setRetas] = useState(null);
+  const [joining, setJoining] = useState('');
+  const [msg, setMsg] = useState(null);
+
+  const load = () => {
+    apiFetch('/reta/feed')
+      .then(d => setRetas(d.ok ? d.data : []))
+      .catch(() => setRetas([]));
+  };
+  useEffect(() => { load(); }, []);
+
+  async function join(r) {
+    setJoining(r.token);
+    setMsg(null);
+    const d = await apiFetch(`/reta/${r.token}/unirme-app`, { method: 'POST' });
+    setJoining('');
+    if (d.ok) { setMsg({ ok: true, text: '¡Estas dentro! 🎾' }); load(); }
+    else setMsg({ ok: false, text: d.error || 'No se pudo. Intenta de nuevo.' });
+  }
+
+  // Sin retas no ocupamos espacio (la página completa vive en /retas)
+  if (!retas?.length) return null;
+
+  const top = retas.slice(0, 3);
+  return (
+    <div className="flex flex-col gap-2">
+      <SectionHeader title="🎾 Retas abiertas" actionLabel="Ver todas" onAction={() => navigate('/retas')} />
+      {msg && (
+        <p className={`text-[13px] text-center font-medium ${msg.ok ? 'text-sp-green' : 'text-red-500'}`}>{msg.text}</p>
+      )}
+      <div className="flex flex-col gap-2">
+        {top.map(r => (
+          <div key={r.token} className="card flex items-center gap-3 py-3">
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#EDF7D6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 12, fontWeight: 900, color: '#5a8a00', textTransform: 'capitalize' }}>
+                {formatFecha(r.fecha).split(' ')[0]}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#7aaa00' }}>{r.hora_inicio}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sp-gray font-bold text-[15px] truncate">
+                {r.organizador || 'Reta'} · Cancha {r.cancha}
+              </p>
+              <p className="text-gray-400 text-[13px]">
+                {r.nivel_objetivo || 'Abierta a todos'} · {r.faltan === 1 ? 'falta 1' : `faltan ${r.faltan}`}
+              </p>
+            </div>
+            {r.es_mia ? (
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">Tu reta</span>
+            ) : r.ya_apuntado ? (
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-sp-green-light text-sp-green-dark flex-shrink-0">✓ Ya vas</span>
+            ) : (
+              <button
+                onClick={() => join(r)}
+                disabled={joining === r.token}
+                className="text-[13px] font-black px-3.5 py-2 rounded-full bg-sp-green text-white active:scale-95 transition-transform flex-shrink-0 disabled:opacity-50"
+              >
+                {joining === r.token ? '…' : 'Me apunto'}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Seccion: Proximos torneos ─────────────────────────────────────────────────
 function ProximosTorneos({ apiFetch, navigate }) {
   const [torneos, setTorneos] = useState(null);
@@ -358,6 +427,9 @@ export default function Home() {
             <p style={{ color: 'rgba(10,26,0,0.65)', fontSize: 13, marginTop: 3, fontWeight: 600 }}>Directo a tu cancha</p>
           </button>
         </div>
+
+        {/* Retas abiertas (matchmaking) */}
+        <RetasAbiertas apiFetch={apiFetch} navigate={navigate} />
 
         {/* Mis reservas */}
         <MisReservas apiFetch={apiFetch} navigate={navigate} />
