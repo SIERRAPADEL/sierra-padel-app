@@ -4,6 +4,17 @@ import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
 
+// Estilo por nivel víbora (bolsa única): color + emoji.
+const NIVEL_STYLE = {
+  1: { color: '#a8b3bf', emoji: '🪱' },     // Lombriz
+  2: { color: '#7bbf1a', emoji: '🐍' },     // Víbora
+  3: { color: '#e0a91f', emoji: '🐍🔥' },   // Cobra
+  4: { color: '#b06cff', emoji: '👑🐍' },   // Mamba
+};
+const fmtMoney = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+// Regalo tangible por día que juega, según nivel (Fase 2 al cobrar renta).
+const TANGIBLE_NIVEL = { 2: 'Agua 500 ml gratis', 3: 'Agua de 1 L gratis', 4: 'Overgrip SP gratis' };
+
 // ── Badge SVG placeholder para cada nivel (orden 1-4) ─────────────────────────
 function NivelBadge({ nivel, size = 56 }) {
   if (!nivel) return null;
@@ -89,6 +100,7 @@ export default function Puntos() {
 
   const [niveles, setNiveles]   = useState([]);
   const [saldo, setSaldo]       = useState(null);
+  const [miNivel, setMiNivel]   = useState(null);   // bolsa única + nivel víbora (/loyalty/mi-nivel)
   const [historial, setHistorial] = useState([]);
   const [tab, setTab]           = useState(() => {
     const qTab = new URLSearchParams(location.search).get('tab');     // viene del push (/puntos?tab=promos)
@@ -110,14 +122,16 @@ export default function Puntos() {
   const { segs, label: countdown } = useCountdown(canjeActivo?.expires_at);
 
   const cargarDatos = useCallback(async () => {
-    const [nivelesRes, me, hist] = await Promise.all([
+    const [nivelesRes, me, hist, mn] = await Promise.all([
       apiFetch('/loyalty/niveles'),
       apiFetch('/auth/me'),
       apiFetch(`/loyalty/clientes/${user?.id}/historial`),
+      apiFetch('/loyalty/mi-nivel'),
     ]);
     if (nivelesRes.ok && nivelesRes.data?.length) setNiveles(nivelesRes.data);
     if (me.ok)   setSaldo(me.data);
     if (hist.ok) setHistorial(hist.data);
+    if (mn.ok)   setMiNivel(mn.data);
   }, [user?.id]);
 
   useEffect(() => { cargarDatos(); }, [cargarDatos]);
@@ -242,89 +256,70 @@ export default function Puntos() {
         </div>
       </div>
 
-      {/* Tarjeta de nivel */}
-      <div className="mx-4 mt-4 rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, #1C1C1C, #2A2A2A)' }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <NivelBadge nivel={nivel} size={44} />
-            <div>
-              <span className="font-black text-lg" style={{ color: nivel.color }}>{nivel.nombre}</span>
-              <p className="text-gray-500 text-xs">{saldo?.nombre || user?.nombre}</p>
+      {/* Bolsa única de puntos */}
+      {(() => {
+        const st = NIVEL_STYLE[miNivel?.nivel?.nivel] || NIVEL_STYLE[1];
+        return (
+          <div className="mx-4 mt-4 rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, #1C1C1C, #2A2A2A)' }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Mis puntos</p>
+                <p className="text-4xl font-black mt-1">{miNivel?.saldo_puntos ?? 0}</p>
+                <p className="text-sm mt-1" style={{ color: st.color }}>= {fmtMoney(miNivel?.valor ?? 0)} para usar en el club</p>
+              </div>
+              <Isotipo size={26} color={st.color} />
             </div>
-          </div>
-          <Isotipo size={22} color={nivel.color} />
-        </div>
-
-        {nextNivel && (
-          <div className="mt-4">
-            <div className="flex justify-between text-xs text-gray-500 mb-1">
-              <span>{saldo?.nivel_pc || 0} PC acumulados</span>
-              <span>{nextNivel.min_pc} PC → {nextNivel.nombre}</span>
-            </div>
-            <div className="bg-gray-700 rounded-full h-1.5">
-              <div
-                className="h-1.5 rounded-full transition-all duration-700"
-                style={{ width: `${progreso}%`, background: nivel.color }}
-              />
-            </div>
-            <p className="text-gray-600 text-xs mt-1">
-              {nextNivel.min_pc - (saldo?.nivel_pc || 0)} rentas mas para llegar a {nextNivel.nombre}
+            <p className="text-gray-500 text-xs mt-3">
+              🎾 Cancha y 🍽️ consumo suman a la misma bolsa. El cajero los aplica al pagar cuando te identifica.
             </p>
           </div>
-        )}
-        {!nextNivel && (
-          <p className="text-xs mt-3" style={{ color: nivel.color }}>¡Nivel maximo alcanzado!</p>
-        )}
-      </div>
+        );
+      })()}
 
-      {/* Tracks de puntos */}
-      <div className="mx-4 mt-3 grid grid-cols-2 gap-3">
-        {/* Cancha */}
-        <div className="card flex flex-col gap-2">
-          <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">🎾 Cancha</p>
-          <p className="text-3xl font-black text-sp-gray">{pc}</p>
-          <p className="text-xs text-gray-400">/{nivel.pc_meta} para canjear</p>
-          {pc >= nivel.pc_meta ? (
-            <button
-              onClick={() => { setCanjeModal({ tipo: 'cancha' }); setCanjeError(''); }}
-              className="mt-1 py-2 rounded-xl text-xs font-bold text-white active:scale-95 transition-transform"
-              style={{ background: nivel.color }}
-            >
-              Canjear
-            </button>
-          ) : (
-            <div className="mt-1 bg-gray-100 rounded-full h-1.5">
-              <div
-                className="bg-sp-green h-1.5 rounded-full"
-                style={{ width: `${Math.min((pc / nivel.pc_meta) * 100, 100)}%` }}
-              />
+      {/* Nivel víbora + progreso */}
+      {miNivel?.nivel && (() => {
+        const st  = NIVEL_STYLE[miNivel.nivel.nivel] || NIVEL_STYLE[1];
+        const sig = miNivel.siguiente;
+        const act = miNivel.actividad || { visitas: 0, gasto: 0 };
+        return (
+          <div className="mx-4 mt-3 card flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl leading-none">{st.emoji}</span>
+                <div>
+                  <span className="font-black text-lg" style={{ color: st.color }}>{miNivel.nivel.nombre}</span>
+                  <p className="text-gray-400 text-xs">Ganas ×{miNivel.nivel.mult} puntos en cada visita</p>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Restaurante */}
-        <div className="card flex flex-col gap-2">
-          <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">🍽️ Restaurante</p>
-          <p className="text-3xl font-black text-sp-gray">{pr}</p>
-          <p className="text-xs text-gray-400">/{nivel.pr_meta} para canjear</p>
-          {pr >= nivel.pr_meta ? (
-            <button
-              onClick={() => { setCanjeModal({ tipo: 'restaurante' }); setCanjeError(''); }}
-              className="mt-1 py-2 rounded-xl text-xs font-bold text-white active:scale-95 transition-transform"
-              style={{ background: nivel.color }}
-            >
-              Canjear
-            </button>
-          ) : (
-            <div className="mt-1 bg-gray-100 rounded-full h-1.5">
-              <div
-                className="bg-sp-green h-1.5 rounded-full"
-                style={{ width: `${Math.min((pr / nivel.pr_meta) * 100, 100)}%` }}
-              />
+            <div className="text-xs text-gray-400">
+              Últimos 30 días: <b className="text-sp-gray">{act.visitas}</b> visita{act.visitas === 1 ? '' : 's'} · <b className="text-sp-gray">{fmtMoney(act.gasto)}</b> de consumo
             </div>
-          )}
-        </div>
-      </div>
+
+            {sig ? (
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-500">
+                  Para subir a <b style={{ color: NIVEL_STYLE[miNivel.nivel.nivel + 1]?.color || st.color }}>{sig.nombre}</b> te falta lo que llegue primero:
+                </p>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div className="bg-white rounded-lg p-2 text-center border border-gray-100">
+                    <p className="text-lg font-black text-sp-gray">{sig.faltan_visitas > 0 ? sig.faltan_visitas : '✓'}</p>
+                    <p className="text-[10px] text-gray-400">{sig.faltan_visitas > 0 ? 'visitas más' : 'visitas listas'}</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-2 text-center border border-gray-100">
+                    <p className="text-lg font-black text-sp-gray">{sig.faltan_gasto > 0 ? fmtMoney(sig.faltan_gasto) : '✓'}</p>
+                    <p className="text-[10px] text-gray-400">{sig.faltan_gasto > 0 ? 'consumo más' : 'consumo listo'}</p>
+                  </div>
+                </div>
+                <p className="text-[11px] text-gray-400 mt-2">No tienes que jugar para subir: también cuenta lo que consumes 🍽️</p>
+              </div>
+            ) : (
+              <p className="text-sm font-bold" style={{ color: st.color }}>👑 ¡Nivel máximo! Eres {miNivel.nivel.nombre}.</p>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Tabs */}
       <div className="mx-4 mt-3 flex gap-2">
@@ -344,76 +339,48 @@ export default function Puntos() {
       {/* Tab: Beneficios */}
       {tab === 'beneficios' && (
         <div className="mx-4 mt-3 flex flex-col gap-3 pb-24">
-          {/* Nivel actual */}
-          <div className="card flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <NivelBadge nivel={nivel} size={36} />
-              <p className="text-sm font-bold text-sp-gray">Tu nivel: {nivel.nombre}</p>
-            </div>
-            <div className="flex flex-col gap-2 text-sm">
-              <div className="flex items-start gap-2">
-                <span>🎾</span>
-                <p className="text-sp-gray"><strong>{nivel.pc_meta} PC</strong> → {nivel.premio_cancha}</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span>🍽️</span>
-                <p className="text-sp-gray"><strong>{nivel.pr_meta} PR</strong> → {nivel.premio_restaurante}</p>
-              </div>
-              {nivel.descuento_merch > 0 && (
-                <div className="flex items-start gap-2">
-                  <span>🛍️</span>
-                  <p className="text-sp-gray"><strong>{nivel.descuento_merch}% de descuento</strong> en pelotas, merch y equipo</p>
-                </div>
-              )}
-              {nivel.descuento_equipo > 0 && (
-                <div className="flex items-start gap-2">
-                  <span>🏓</span>
-                  <p className="text-sp-gray"><strong>{nivel.descuento_equipo}% de descuento</strong> en renta de equipo</p>
-                </div>
-              )}
-            </div>
+          {/* Cómo funciona */}
+          <div className="card flex flex-col gap-2">
+            <p className="text-sm font-bold text-sp-gray">Cómo ganas 🐍</p>
+            <p className="text-xs text-gray-500">
+              Ganas <b>1 punto por cada $10</b> en cancha, tienda y consumo (el alcohol no acumula). Cada punto vale <b>$0.50</b> — cerca del <b>5%</b> de todo lo que gastas, en una sola bolsa.
+            </p>
+            <p className="text-xs text-gray-500">
+              Entre más alto tu nivel, <b>más rápido</b> acumulas y desbloqueas un regalo por cada día que juegas.
+            </p>
           </div>
 
-          {/* Proximo nivel */}
-          {nextNivel && (
-            <div className="card border-2 opacity-80" style={{ borderColor: nextNivel.color }}>
-              <div className="flex items-center gap-2 mb-2">
-                <NivelBadge nivel={nextNivel} size={30} />
-                <p className="text-xs text-gray-400 font-bold">Con nivel {nextNivel.nombre} obtienes:</p>
-              </div>
-              <div className="flex flex-col gap-1 text-xs text-gray-400">
-                <p>• 1 hr gratis con solo <strong>{nextNivel.pc_meta} PC</strong> (ahorras {nivel.pc_meta - nextNivel.pc_meta})</p>
-                <p>• Restaurante con solo <strong>{nextNivel.pr_meta} PR</strong></p>
-                {nextNivel.descuento_merch > 0 && <p>• <strong>{nextNivel.descuento_merch}% de descuento</strong> en tienda</p>}
-                <p className="mt-1 font-medium" style={{ color: nextNivel.color }}>
-                  Faltan {nextNivel.min_pc - (saldo?.nivel_pc || 0)} rentas mas
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Todos los niveles (resumen) */}
+          {/* Los niveles + tangibles */}
           <div className="card">
-            <p className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wide">Todos los niveles</p>
+            <p className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wide">Los niveles</p>
             <div className="flex flex-col gap-2">
-              {niveles.map((n) => (
-                <div
-                  key={n.id}
-                  className={`flex items-center gap-3 py-2 px-3 rounded-xl ${n.orden === nivel.orden ? 'bg-gray-50' : ''}`}
-                >
-                  <NivelBadge nivel={n} size={28} />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-sp-gray">{n.nombre}</p>
-                    <p className="text-xs text-gray-400">{n.min_pc}+ rentas acumuladas</p>
+              {(miNivel?.niveles || []).map((n) => {
+                const st = NIVEL_STYLE[n.nivel] || NIVEL_STYLE[1];
+                const esActual = n.nivel === miNivel?.nivel?.nivel;
+                const regalo = TANGIBLE_NIVEL[n.nivel];
+                return (
+                  <div key={n.nivel} className={`flex items-start gap-3 py-2 px-3 rounded-xl ${esActual ? 'bg-gray-50' : ''}`}>
+                    <span className="text-2xl leading-none mt-0.5">{st.emoji}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-bold" style={{ color: st.color }}>{n.nombre}</p>
+                        <span className="text-[10px] text-gray-400">gana ×{n.mult}</span>
+                        {esActual && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: st.color }}>Actual</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        {n.nivel === 1 ? 'Desde tu primer punto' : `${n.min_visitas} visitas o ${fmtMoney(n.min_gasto)} en 30 días`}
+                      </p>
+                      {regalo && <p className="text-xs mt-0.5" style={{ color: st.color }}>🎁 {regalo} por día que juegas</p>}
+                    </div>
                   </div>
-                  {n.orden === nivel.orden && (
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ background: n.color }}>
-                      Actual
-                    </span>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
+            <p className="text-[11px] text-gray-400 mt-3">
+              Tu nivel se mide por tus últimos 30 días. Si dejas de venir bajas de nivel, así que mantente activo 🎾
+            </p>
           </div>
         </div>
       )}
