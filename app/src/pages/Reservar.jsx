@@ -361,10 +361,11 @@ function MisReservas({ apiFetch }) {
 
 // ── Constantes del formulario ─────────────────────────────────────────────────
 
-const HORARIOS = [
-  '07:00','08:00','09:00','10:00','11:00','12:00','13:00',
-  '14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00',
-];
+// Cada 30 min (07:00 → 22:00); el backend confirma disponibilidad real por media hora.
+const HORARIOS = [];
+for (let m = 7 * 60; m <= 22 * 60; m += 30) {
+  HORARIOS.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
+}
 
 function hoyISO() { return new Date().toISOString().split('T')[0]; }
 
