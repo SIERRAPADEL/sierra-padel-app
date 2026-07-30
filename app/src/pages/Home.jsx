@@ -352,7 +352,7 @@ function PromoBienvenida({ apiFetch, navigate }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sp-gray font-bold text-[15px]">Tu primera renta a ${promo.precio || 200}</p>
-          <p className="text-gray-400 text-[13px]">Cancha completa 90 min + tu bote de pelotas SP</p>
+          <p className="text-gray-400 text-[13px]">En la compra de un bote de pelotas SP · cancha completa 90 min</p>
         </div>
         <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Reservar →</span>
       </div>

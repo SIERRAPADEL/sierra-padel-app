@@ -545,8 +545,8 @@ export default function Reservar() {
         {done.primera && (
           <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>🎉 Promo de bienvenida aplicada</p>
-            <p style={{ fontSize: 22, fontWeight: 900, color: '#96C800' }}>Primera renta ${done.primera.precio}</p>
-            <p style={{ fontSize: 12, color: '#9090a8', marginTop: 4 }}>Cancha completa · 90 min. Al llegar al club compra tu <strong style={{ color: '#eeeef5' }}>bote de pelotas Sierra Padel</strong> — es la condición de la promo.</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: '#96C800' }}>Renta a ${done.primera.precio}</p>
+            <p style={{ fontSize: 12, color: '#9090a8', marginTop: 4 }}>En la compra de un <strong style={{ color: '#eeeef5' }}>bote de pelotas Sierra Padel</strong> al llegar al club. Cancha completa · 90 min.</p>
           </div>
         )}
         <button className="btn-green w-full max-w-xs" onClick={reset}>Nueva solicitud</button>
@@ -704,8 +704,8 @@ export default function Reservar() {
                 )}
                 {!tienePromo && primera?.elegible && (
                   <div className="mt-2 bg-white/70 rounded-xl px-3 py-2">
-                    <p className="text-xs text-sp-green-dark font-bold">🎉 Tu primera renta: ${primera.precio || 200} la cancha completa</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">Comprando tu bote de pelotas Sierra Padel al llegar al club. Se aplica sola al confirmar.</p>
+                    <p className="text-xs text-sp-green-dark font-bold">🎉 Tu primera renta a ${primera.precio || 200} en la compra de un bote de pelotas Sierra Padel</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">Cancha completa · 90 min. El bote lo compras al llegar al club; la promo se aplica sola al confirmar.</p>
                   </div>
                 )}
                 <button
