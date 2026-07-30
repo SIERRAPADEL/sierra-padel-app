@@ -412,6 +412,15 @@ export default function Reservar() {
   const [error, setError]     = useState('');
   const [done, setDone]       = useState(null);
 
+  // Promo de bienvenida: primera renta $200 (el servidor decide si aplica)
+  const [primera, setPrimera] = useState(null); // { elegible, precio }
+  useEffect(() => {
+    apiFetch('/reservas/primera-renta')
+      .then(d => { if (d?.ok) setPrimera(d); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Horas con disponibilidad (oculta pasadas si es hoy, marca llenas)
   useEffect(() => {
     if (!fecha) { setHorasDisp(null); return; }
@@ -478,11 +487,14 @@ export default function Reservar() {
     });
     setLoading(false);
     if (data.ok) {
+      const esPrimera = data.data?.promo_codigo === 'PRIMERA200';
+      if (esPrimera) setPrimera({ elegible: false }); // ya quedó apartada su promo
       setDone({
         fecha:   tipo === 'cancha' ? fecha      : fechaClase,
         hora:    tipo === 'cancha' ? hora       : horaSel,
         detalle: tipo === 'cancha' ? `Cancha ${cancha}` : `Clase con ${coachSel}`,
         promo:   tienePromo ? { codigo: promoCodigo, precio: promoPrecio, titulo: promoTitulo } : null,
+        primera: esPrimera ? { precio: Number(data.data.promo_precio) || 200 } : null,
       });
     } else {
       setError(data.error || 'No se pudo enviar la solicitud');
@@ -528,6 +540,13 @@ export default function Reservar() {
             <p style={{ fontSize: 22, fontWeight: 900, letterSpacing: '0.12em', color: '#96C800' }}>{done.promo.codigo}</p>
             {done.promo.precio && <p style={{ fontSize: 13, color: '#9090a8', marginTop: 4 }}>Precio preferencial: <strong style={{ color: '#eeeef5' }}>${done.promo.precio}</strong></p>}
             <p style={{ fontSize: 11, color: '#5e5e78', marginTop: 4 }}>El encargado vera este codigo al revisar la reserva</p>
+          </div>
+        )}
+        {done.primera && (
+          <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>🎉 Promo de bienvenida aplicada</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: '#96C800' }}>Primera renta ${done.primera.precio}</p>
+            <p style={{ fontSize: 12, color: '#9090a8', marginTop: 4 }}>Cancha completa · 90 min. Al llegar al club compra tu <strong style={{ color: '#eeeef5' }}>bote de pelotas Sierra Padel</strong> — es la condición de la promo.</p>
           </div>
         )}
         <button className="btn-green w-full max-w-xs" onClick={reset}>Nueva solicitud</button>
@@ -682,6 +701,12 @@ export default function Reservar() {
                 </div>
                 {tienePromo && promoPrecio && (
                   <p className="text-xs text-sp-green-dark mt-1 font-semibold">⚡ Con tu promo: ${promoPrecio}</p>
+                )}
+                {!tienePromo && primera?.elegible && (
+                  <div className="mt-2 bg-white/70 rounded-xl px-3 py-2">
+                    <p className="text-xs text-sp-green-dark font-bold">🎉 Tu primera renta: ${primera.precio || 200} la cancha completa</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">Comprando tu bote de pelotas Sierra Padel al llegar al club. Se aplica sola al confirmar.</p>
+                  </div>
                 )}
                 <button
                   className="btn-green w-full mt-4"
