@@ -18,6 +18,7 @@ export default function Pedir() {
   const [enviando, setEnviando]   = useState(false);
   const [errorEnvio, setErrorEnvio] = useState('');
   const [pedidoOk, setPedidoOk]   = useState(null); // pedido enviado
+  const [pickUbi, setPickUbi]     = useState(false); // selector de ubicación (al confirmar)
   const [catActiva, setCatActiva] = useState('');
   const [habitos, setHabitos]     = useState(null); // { frecuentes, ultimo, total_pedidos }
   const [seguim, setSeguim]       = useState(null); // estado EN VIVO del pedido enviado
@@ -172,8 +173,11 @@ export default function Pedir() {
     return Object.values(carrito).reduce((s, n) => s + n, 0);
   }
 
-  async function enviarPedido() {
-    if (!ubicacion) return;
+  // La ubicación puede llegar directo del selector (al confirmar) — setState es
+  // asíncrono, así que no se puede depender solo del estado en ese primer envío.
+  async function enviarPedido(ubiElegida) {
+    const ubi = ubiElegida || ubicacion;
+    if (!ubi) { setPickUbi(true); return; }
     const items = itemsCarrito();
     if (items.length === 0) return;
 
@@ -190,7 +194,7 @@ export default function Pedir() {
         headers,
         body: JSON.stringify({
           items,
-          ubicacion,
+          ubicacion: ubi,
           notas: notas || undefined,
           cliente_nombre: user?.nombre || 'Cliente',
           cliente_tel:    user?.telefono || undefined,
@@ -305,16 +309,16 @@ export default function Pedir() {
           )}
         </div>
 
-        {/* Ubicacion */}
-        <select
-          value={ubicacion}
-          onChange={e => setUbicacion(e.target.value)}
-          className="w-full rounded-xl px-3.5 py-3 text-[15px] font-bold mb-2.5 outline-none"
-          style={{ background: 'white', border: 'none', color: ubicacion ? '#575757' : '#9ca3af' }}
+        {/* Ubicación elegida, siempre visible y tocable para cambiarla. Si aún no hay,
+            se elige al confirmar el pedido (ahí es cuando el cliente pone atención). */}
+        <button
+          onClick={() => setPickUbi(true)}
+          className="w-full rounded-xl px-3.5 py-3 text-[15px] font-bold mb-2.5 text-left flex items-center justify-between"
+          style={{ background: 'white', color: ubicacion ? '#575757' : '#9ca3af' }}
         >
-          <option value="">¿Donde estas? (selecciona tu ubicacion)</option>
-          {UBICACIONES.map(u => <option key={u} value={u}>{u}</option>)}
-        </select>
+          <span>📍 {ubicacion || '¿Dónde estás?'}</span>
+          <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
+        </button>
 
         {/* Categorías */}
         {!loading && cats.length > 0 && (
@@ -448,14 +452,59 @@ export default function Pedir() {
           />
           {errorEnvio && <p className="text-red-500 text-sm font-semibold text-center mb-2">{errorEnvio}</p>}
           <button
-            onClick={enviarPedido}
-            disabled={enviando || !ubicacion}
-            className={`w-full py-3.5 rounded-xl font-black text-[15px] flex items-center justify-center gap-2 ${
-              !ubicacion ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'
-            }`}
+            onClick={() => enviarPedido()}
+            disabled={enviando}
+            className="w-full py-3.5 rounded-xl font-black text-[15px] flex items-center justify-center gap-2 bg-sp-green text-white disabled:opacity-60"
           >
-            {enviando ? 'Enviando...' : !ubicacion ? 'Selecciona tu ubicacion primero' : `Pedir ${numItems()} items · $${totalCarrito().toFixed(0)}`}
+            {enviando
+              ? 'Enviando...'
+              : ubicacion
+                ? `Pedir ${numItems()} items · $${totalCarrito().toFixed(0)} → 📍 ${ubicacion}`
+                : `Pedir ${numItems()} items · $${totalCarrito().toFixed(0)}`}
           </button>
+        </div>
+      )}
+
+      {/* SELECTOR DE UBICACIÓN — aparece al confirmar (o al tocar el chip de arriba) */}
+      {pickUbi && (
+        <div
+          className="fixed inset-0 z-50 flex items-end"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          onClick={() => setPickUbi(false)}
+        >
+          <div
+            className="w-full bg-white rounded-t-3xl px-4 pt-5 pb-8"
+            style={{ maxWidth: 448, margin: '0 auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-sp-gray font-black text-lg text-center mb-1">📍 ¿Dónde te llevamos tu pedido?</p>
+            {numItems() > 0 && (
+              <p className="text-gray-400 text-[13px] text-center mb-4">
+                {numItems()} {numItems() === 1 ? 'item' : 'items'} · ${totalCarrito().toFixed(0)} — se envía al elegir
+              </p>
+            )}
+            {numItems() === 0 && <p className="text-gray-400 text-[13px] text-center mb-4">Tu pedido llegará hasta donde estés</p>}
+            <div className="grid grid-cols-2 gap-2.5">
+              {UBICACIONES.map(u => (
+                <button
+                  key={u}
+                  onClick={() => {
+                    setUbicacion(u);
+                    setPickUbi(false);
+                    if (numItems() > 0) enviarPedido(u);
+                  }}
+                  className={`py-3.5 rounded-xl text-[15px] font-bold border transition-colors ${
+                    ubicacion === u ? 'bg-sp-green text-white border-sp-green' : 'bg-white text-sp-gray border-gray-200'
+                  }`}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setPickUbi(false)} className="w-full text-center text-gray-400 text-sm font-semibold mt-4">
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
 
