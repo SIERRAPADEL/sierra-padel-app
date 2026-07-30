@@ -18,13 +18,32 @@ export default function Pedir() {
   const [enviando, setEnviando]   = useState(false);
   const [errorEnvio, setErrorEnvio] = useState('');
   const [pedidoOk, setPedidoOk]   = useState(null); // pedido enviado
-  const [pickUbi, setPickUbi]     = useState(false); // selector de ubicación (al confirmar)
+  const [pickUbi, setPickUbi]     = useState(false);      // selector de ubicación
+  const [confirmando, setConfirmando] = useState(false);  // resumen SIEMPRE antes de enviar (anti-dedazo)
+  const [cuentaAbierta, setCuentaAbierta] = useState(null); // { folio, ubicacion } si hay cuenta abierta
   const [catActiva, setCatActiva] = useState('');
   const [busqueda, setBusqueda]   = useState('');   // búsqueda por nombre en TODO el menú
   const [habitos, setHabitos]     = useState(null); // { frecuentes, ultimo, total_pedidos }
   const [seguim, setSeguim]       = useState(null); // estado EN VIVO del pedido enviado
 
-  useEffect(() => { fetchMenu(); fetchHabitos(); }, []);
+  useEffect(() => { fetchMenu(); fetchHabitos(); fetchCuentaAbierta(); }, []);
+
+  // Si el cliente ya tiene cuenta abierta, el sistema sabe dónde está: la ubicación
+  // se pre-llena sola y el pedido se agiliza (solo queda confirmar).
+  async function fetchCuentaAbierta() {
+    const token = localStorage.getItem('sp_token');
+    if (!token) return;
+    try {
+      const r = await fetch(`${BACKEND}/api/pedidos/mi-cuenta-abierta`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await r.json();
+      if (d.ok && d.abierta) {
+        setCuentaAbierta(d);
+        if (d.ubicacion) setUbicacion(d.ubicacion);
+      }
+    } catch { }
+  }
 
   // Seguimiento en vivo del pedido enviado: sondea /mis-pedidos hasta que el encargado
   // lo acepte (preparando) / marque listo/entregado, o lo rechace (cancelado + motivo).
@@ -188,13 +207,12 @@ export default function Pedir() {
     return out.slice(0, 60);
   }
 
-  // La ubicación puede llegar directo del selector (al confirmar) — setState es
-  // asíncrono, así que no se puede depender solo del estado en ese primer envío.
-  async function enviarPedido(ubiElegida) {
-    const ubi = ubiElegida || ubicacion;
+  async function enviarPedido() {
+    const ubi = ubicacion;
     if (!ubi) { setPickUbi(true); return; }
     const items = itemsCarrito();
     if (items.length === 0) return;
+    setConfirmando(false);
 
     setEnviando(true);
     setErrorEnvio('');
@@ -333,7 +351,12 @@ export default function Pedir() {
           className="w-full rounded-xl px-3.5 py-3 text-[15px] font-bold mb-2.5 text-left flex items-center justify-between"
           style={{ background: 'white', color: ubicacion ? '#575757' : '#9ca3af' }}
         >
-          <span>📍 {ubicacion || '¿Dónde estás?'}</span>
+          <span>
+            📍 {ubicacion || '¿Dónde estás?'}
+            {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
+              <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}> · tu cuenta abierta</span>
+            )}
+          </span>
           <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
         </button>
 
@@ -492,23 +515,72 @@ export default function Pedir() {
           />
           {errorEnvio && <p className="text-red-500 text-sm font-semibold text-center mb-2">{errorEnvio}</p>}
           <button
-            onClick={() => enviarPedido()}
+            onClick={() => setConfirmando(true)}
             disabled={enviando}
             className="w-full py-3.5 rounded-xl font-black text-[15px] flex items-center justify-center gap-2 bg-sp-green text-white disabled:opacity-60"
           >
-            {enviando
-              ? 'Enviando...'
-              : ubicacion
-                ? `Pedir ${numItems()} items · $${totalCarrito().toFixed(0)} → 📍 ${ubicacion}`
-                : `Pedir ${numItems()} items · $${totalCarrito().toFixed(0)}`}
+            {enviando ? 'Enviando...' : `Pedir ${numItems()} ${numItems() === 1 ? 'item' : 'items'} · $${totalCarrito().toFixed(0)}`}
           </button>
         </div>
       )}
 
-      {/* SELECTOR DE UBICACIÓN — aparece al confirmar (o al tocar el chip de arriba) */}
-      {pickUbi && (
+      {/* CONFIRMACIÓN — SIEMPRE se revisa el pedido antes de enviar (anti-dedazo) */}
+      {confirmando && (
         <div
           className="fixed inset-0 z-50 flex items-end"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          onClick={() => setConfirmando(false)}
+        >
+          <div
+            className="w-full bg-white rounded-t-3xl px-4 pt-5 pb-8"
+            style={{ maxWidth: 448, margin: '0 auto', maxHeight: '80vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-sp-gray font-black text-lg text-center mb-3">¿Confirmamos tu pedido?</p>
+            <div className="rounded-xl bg-gray-50 px-3.5 py-2.5 mb-3">
+              {itemsCarrito().map((it, i) => (
+                <div key={i} className="flex justify-between py-1 text-[15px]">
+                  <span className="text-sp-gray"><b className="text-sp-green-dark">{it.cantidad}x</b> {it.nombre}</span>
+                  <span className="text-gray-500">${(it.precio * it.cantidad).toFixed(0)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between pt-2 mt-1 border-t border-gray-200 font-black text-sp-green-dark">
+                <span>Total</span><span>${totalCarrito().toFixed(0)}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setPickUbi(true)}
+              className="w-full rounded-xl px-3.5 py-3 mb-3 text-left flex items-center justify-between bg-gray-50 border border-gray-200"
+            >
+              <span className="text-[15px] font-bold text-sp-gray">
+                📍 {ubicacion || 'Falta decir dónde estás'}
+                {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
+                  <span className="text-[12px] text-sp-green-dark"> · tu cuenta abierta</span>
+                )}
+              </span>
+              <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
+            </button>
+            {notas && <p className="text-gray-400 text-[13px] mb-3">📝 {notas}</p>}
+            <button
+              onClick={enviarPedido}
+              disabled={enviando || !ubicacion}
+              className={`w-full py-3.5 rounded-xl font-black text-[15px] ${
+                !ubicacion ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'
+              }`}
+            >
+              {enviando ? 'Enviando...' : !ubicacion ? 'Elige tu ubicación primero' : '✅ Confirmar pedido'}
+            </button>
+            <button onClick={() => setConfirmando(false)} className="w-full text-center text-gray-400 text-sm font-semibold mt-3">
+              Volver
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SELECTOR DE UBICACIÓN — desde el chip de arriba o desde la confirmación */}
+      {pickUbi && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end"
           style={{ background: 'rgba(0,0,0,0.45)' }}
           onClick={() => setPickUbi(false)}
         >
@@ -517,22 +589,13 @@ export default function Pedir() {
             style={{ maxWidth: 448, margin: '0 auto' }}
             onClick={e => e.stopPropagation()}
           >
-            <p className="text-sp-gray font-black text-lg text-center mb-1">📍 ¿Dónde te llevamos tu pedido?</p>
-            {numItems() > 0 && (
-              <p className="text-gray-400 text-[13px] text-center mb-4">
-                {numItems()} {numItems() === 1 ? 'item' : 'items'} · ${totalCarrito().toFixed(0)} — se envía al elegir
-              </p>
-            )}
-            {numItems() === 0 && <p className="text-gray-400 text-[13px] text-center mb-4">Tu pedido llegará hasta donde estés</p>}
+            <p className="text-sp-gray font-black text-lg text-center mb-1">📍 ¿Dónde estás?</p>
+            <p className="text-gray-400 text-[13px] text-center mb-4">Tu pedido llegará hasta donde estés</p>
             <div className="grid grid-cols-2 gap-2.5">
               {UBICACIONES.map(u => (
                 <button
                   key={u}
-                  onClick={() => {
-                    setUbicacion(u);
-                    setPickUbi(false);
-                    if (numItems() > 0) enviarPedido(u);
-                  }}
+                  onClick={() => { setUbicacion(u); setPickUbi(false); }}
                   className={`py-3.5 rounded-xl text-[15px] font-bold border transition-colors ${
                     ubicacion === u ? 'bg-sp-green text-white border-sp-green' : 'bg-white text-sp-gray border-gray-200'
                   }`}
