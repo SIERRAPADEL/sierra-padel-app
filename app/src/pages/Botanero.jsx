@@ -52,7 +52,7 @@ export default function Botanero() {
   return (
     <div className="pb-24">
       <div className="bg-sp-green px-5 pt-5 pb-4">
-        <button onClick={() => navigate('/home')} className="text-white/80 text-sm mb-1">‹ Inicio</button>
+        <button onClick={() => navigate('/ligas')} className="text-white/80 text-sm mb-1">‹ Ligas</button>
         <h1 className="text-white font-black text-2xl">🍻 Viernes Botanero</h1>
         <p className="text-white/85 text-[13px] mt-1 capitalize">{fechaBonita}</p>
       </div>

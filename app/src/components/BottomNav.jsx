@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 const tabs = [
   { to: '/home',    icon: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10', label: 'Inicio' },
   // Reservar salió de la barra (ya está como botón principal en Inicio); su lugar lo toma Ligas.
-  { to: '/botanero',icon: 'M9 21V7h6v14 M3 21v-8h6v8 M15 21v-5h6v5 M3 21h18', label: 'Ligas' },
+  { to: '/ligas',   icon: 'M9 21V7h6v14 M3 21v-8h6v8 M15 21v-5h6v5 M3 21h18', label: 'Ligas' },
   { to: '/torneos', icon: 'M6 9H4.5a2.5 2.5 0 010-5H6 M18 9h1.5a2.5 2.5 0 000-5H18 M4 22h16 M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22 M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22 M18 2H6v7a6 6 0 0012 0V2z', label: 'Torneos' },
   { to: '/pedir',   icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z', label: 'Pedir' },
   { to: '/perfil',  icon: 'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2 M12 3a4 4 0 100 8 4 4 0 000-8z', label: 'Mi cuenta' },
