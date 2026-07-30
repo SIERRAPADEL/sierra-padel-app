@@ -136,6 +136,7 @@ export default function Botanero() {
                   </span>
                   <span className="flex-1 text-sp-gray text-[14px] font-semibold truncate">{r.nombre}</span>
                   <span className="text-gray-400 text-[12px]">{r.sets_g}-{r.sets_p}</span>
+                  <span className="text-gray-400 text-[11px] w-8 text-right">{r.dif_games > 0 ? '+' : ''}{r.dif_games ?? 0}</span>
                   <span className="text-sp-green-dark font-black text-[14px] w-9 text-right">{r.puntos}</span>
                 </div>
               ))}
