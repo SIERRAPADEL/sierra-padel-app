@@ -488,13 +488,14 @@ export default function Reservar() {
     setLoading(false);
     if (data.ok) {
       const esPrimera = data.data?.promo_codigo === 'PRIMERA200';
+      const boteInfo = primera?.bote || null;
       if (esPrimera) setPrimera({ elegible: false }); // ya quedó apartada su promo
       setDone({
         fecha:   tipo === 'cancha' ? fecha      : fechaClase,
         hora:    tipo === 'cancha' ? hora       : horaSel,
         detalle: tipo === 'cancha' ? `Cancha ${cancha}` : `Clase con ${coachSel}`,
         promo:   tienePromo ? { codigo: promoCodigo, precio: promoPrecio, titulo: promoTitulo } : null,
-        primera: esPrimera ? { precio: Number(data.data.promo_precio) || 200 } : null,
+        primera: esPrimera ? { precio: Number(data.data.promo_precio) || 200, bote: boteInfo } : null,
       });
     } else {
       setError(data.error || 'No se pudo enviar la solicitud');
@@ -546,7 +547,10 @@ export default function Reservar() {
           <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>🎉 Promo de bienvenida aplicada</p>
             <p style={{ fontSize: 22, fontWeight: 900, color: '#96C800' }}>Renta a ${done.primera.precio}</p>
-            <p style={{ fontSize: 12, color: '#9090a8', marginTop: 4 }}>En la compra de un <strong style={{ color: '#eeeef5' }}>bote de pelotas Sierra Padel</strong> al llegar al club. Cancha completa · 90 min.</p>
+            <p style={{ fontSize: 12, color: '#9090a8', marginTop: 4 }}>
+              Comprando 1 <strong style={{ color: '#eeeef5' }}>bote de pelotas Sierra Padel{done.primera.bote?.precio ? ` ($${done.primera.bote.precio})` : ''}</strong> al llegar al club.
+              {done.primera.bote?.precio ? ` Total a pagar: $${done.primera.precio + done.primera.bote.precio}.` : ''} Cancha completa · 90 min. Sin el bote, la promo no aplica.
+            </p>
           </div>
         )}
         <button className="btn-green w-full max-w-xs" onClick={reset}>Nueva solicitud</button>
@@ -704,8 +708,14 @@ export default function Reservar() {
                 )}
                 {!tienePromo && primera?.elegible && (
                   <div className="mt-2 bg-white/70 rounded-xl px-3 py-2">
-                    <p className="text-xs text-sp-green-dark font-bold">🎉 Tu primera renta a ${primera.precio || 200} en la compra de un bote de pelotas Sierra Padel</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">Cancha completa · 90 min. El bote lo compras al llegar al club; la promo se aplica sola al confirmar.</p>
+                    <p className="text-xs text-sp-green-dark font-bold">
+                      🎉 Tu primera renta a ${primera.precio || 200} comprando 1 bote de pelotas Sierra Padel{primera.bote?.precio ? ` ($${primera.bote.precio})` : ''}
+                    </p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      Cancha completa · 90 min. El bote se paga al llegar al club
+                      {primera.bote?.precio ? ` — total: $${(primera.precio || 200) + primera.bote.precio} ($${primera.precio || 200} cancha + $${primera.bote.precio} bote)` : ''}.
+                      Válida una sola vez y solo para quien hace la reservación. Se aplica sola al confirmar.
+                    </p>
                   </div>
                 )}
                 <button
