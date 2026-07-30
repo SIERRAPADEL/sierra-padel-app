@@ -8,13 +8,15 @@ export default function Botanero() {
   const navigate = useNavigate();
   const { apiFetch } = useApi();
   const [data, setData] = useState(null);
+  const [ranking, setRanking] = useState([]);
   const [loading, setLoading] = useState(true);
   const [accion, setAccion] = useState(false);
   const [error, setError] = useState('');
 
   const cargar = useCallback(async () => {
-    const d = await apiFetch('/botanero/estado');
+    const [d, r] = await Promise.all([apiFetch('/botanero/estado'), apiFetch('/botanero/ranking')]);
     if (d.ok) setData(d.data);
+    if (r.ok) setRanking(r.data || []);
     setLoading(false);
   }, [apiFetch]);
 
@@ -101,7 +103,9 @@ export default function Botanero() {
               <div className="mt-3">
                 {t.mi_estado === 'apuntado' && (
                   <div className="flex items-center gap-2">
-                    <span className="flex-1 text-center text-[14px] font-bold text-green-600 bg-green-50 rounded-xl py-2.5">✓ ¡Vas! Nos vemos el viernes</span>
+                    <span className="flex-1 text-center text-[14px] font-bold text-green-600 bg-green-50 rounded-xl py-2.5">
+                      {t.mi_cancha ? `✓ ¡Vas! Te toca la Cancha ${t.mi_cancha}` : '✓ ¡Vas! Nos vemos el viernes'}
+                    </span>
                     <button onClick={() => bajarse(t.turno)} disabled={accion} className="text-[13px] text-gray-400 underline px-2">Bajarme</button>
                   </div>
                 )}
@@ -120,6 +124,25 @@ export default function Botanero() {
             </div>
           );
         })}
+
+        {ranking.length > 0 && (
+          <div className="card py-4">
+            <p className="text-sp-gray font-bold text-[15px] mb-2">🏆 Ranking de la liga</p>
+            <div className="flex flex-col">
+              {ranking.slice(0, 10).map(r => (
+                <div key={r.cliente_id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 last:border-0">
+                  <span className="w-7 text-center font-black text-[14px]">
+                    {r.pos === 1 ? '🥇' : r.pos === 2 ? '🥈' : r.pos === 3 ? '🥉' : r.pos}
+                  </span>
+                  <span className="flex-1 text-sp-gray text-[14px] font-semibold truncate">{r.nombre}</span>
+                  <span className="text-gray-400 text-[12px]">{r.sets_g}-{r.sets_p}</span>
+                  <span className="text-sp-green-dark font-black text-[14px] w-9 text-right">{r.puntos}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-gray-400 text-[11px] mt-2">2 pts por set ganado + 1 por venir a jugar. Tu récord decide tu cancha.</p>
+          </div>
+        )}
 
         <p className="text-gray-400 text-[12px] text-center px-4 leading-relaxed">
           La cuota se paga en el club al llegar. Si se libera un lugar y estás en espera, te avisamos con una notificación.
