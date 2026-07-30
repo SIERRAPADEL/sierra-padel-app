@@ -20,6 +20,7 @@ export default function Pedir() {
   const [pedidoOk, setPedidoOk]   = useState(null); // pedido enviado
   const [pickUbi, setPickUbi]     = useState(false); // selector de ubicación (al confirmar)
   const [catActiva, setCatActiva] = useState('');
+  const [busqueda, setBusqueda]   = useState('');   // búsqueda por nombre en TODO el menú
   const [habitos, setHabitos]     = useState(null); // { frecuentes, ultimo, total_pedidos }
   const [seguim, setSeguim]       = useState(null); // estado EN VIVO del pedido enviado
 
@@ -173,6 +174,20 @@ export default function Pedir() {
     return Object.values(carrito).reduce((s, n) => s + n, 0);
   }
 
+  // Búsqueda por nombre en todas las categorías (sin acentos, may/min da igual)
+  const normTxt = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  function itemsBusqueda() {
+    const q = normTxt(busqueda.trim());
+    if (!q) return [];
+    const out = [];
+    for (const [grupo, items] of Object.entries(menu)) {
+      for (const it of items) {
+        if (it.disponible && normTxt(it.nombre).includes(q)) out.push({ ...it, _grupo: grupo });
+      }
+    }
+    return out.slice(0, 60);
+  }
+
   // La ubicación puede llegar directo del selector (al confirmar) — setState es
   // asíncrono, así que no se puede depender solo del estado en ese primer envío.
   async function enviarPedido(ubiElegida) {
@@ -292,6 +307,8 @@ export default function Pedir() {
 
   const cats = Object.keys(menu);
   const itemsActivos = (menu[catActiva] || []).filter(i => i.disponible);
+  const enBusqueda   = !!busqueda.trim();
+  const itemsMostrar = enBusqueda ? itemsBusqueda() : itemsActivos;
   const frecVivos = frecuentesVivos();
   const ultDisp   = ultimoDisponible();
 
@@ -320,8 +337,26 @@ export default function Pedir() {
           <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
         </button>
 
-        {/* Categorías */}
-        {!loading && cats.length > 0 && (
+        {/* Buscador por nombre (todo el menú) */}
+        <div className="relative mb-2.5">
+          <input
+            type="text"
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="🔎 Buscar... (ej. corona, tacos, café)"
+            className="w-full rounded-xl px-3.5 py-3 text-[15px] font-semibold outline-none"
+            style={{ background: 'white', border: 'none', color: '#575757' }}
+          />
+          {busqueda && (
+            <button
+              onClick={() => setBusqueda('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-100 text-gray-500 font-black"
+            >✕</button>
+          )}
+        </div>
+
+        {/* Categorías (se ocultan mientras buscas) */}
+        {!loading && cats.length > 0 && !busqueda.trim() && (
           <div className="flex gap-2 overflow-x-auto pb-0.5">
             {cats.map(cat => (
               <button
@@ -341,8 +376,8 @@ export default function Pedir() {
       {/* CONTENIDO */}
       <div className="px-4 pt-4">
 
-        {/* ⭐ LO DE SIEMPRE — personalización por hábitos del cliente */}
-        {!loading && (ultDisp > 0 || frecVivos.length > 0) && (
+        {/* ⭐ LO DE SIEMPRE — personalización por hábitos del cliente (oculto al buscar) */}
+        {!loading && !enBusqueda && (ultDisp > 0 || frecVivos.length > 0) && (
           <div className="card mb-4" style={{ borderColor: '#d5e8a8' }}>
             <div className="flex items-center gap-2 mb-3">
               <span style={{ fontSize: 22 }}>⭐</span>
@@ -395,16 +430,18 @@ export default function Pedir() {
           </div>
         )}
 
-        {!loading && itemsActivos.length === 0 && (
+        {!loading && itemsMostrar.length === 0 && (
           <div className="text-center py-14">
-            <div style={{ fontSize: 36, marginBottom: 10 }}>🍽</div>
-            <p className="text-gray-400 font-bold text-sm">Sin productos disponibles</p>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>{enBusqueda ? '🔎' : '🍽'}</div>
+            <p className="text-gray-400 font-bold text-sm">
+              {enBusqueda ? `Sin resultados para "${busqueda.trim()}"` : 'Sin productos disponibles'}
+            </p>
           </div>
         )}
 
         {!loading && (
           <div className="flex flex-col gap-2.5">
-            {itemsActivos.map(item => {
+            {itemsMostrar.map(item => {
               const cant = carrito[item.id] || 0;
               return (
                 <div
@@ -415,7 +452,10 @@ export default function Pedir() {
                   <div className="flex-1">
                     <p className="text-sp-gray font-bold text-base mb-0.5">{item.nombre}</p>
                     {item.descripcion && <p className="text-gray-400 text-[13px] mb-1">{item.descripcion}</p>}
-                    <p className="text-sp-green-dark font-black text-base">${item.precio}</p>
+                    <p className="text-sp-green-dark font-black text-base">
+                      ${item.precio}
+                      {enBusqueda && item._grupo && <span className="text-gray-300 text-[12px] font-semibold"> · {item._grupo}</span>}
+                    </p>
                   </div>
                   {cant === 0 ? (
                     <button
