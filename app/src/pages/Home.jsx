@@ -117,10 +117,10 @@ function MisReservas({ apiFetch, navigate }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sp-gray font-bold text-[15px] truncate">
-                  {r.cancha_nombre || r.cancha || `Cancha ${r.cancha_id || ''}`}
+                  {r.tipo === 'clase' ? (r.instructor ? `Clase con ${r.instructor}` : 'Clase') : `Cancha ${r.cancha}`}
                 </p>
                 <p className="text-gray-400 text-[13px]">
-                  {formatHora(r.hora_inicio)} – {formatHora(r.hora_fin)}
+                  {formatHora(r.hora_inicio)}{r.duracion_minutos ? ` · ${r.duracion_minutos} min` : ''}
                 </p>
               </div>
               <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
