@@ -667,13 +667,14 @@ export default function Torneos() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Un torneo es "pasado" cuando todas sus categorías terminaron (o su fecha_fin ya quedó atrás).
-  // Separarlos evita que un torneo viejo se confunda con uno abierto.
+  // Un torneo es "pasado" cuando su FECHA ya quedó atrás (la fecha manda — muchos torneos
+  // nunca se marcan "finalizado" en sus categorías) o cuando todas sus categorías terminaron.
   const esPasado = (t) => {
+    const hoy = new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10); // hoy en Monclova
+    const fin = String(t.fecha_fin || t.fecha_inicio || '').slice(0, 10);
+    if (fin && fin < hoy) return true;
     const cats = t.torneo_categorias || [];
-    if (cats.length) return cats.every(c => c.estado === 'finalizado');
-    const hoy = new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
-    return !!t.fecha_fin && String(t.fecha_fin).slice(0, 10) < hoy;
+    return cats.length > 0 && cats.every(c => c.estado === 'finalizado');
   };
   const proximos = (torneos || []).filter(t => !esPasado(t));
   const pasados  = (torneos || []).filter(esPasado);
