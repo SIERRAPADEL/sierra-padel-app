@@ -15,6 +15,7 @@ import Noticias from './pages/Noticias';
 import Pedir from './pages/Pedir';
 import Terminos from './pages/Terminos';
 import Retas from './pages/Retas';
+import Botanero from './pages/Botanero';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -35,6 +36,7 @@ function AppRoutes() {
       <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route path="/reservar" element={<ProtectedRoute><Reservar /></ProtectedRoute>} />
       <Route path="/retas" element={<ProtectedRoute><Retas /></ProtectedRoute>} />
+      <Route path="/botanero" element={<ProtectedRoute><Botanero /></ProtectedRoute>} />
       <Route path="/torneos" element={<ProtectedRoute><Torneos /></ProtectedRoute>} />
       <Route path="/puntos" element={<ProtectedRoute><Puntos /></ProtectedRoute>} />
       <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />

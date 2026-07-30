@@ -440,6 +440,23 @@ export default function Home() {
         {/* Novedades (teaser de Noticias) */}
         <Novedades navigate={navigate} />
 
+        {/* Liga Viernes Botanero */}
+        <button
+          onClick={() => navigate('/botanero')}
+          className="text-left active:scale-[0.98] transition-transform"
+        >
+          <div className="card flex items-center gap-3 py-3">
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#2e1b06', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
+              🍻
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sp-gray font-bold text-[15px]">Viernes Botanero</p>
+              <p className="text-gray-400 text-[13px]">Liga individual · 6:30 $100 · 8:00 $50</p>
+            </div>
+            <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Ver →</span>
+          </div>
+        </button>
+
         {/* Promos reclamables */}
         <button
           onClick={() => navigate('/puntos', { state: { tab: 'promos' } })}
