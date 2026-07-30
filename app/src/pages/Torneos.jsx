@@ -651,7 +651,7 @@ export default function Torneos() {
   const { apiFetch } = useApi();
   const { user }     = useAuth();
 
-  const [mainTab, setMainTab]     = useState('calendario');
+  const [mainTab, setMainTab]     = useState('proximos');
   const [torneos, setTorneos]     = useState(null);
   const [loading, setLoading]     = useState(true);
   const [view, setView]           = useState(null); // null | 'inscripcion' | 'detalle'
@@ -667,10 +667,16 @@ export default function Torneos() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Torneos con resultados disponibles
-  const torneoConResultados = (torneos || []).filter(t =>
-    ['draw_generado','calendario_publicado','en_curso','finalizado'].includes(torneoEstado(t))
-  );
+  // Un torneo es "pasado" cuando todas sus categorías terminaron (o su fecha_fin ya quedó atrás).
+  // Separarlos evita que un torneo viejo se confunda con uno abierto.
+  const esPasado = (t) => {
+    const cats = t.torneo_categorias || [];
+    if (cats.length) return cats.every(c => c.estado === 'finalizado');
+    const hoy = new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
+    return !!t.fecha_fin && String(t.fecha_fin).slice(0, 10) < hoy;
+  };
+  const proximos = (torneos || []).filter(t => !esPasado(t));
+  const pasados  = (torneos || []).filter(esPasado);
 
   const miTelefono = user?.telefono || '';
 
@@ -690,7 +696,7 @@ export default function Torneos() {
         <p className="text-white font-black text-lg pt-3 mb-3">{headerLabel}</p>
         {!view && (
           <div className="flex gap-1">
-            {[['calendario','Calendario'],['ranking','Ranking']].map(([v,label]) => (
+            {[['proximos','Próximos'],['pasados','Pasados'],['ranking','Ranking']].map(([v,label]) => (
               <button
                 key={v}
                 onClick={() => setMainTab(v)}
@@ -719,18 +725,22 @@ export default function Torneos() {
         </div>
       )}
 
-      {/* ── CALENDARIO ── */}
-      {!view && mainTab === 'calendario' && (
+      {/* ── PRÓXIMOS / PASADOS ── */}
+      {!view && (mainTab === 'proximos' || mainTab === 'pasados') && (
         <div className="px-4 py-4 flex flex-col gap-3 overflow-y-auto">
           {loading && <Spinner />}
-          {!loading && torneos?.length === 0 && (
+          {!loading && (mainTab === 'proximos' ? proximos : pasados).length === 0 && (
             <div className="card text-center py-12">
               <p className="text-3xl mb-3">🏆</p>
-              <p className="text-gray-500 font-medium">Sin torneos por ahora</p>
-              <p className="text-gray-400 text-sm mt-1">Pronto habra novedades</p>
+              <p className="text-gray-500 font-medium">
+                {mainTab === 'proximos' ? 'Sin torneos por ahora' : 'Aún no hay torneos pasados'}
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                {mainTab === 'proximos' ? 'Pronto habra novedades' : 'Aquí quedará el historial'}
+              </p>
             </div>
           )}
-          {!loading && (torneos || []).map(t => (
+          {!loading && (mainTab === 'proximos' ? proximos : pasados).map(t => (
             <div key={t.id} className="card">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1 pr-3">
@@ -742,7 +752,7 @@ export default function Torneos() {
                     </p>
                   )}
                 </div>
-                <EstadoBadge estado={torneoEstado(t)} />
+                <EstadoBadge estado={esPasado(t) ? 'finalizado' : torneoEstado(t)} />
               </div>
               {t.descripcion && (
                 <p className="text-sm text-gray-500 mb-3">{t.descripcion}</p>

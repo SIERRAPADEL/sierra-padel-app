@@ -9,14 +9,18 @@ export default function Botanero() {
   const { apiFetch } = useApi();
   const [data, setData] = useState(null);
   const [ranking, setRanking] = useState([]);
+  const [juegos, setJuegos] = useState(null);
   const [loading, setLoading] = useState(true);
   const [accion, setAccion] = useState(false);
   const [error, setError] = useState('');
 
   const cargar = useCallback(async () => {
-    const [d, r] = await Promise.all([apiFetch('/botanero/estado'), apiFetch('/botanero/ranking')]);
+    const [d, r, j] = await Promise.all([
+      apiFetch('/botanero/estado'), apiFetch('/botanero/ranking'), apiFetch('/botanero/juegos'),
+    ]);
     if (d.ok) setData(d.data);
     if (r.ok) setRanking(r.data || []);
+    if (j.ok) setJuegos(j.data);
     setLoading(false);
   }, [apiFetch]);
 
@@ -63,6 +67,13 @@ export default function Botanero() {
           </p>
         </div>
 
+        {ranking.length === 0 && data?.fecha && (
+          <div className="rounded-2xl px-4 py-3 text-center" style={{ background: '#2e1b06' }}>
+            <p className="text-white font-black text-[15px]">🚀 ¡La liga arranca el {fechaBonita}!</p>
+            <p className="text-amber-200/90 text-[12px] mt-0.5">Cuotas con precio de lanzamiento — apúntate y estrena el ranking.</p>
+          </div>
+        )}
+
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
         {loading ? (
@@ -81,6 +92,7 @@ export default function Botanero() {
                 <div className="text-right">
                   <p className="text-sp-green-dark font-black text-xl">${t.precio}</p>
                   <p className="text-gray-400 text-[12px]">por jugador</p>
+                  <p className="text-amber-600 text-[11px] font-bold">precio de lanzamiento</p>
                 </div>
               </div>
 
@@ -142,6 +154,32 @@ export default function Botanero() {
               ))}
             </div>
             <p className="text-gray-400 text-[11px] mt-2">2 pts por set ganado + 1 por venir a jugar. Tu récord decide tu cancha.</p>
+          </div>
+        )}
+
+        {juegos?.turnos?.length > 0 && (
+          <div className="card py-4">
+            <p className="text-sp-gray font-bold text-[15px]">🎾 Juegos de la última jornada</p>
+            <p className="text-gray-400 text-[12px] mb-2 capitalize">
+              {new Date(juegos.fecha + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+            {juegos.turnos.map(tu => (
+              <div key={tu.turno} className="mt-2">
+                <p className="text-gray-400 text-[11px] font-bold uppercase tracking-wide">Turno {tu.hora}</p>
+                {tu.canchas.map(c => (
+                  <div key={c.cancha} className="mt-1.5 rounded-xl bg-gray-50 px-3 py-2">
+                    <p className="text-[12px] font-bold text-sp-gray mb-1">Cancha {c.cancha}</p>
+                    {c.sets.map(s => (
+                      <div key={s.set} className="flex items-center gap-2 py-0.5 text-[13px]">
+                        <span className={`flex-1 truncate text-right ${s.games_a > s.games_b ? 'font-bold text-sp-gray' : 'text-gray-500'}`}>{s.a}</span>
+                        <span className="font-black text-sp-green-dark whitespace-nowrap">{s.games_a}–{s.games_b}</span>
+                        <span className={`flex-1 truncate ${s.games_b > s.games_a ? 'font-bold text-sp-gray' : 'text-gray-500'}`}>{s.b}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         )}
 
