@@ -361,10 +361,11 @@ function MisReservas({ apiFetch }) {
 
 // ── Constantes del formulario ─────────────────────────────────────────────────
 
-const HORARIOS = [
-  '07:00','08:00','09:00','10:00','11:00','12:00','13:00',
-  '14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00',
-];
+// Cada 30 min (07:00 → 22:00); el backend confirma disponibilidad real por media hora.
+const HORARIOS = [];
+for (let m = 7 * 60; m <= 22 * 60; m += 30) {
+  HORARIOS.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
+}
 
 function hoyISO() { return new Date().toISOString().split('T')[0]; }
 
@@ -411,6 +412,15 @@ export default function Reservar() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [done, setDone]       = useState(null);
+
+  // Promo de bienvenida: primera renta $200 (el servidor decide si aplica)
+  const [primera, setPrimera] = useState(null); // { elegible, precio }
+  useEffect(() => {
+    apiFetch('/reservas/primera-renta')
+      .then(d => { if (d?.ok) setPrimera(d); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Horas con disponibilidad (oculta pasadas si es hoy, marca llenas)
   useEffect(() => {
@@ -478,11 +488,15 @@ export default function Reservar() {
     });
     setLoading(false);
     if (data.ok) {
+      const esPrimera = data.data?.promo_codigo === 'PRIMERA200';
+      const boteInfo = primera?.bote || null;
+      if (esPrimera) setPrimera({ elegible: false }); // ya quedó apartada su promo
       setDone({
         fecha:   tipo === 'cancha' ? fecha      : fechaClase,
         hora:    tipo === 'cancha' ? hora       : horaSel,
         detalle: tipo === 'cancha' ? `Cancha ${cancha}` : `Clase con ${coachSel}`,
         promo:   tienePromo ? { codigo: promoCodigo, precio: promoPrecio, titulo: promoTitulo } : null,
+        primera: esPrimera ? { precio: Number(data.data.promo_precio) || 200, bote: boteInfo } : null,
       });
     } else {
       setError(data.error || 'No se pudo enviar la solicitud');
@@ -528,6 +542,16 @@ export default function Reservar() {
             <p style={{ fontSize: 22, fontWeight: 900, letterSpacing: '0.12em', color: '#96C800' }}>{done.promo.codigo}</p>
             {done.promo.precio && <p style={{ fontSize: 13, color: '#9090a8', marginTop: 4 }}>Precio preferencial: <strong style={{ color: '#eeeef5' }}>${done.promo.precio}</strong></p>}
             <p style={{ fontSize: 11, color: '#5e5e78', marginTop: 4 }}>El encargado vera este codigo al revisar la reserva</p>
+          </div>
+        )}
+        {done.primera && (
+          <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>🎉 Promo de bienvenida aplicada</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: '#96C800' }}>Renta a ${done.primera.precio}</p>
+            <p style={{ fontSize: 12, color: '#9090a8', marginTop: 4 }}>
+              Comprando 1 <strong style={{ color: '#eeeef5' }}>bote de pelotas Sierra Padel{done.primera.bote?.precio ? ` ($${done.primera.bote.precio})` : ''}</strong> al llegar al club.
+              {done.primera.bote?.precio ? ` Total a pagar: $${done.primera.precio + done.primera.bote.precio}.` : ''} Cancha completa · 90 min. Sin el bote, la promo no aplica.
+            </p>
           </div>
         )}
         <button className="btn-green w-full max-w-xs" onClick={reset}>Nueva solicitud</button>
@@ -682,6 +706,18 @@ export default function Reservar() {
                 </div>
                 {tienePromo && promoPrecio && (
                   <p className="text-xs text-sp-green-dark mt-1 font-semibold">⚡ Con tu promo: ${promoPrecio}</p>
+                )}
+                {!tienePromo && primera?.elegible && (
+                  <div className="mt-2 bg-white/70 rounded-xl px-3 py-2">
+                    <p className="text-xs text-sp-green-dark font-bold">
+                      🎉 Tu primera renta a ${primera.precio || 200} comprando 1 bote de pelotas Sierra Padel{primera.bote?.precio ? ` ($${primera.bote.precio})` : ''}
+                    </p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      Cancha completa · 90 min. El bote se paga al llegar al club
+                      {primera.bote?.precio ? ` — total: $${(primera.precio || 200) + primera.bote.precio} ($${primera.precio || 200} cancha + $${primera.bote.precio} bote)` : ''}.
+                      Válida una sola vez y solo para quien hace la reservación. Se aplica sola al confirmar.
+                    </p>
+                  </div>
                 )}
                 <button
                   className="btn-green w-full mt-4"

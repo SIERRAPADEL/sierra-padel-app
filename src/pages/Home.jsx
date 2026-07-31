@@ -117,10 +117,10 @@ function MisReservas({ apiFetch, navigate }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sp-gray font-bold text-[15px] truncate">
-                  {r.cancha_nombre || r.cancha || `Cancha ${r.cancha_id || ''}`}
+                  {r.tipo === 'clase' ? (r.instructor ? `Clase con ${r.instructor}` : 'Clase') : `Cancha ${r.cancha}`}
                 </p>
                 <p className="text-gray-400 text-[13px]">
-                  {formatHora(r.hora_inicio)} – {formatHora(r.hora_fin)}
+                  {formatHora(r.hora_inicio)}{r.duracion_minutos ? ` · ${r.duracion_minutos} min` : ''}
                 </p>
               </div>
               <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
@@ -334,6 +334,34 @@ function Novedades({ navigate }) {
   );
 }
 
+// ── Promo de bienvenida: primera renta $200 (solo si el cliente aún la tiene) ──
+function PromoBienvenida({ apiFetch, navigate }) {
+  const [promo, setPromo] = useState(null);
+  useEffect(() => {
+    apiFetch('/reservas/primera-renta')
+      .then(d => { if (d?.ok && d.elegible) setPromo(d); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  if (!promo) return null;
+  return (
+    <button onClick={() => navigate('/reservar')} className="text-left active:scale-[0.98] transition-transform">
+      <div className="card flex items-center gap-3 py-3" style={{ border: '1.5px solid #96C800' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 10, background: '#1a2a00', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
+          🎉
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sp-gray font-bold text-[15px]">Tu primera renta a ${promo.precio || 200}</p>
+          <p className="text-gray-400 text-[13px]">
+            Comprando 1 bote de pelotas SP{promo.bote?.precio ? ` ($${promo.bote.precio})` : ''} · cancha completa 90 min
+          </p>
+        </div>
+        <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Reservar →</span>
+      </div>
+    </button>
+  );
+}
+
 // ── Pagina principal ──────────────────────────────────────────────────────────
 export default function Home() {
   const { user, updateUser } = useAuth();
@@ -395,6 +423,9 @@ export default function Home() {
         {/* Promo Express: sensible al tiempo, siempre hasta arriba */}
         <PromoExpressBanner />
 
+        {/* Bienvenida: primera renta $200 (solo clientes que aún la tienen) */}
+        <PromoBienvenida apiFetch={apiFetch} navigate={navigate} />
+
         {/* Accesos rápidos */}
         <div className="grid grid-cols-2 gap-3">
           <button
@@ -439,6 +470,23 @@ export default function Home() {
 
         {/* Novedades (teaser de Noticias) */}
         <Novedades navigate={navigate} />
+
+        {/* Liga Viernes Botanero */}
+        <button
+          onClick={() => navigate('/botanero')}
+          className="text-left active:scale-[0.98] transition-transform"
+        >
+          <div className="card flex items-center gap-3 py-3">
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#2e1b06', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
+              🍻
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sp-gray font-bold text-[15px]">Viernes Botanero</p>
+              <p className="text-gray-400 text-[13px]">Liga individual · 6:30 $100 · 8:00 $50</p>
+            </div>
+            <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Ver →</span>
+          </div>
+        </button>
 
         {/* Promos reclamables */}
         <button

@@ -18,11 +18,32 @@ export default function Pedir() {
   const [enviando, setEnviando]   = useState(false);
   const [errorEnvio, setErrorEnvio] = useState('');
   const [pedidoOk, setPedidoOk]   = useState(null); // pedido enviado
+  const [pickUbi, setPickUbi]     = useState(false);      // selector de ubicación
+  const [confirmando, setConfirmando] = useState(false);  // resumen SIEMPRE antes de enviar (anti-dedazo)
+  const [cuentaAbierta, setCuentaAbierta] = useState(null); // { folio, ubicacion } si hay cuenta abierta
   const [catActiva, setCatActiva] = useState('');
+  const [busqueda, setBusqueda]   = useState('');   // búsqueda por nombre en TODO el menú
   const [habitos, setHabitos]     = useState(null); // { frecuentes, ultimo, total_pedidos }
   const [seguim, setSeguim]       = useState(null); // estado EN VIVO del pedido enviado
 
-  useEffect(() => { fetchMenu(); fetchHabitos(); }, []);
+  useEffect(() => { fetchMenu(); fetchHabitos(); fetchCuentaAbierta(); }, []);
+
+  // Si el cliente ya tiene cuenta abierta, el sistema sabe dónde está: la ubicación
+  // se pre-llena sola y el pedido se agiliza (solo queda confirmar).
+  async function fetchCuentaAbierta() {
+    const token = localStorage.getItem('sp_token');
+    if (!token) return;
+    try {
+      const r = await fetch(`${BACKEND}/api/pedidos/mi-cuenta-abierta`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await r.json();
+      if (d.ok && d.abierta) {
+        setCuentaAbierta(d);
+        if (d.ubicacion) setUbicacion(d.ubicacion);
+      }
+    } catch { }
+  }
 
   // Seguimiento en vivo del pedido enviado: sondea /mis-pedidos hasta que el encargado
   // lo acepte (preparando) / marque listo/entregado, o lo rechace (cancelado + motivo).
@@ -172,10 +193,26 @@ export default function Pedir() {
     return Object.values(carrito).reduce((s, n) => s + n, 0);
   }
 
+  // Búsqueda por nombre en todas las categorías (sin acentos, may/min da igual)
+  const normTxt = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  function itemsBusqueda() {
+    const q = normTxt(busqueda.trim());
+    if (!q) return [];
+    const out = [];
+    for (const [grupo, items] of Object.entries(menu)) {
+      for (const it of items) {
+        if (it.disponible && normTxt(it.nombre).includes(q)) out.push({ ...it, _grupo: grupo });
+      }
+    }
+    return out.slice(0, 60);
+  }
+
   async function enviarPedido() {
-    if (!ubicacion) return;
+    const ubi = ubicacion;
+    if (!ubi) { setPickUbi(true); return; }
     const items = itemsCarrito();
     if (items.length === 0) return;
+    setConfirmando(false);
 
     setEnviando(true);
     setErrorEnvio('');
@@ -190,7 +227,7 @@ export default function Pedir() {
         headers,
         body: JSON.stringify({
           items,
-          ubicacion,
+          ubicacion: ubi,
           notas: notas || undefined,
           cliente_nombre: user?.nombre || 'Cliente',
           cliente_tel:    user?.telefono || undefined,
@@ -288,6 +325,8 @@ export default function Pedir() {
 
   const cats = Object.keys(menu);
   const itemsActivos = (menu[catActiva] || []).filter(i => i.disponible);
+  const enBusqueda   = !!busqueda.trim();
+  const itemsMostrar = enBusqueda ? itemsBusqueda() : itemsActivos;
   const frecVivos = frecuentesVivos();
   const ultDisp   = ultimoDisponible();
 
@@ -305,19 +344,42 @@ export default function Pedir() {
           )}
         </div>
 
-        {/* Ubicacion */}
-        <select
-          value={ubicacion}
-          onChange={e => setUbicacion(e.target.value)}
-          className="w-full rounded-xl px-3.5 py-3 text-[15px] font-bold mb-2.5 outline-none"
-          style={{ background: 'white', border: 'none', color: ubicacion ? '#575757' : '#9ca3af' }}
+        {/* Ubicación elegida, siempre visible y tocable para cambiarla. Si aún no hay,
+            se elige al confirmar el pedido (ahí es cuando el cliente pone atención). */}
+        <button
+          onClick={() => setPickUbi(true)}
+          className="w-full rounded-xl px-3.5 py-3 text-[15px] font-bold mb-2.5 text-left flex items-center justify-between"
+          style={{ background: 'white', color: ubicacion ? '#575757' : '#9ca3af' }}
         >
-          <option value="">¿Donde estas? (selecciona tu ubicacion)</option>
-          {UBICACIONES.map(u => <option key={u} value={u}>{u}</option>)}
-        </select>
+          <span>
+            📍 {ubicacion || '¿Dónde estás?'}
+            {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
+              <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}> · tu cuenta abierta</span>
+            )}
+          </span>
+          <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
+        </button>
 
-        {/* Categorías */}
-        {!loading && cats.length > 0 && (
+        {/* Buscador por nombre (todo el menú) */}
+        <div className="relative mb-2.5">
+          <input
+            type="text"
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="🔎 Buscar... (ej. corona, tacos, café)"
+            className="w-full rounded-xl px-3.5 py-3 text-[15px] font-semibold outline-none"
+            style={{ background: 'white', border: 'none', color: '#575757' }}
+          />
+          {busqueda && (
+            <button
+              onClick={() => setBusqueda('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-100 text-gray-500 font-black"
+            >✕</button>
+          )}
+        </div>
+
+        {/* Categorías (se ocultan mientras buscas) */}
+        {!loading && cats.length > 0 && !busqueda.trim() && (
           <div className="flex gap-2 overflow-x-auto pb-0.5">
             {cats.map(cat => (
               <button
@@ -337,8 +399,8 @@ export default function Pedir() {
       {/* CONTENIDO */}
       <div className="px-4 pt-4">
 
-        {/* ⭐ LO DE SIEMPRE — personalización por hábitos del cliente */}
-        {!loading && (ultDisp > 0 || frecVivos.length > 0) && (
+        {/* ⭐ LO DE SIEMPRE — personalización por hábitos del cliente (oculto al buscar) */}
+        {!loading && !enBusqueda && (ultDisp > 0 || frecVivos.length > 0) && (
           <div className="card mb-4" style={{ borderColor: '#d5e8a8' }}>
             <div className="flex items-center gap-2 mb-3">
               <span style={{ fontSize: 22 }}>⭐</span>
@@ -391,16 +453,18 @@ export default function Pedir() {
           </div>
         )}
 
-        {!loading && itemsActivos.length === 0 && (
+        {!loading && itemsMostrar.length === 0 && (
           <div className="text-center py-14">
-            <div style={{ fontSize: 36, marginBottom: 10 }}>🍽</div>
-            <p className="text-gray-400 font-bold text-sm">Sin productos disponibles</p>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>{enBusqueda ? '🔎' : '🍽'}</div>
+            <p className="text-gray-400 font-bold text-sm">
+              {enBusqueda ? `Sin resultados para "${busqueda.trim()}"` : 'Sin productos disponibles'}
+            </p>
           </div>
         )}
 
         {!loading && (
           <div className="flex flex-col gap-2.5">
-            {itemsActivos.map(item => {
+            {itemsMostrar.map(item => {
               const cant = carrito[item.id] || 0;
               return (
                 <div
@@ -411,7 +475,10 @@ export default function Pedir() {
                   <div className="flex-1">
                     <p className="text-sp-gray font-bold text-base mb-0.5">{item.nombre}</p>
                     {item.descripcion && <p className="text-gray-400 text-[13px] mb-1">{item.descripcion}</p>}
-                    <p className="text-sp-green-dark font-black text-base">${item.precio}</p>
+                    <p className="text-sp-green-dark font-black text-base">
+                      ${item.precio}
+                      {enBusqueda && item._grupo && <span className="text-gray-300 text-[12px] font-semibold"> · {item._grupo}</span>}
+                    </p>
                   </div>
                   {cant === 0 ? (
                     <button
@@ -448,14 +515,99 @@ export default function Pedir() {
           />
           {errorEnvio && <p className="text-red-500 text-sm font-semibold text-center mb-2">{errorEnvio}</p>}
           <button
-            onClick={enviarPedido}
-            disabled={enviando || !ubicacion}
-            className={`w-full py-3.5 rounded-xl font-black text-[15px] flex items-center justify-center gap-2 ${
-              !ubicacion ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'
-            }`}
+            onClick={() => setConfirmando(true)}
+            disabled={enviando}
+            className="w-full py-3.5 rounded-xl font-black text-[15px] flex items-center justify-center gap-2 bg-sp-green text-white disabled:opacity-60"
           >
-            {enviando ? 'Enviando...' : !ubicacion ? 'Selecciona tu ubicacion primero' : `Pedir ${numItems()} items · $${totalCarrito().toFixed(0)}`}
+            {enviando ? 'Enviando...' : `Pedir ${numItems()} ${numItems() === 1 ? 'item' : 'items'} · $${totalCarrito().toFixed(0)}`}
           </button>
+        </div>
+      )}
+
+      {/* CONFIRMACIÓN — SIEMPRE se revisa el pedido antes de enviar (anti-dedazo) */}
+      {confirmando && (
+        <div
+          className="fixed inset-0 z-50 flex items-end"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          onClick={() => setConfirmando(false)}
+        >
+          <div
+            className="w-full bg-white rounded-t-3xl px-4 pt-5 pb-8"
+            style={{ maxWidth: 448, margin: '0 auto', maxHeight: '80vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-sp-gray font-black text-lg text-center mb-3">¿Confirmamos tu pedido?</p>
+            <div className="rounded-xl bg-gray-50 px-3.5 py-2.5 mb-3">
+              {itemsCarrito().map((it, i) => (
+                <div key={i} className="flex justify-between py-1 text-[15px]">
+                  <span className="text-sp-gray"><b className="text-sp-green-dark">{it.cantidad}x</b> {it.nombre}</span>
+                  <span className="text-gray-500">${(it.precio * it.cantidad).toFixed(0)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between pt-2 mt-1 border-t border-gray-200 font-black text-sp-green-dark">
+                <span>Total</span><span>${totalCarrito().toFixed(0)}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setPickUbi(true)}
+              className="w-full rounded-xl px-3.5 py-3 mb-3 text-left flex items-center justify-between bg-gray-50 border border-gray-200"
+            >
+              <span className="text-[15px] font-bold text-sp-gray">
+                📍 {ubicacion || 'Falta decir dónde estás'}
+                {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
+                  <span className="text-[12px] text-sp-green-dark"> · tu cuenta abierta</span>
+                )}
+              </span>
+              <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
+            </button>
+            {notas && <p className="text-gray-400 text-[13px] mb-3">📝 {notas}</p>}
+            <button
+              onClick={enviarPedido}
+              disabled={enviando || !ubicacion}
+              className={`w-full py-3.5 rounded-xl font-black text-[15px] ${
+                !ubicacion ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'
+              }`}
+            >
+              {enviando ? 'Enviando...' : !ubicacion ? 'Elige tu ubicación primero' : '✅ Confirmar pedido'}
+            </button>
+            <button onClick={() => setConfirmando(false)} className="w-full text-center text-gray-400 text-sm font-semibold mt-3">
+              Volver
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SELECTOR DE UBICACIÓN — desde el chip de arriba o desde la confirmación */}
+      {pickUbi && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+          onClick={() => setPickUbi(false)}
+        >
+          <div
+            className="w-full bg-white rounded-t-3xl px-4 pt-5 pb-8"
+            style={{ maxWidth: 448, margin: '0 auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-sp-gray font-black text-lg text-center mb-1">📍 ¿Dónde estás?</p>
+            <p className="text-gray-400 text-[13px] text-center mb-4">Tu pedido llegará hasta donde estés</p>
+            <div className="grid grid-cols-2 gap-2.5">
+              {UBICACIONES.map(u => (
+                <button
+                  key={u}
+                  onClick={() => { setUbicacion(u); setPickUbi(false); }}
+                  className={`py-3.5 rounded-xl text-[15px] font-bold border transition-colors ${
+                    ubicacion === u ? 'bg-sp-green text-white border-sp-green' : 'bg-white text-sp-gray border-gray-200'
+                  }`}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setPickUbi(false)} className="w-full text-center text-gray-400 text-sm font-semibold mt-4">
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
 

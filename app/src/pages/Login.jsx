@@ -23,7 +23,6 @@ export default function Login() {
   const [nuevoPin, setNuevoPin] = useState('');
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
-  const [waAbierto, setWaAbierto] = useState(false);
   const { login, adoptarSesion } = useAuth();
   const navigate  = useNavigate();
 
@@ -58,14 +57,8 @@ export default function Login() {
     }
   }
 
-  // ── Step 3: instruccion de abrir WA antes de pedir el codigo ─────────────
-  function handleAbrirWA() {
-    const link = `https://wa.me/${WA_BOT_NUMBER}?text=Hola`;
-    window.open(link, '_blank');
-    setWaAbierto(true);
-  }
-
-  // ── Step 3→4: solicitar OTP (solo despues de que el usuario abrio WA) ───
+  // ── Step 3→4: solicitar OTP (el backend lo envia por plantilla, sin necesidad
+  // de que el usuario abra WhatsApp primero) ───────────────────────────────
   async function handleSolicitarOTP() {
     setLoading(true);
     setError('');
@@ -114,7 +107,6 @@ export default function Login() {
     setStep(2);
     setOtp('');
     setNuevoPin('');
-    setWaAbierto(false);
     setError('');
   }
 
@@ -175,7 +167,7 @@ export default function Login() {
           </form>
           <div className="flex flex-col items-center gap-2">
             <button
-              onClick={() => { setStep(3); setError(''); setWaAbierto(false); }}
+              onClick={() => { setStep(3); setError(''); }}
               className="text-white/60 text-sm underline"
             >
               Olvide mi PIN
@@ -190,49 +182,37 @@ export default function Login() {
         </div>
       )}
 
-      {/* ── STEP 3: Instruccion WA ── */}
+      {/* ── STEP 3: Solicitar codigo (envio directo por plantilla) ── */}
       {step === 3 && (
         <div className="w-full max-w-xs flex flex-col gap-5">
           <div className="text-center">
             <p className="text-white font-black text-xl">Recuperar PIN</p>
-            <p className="text-white/60 text-sm mt-1">Te enviaremos un codigo por WhatsApp</p>
-          </div>
-
-          <div className="bg-white/10 rounded-2xl p-4 flex flex-col gap-3">
-            <p className="text-white text-sm font-semibold">
-              📱 Paso 1: Abre el chat de Sierra Padel en WhatsApp
+            <p className="text-white/60 text-sm mt-1">
+              Te enviaremos un codigo de 6 digitos por WhatsApp al {telefono}
             </p>
-            <p className="text-white/70 text-xs">
-              Para enviarte el codigo necesitamos que primero nos escribas. Si ya tienes una conversacion activa con nosotros, puedes omitir este paso.
-            </p>
-            <button
-              onClick={handleAbrirWA}
-              className="w-full py-3 rounded-xl bg-[#25D366] text-white font-bold text-sm flex items-center justify-center gap-2"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.531 5.847L0 24l6.335-1.654A11.955 11.955 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.87 0-3.628-.49-5.153-1.349L2 22l1.386-4.763A9.953 9.953 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-              </svg>
-              Abrir WhatsApp del club
-            </button>
-            {waAbierto && (
-              <p className="text-green-300 text-xs text-center">✓ Listo, ya puedes solicitar tu codigo</p>
-            )}
           </div>
 
           {error && <p className="text-yellow-300 text-sm text-center font-medium">{error}</p>}
 
           <button
             onClick={handleSolicitarOTP}
-            className={`w-full py-3 rounded-2xl font-black text-base transition-all ${
-              waAbierto
-                ? 'bg-white text-sp-green'
-                : 'bg-white/30 text-white/60'
-            }`}
+            className="w-full py-3 rounded-2xl bg-white text-sp-green font-black text-base"
             disabled={loading}
           >
-            {loading ? 'Enviando codigo…' : waAbierto ? 'Enviar codigo de verificacion' : 'Paso 2: Solicitar codigo'}
+            {loading ? 'Enviando codigo…' : 'Enviarme el codigo'}
           </button>
+
+          <p className="text-white/40 text-xs text-center">
+            ¿Problemas para recibirlo?{' '}
+            <a
+              href={`https://wa.me/${WA_BOT_NUMBER}?text=Hola`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-white/70 underline"
+            >
+              Escribenos por WhatsApp
+            </a>
+          </p>
 
           <button onClick={volverAlPin} className="text-white/40 text-xs text-center">
             ← Volver a ingresar PIN
@@ -282,7 +262,7 @@ export default function Login() {
 
           <button
             type="button"
-            onClick={() => { setStep(3); setWaAbierto(true); setOtp(''); setError(''); }}
+            onClick={() => { setStep(3); setOtp(''); setError(''); }}
             className="text-white/50 text-xs text-center underline"
           >
             No recibi el codigo — volver a solicitar
