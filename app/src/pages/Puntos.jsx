@@ -449,20 +449,28 @@ export default function Puntos() {
           {historial.length === 0 && (
             <div className="card text-center text-gray-400 text-sm py-8">Sin movimientos aun</div>
           )}
-          {historial.map(h => (
-            <div key={h.id} className="card flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-sp-gray capitalize">
-                  {h.tipo === 'renta' ? '🎾 Renta de cancha' : h.tipo === 'consumo' ? '🍽️ Consumo' : h.tipo}
-                  {h.puntos < 0 ? ' (canje)' : ''}
-                </p>
-                <p className="text-xs text-gray-400">{formatFecha(h.created_at)}</p>
+          {/* El movimiento se nombra por su ORIGEN, no por el signo: un ajuste del club NO es
+              un canje (decirle "canje" a lo que el cliente nunca gastó confunde y se ve mal). */}
+          {historial.map(h => {
+            const canje  = h.registrado_por === 'redencion_pos';
+            const ajuste = h.registrado_por === 'ajuste_admin' || h.registrado_por === 'redencion_revert';
+            const titulo = canje  ? '🎁 Puntos usados en el club'
+                         : ajuste ? '⚙️ Ajuste de puntos'
+                         : h.tipo === 'renta'   ? '🎾 Renta de cancha'
+                         : h.tipo === 'consumo' ? '🍽️ Consumo'
+                         : h.tipo;
+            return (
+              <div key={h.id} className="card flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-sp-gray">{titulo}</p>
+                  <p className="text-xs text-gray-400">{formatFecha(h.created_at)}</p>
+                </div>
+                <span className={`text-lg font-black ${h.puntos < 0 ? 'text-red-400' : 'text-sp-green'}`}>
+                  {h.puntos > 0 ? '+' : ''}{h.puntos}
+                </span>
               </div>
-              <span className={`text-lg font-black ${h.puntos < 0 ? 'text-red-400' : 'text-sp-green'}`}>
-                {h.puntos > 0 ? '+' : ''}{h.puntos}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
