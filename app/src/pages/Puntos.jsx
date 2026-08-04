@@ -343,7 +343,7 @@ export default function Puntos() {
           <div className="card flex flex-col gap-2">
             <p className="text-sm font-bold text-sp-gray">Cómo ganas 🐍</p>
             <p className="text-xs text-gray-500">
-              Ganas <b>1 punto por cada $20</b> en cancha, tienda y consumo (el alcohol no acumula). Cada punto vale <b>$0.50</b>, en una sola bolsa.
+              Ganas <b>1 punto por cada $20</b> en cancha, tienda y consumo (el alcohol no acumula). Cada punto vale <b>$0.50</b> — el <b>2.5%</b> de todo lo que gastas, en una sola bolsa.
             </p>
             <p className="text-xs text-gray-500">
               Entre más alto tu nivel, <b>más rápido</b> acumulas y desbloqueas un regalo por cada día que juegas.
