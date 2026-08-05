@@ -256,6 +256,20 @@ export default function Puntos() {
         </div>
       </div>
 
+      {/* Arranque del programa: mientras no arranca, la pantalla explica el programa pero
+          NADA se puede pedir en caja todavía. Sin este aviso los socios iban al mostrador
+          por su regalo y la cajera no tenía cómo dárselos (reportado 2026-08-04).
+          La fecha viene del backend (LEALTAD_INICIO), no se escribe aquí. */}
+      {miNivel && miNivel.arrancada === false && (
+        <div className="mx-4 mt-4 rounded-2xl px-4 py-3 bg-amber-50 border border-amber-200">
+          <p className="text-sm font-bold text-amber-700">🚦 Arranca el {miNivel.inicio_texto}</p>
+          <p className="text-xs text-amber-700/80 mt-1">
+            Tus puntos ya se están guardando y aquí ves cómo funciona, pero los regalos y los
+            canjes empiezan ese día. Antes de esa fecha la caja todavía no los puede aplicar.
+          </p>
+        </div>
+      )}
+
       {/* Bolsa única de puntos */}
       {(() => {
         const st = NIVEL_STYLE[miNivel?.nivel?.nivel] || NIVEL_STYLE[1];
