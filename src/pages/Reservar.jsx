@@ -60,8 +60,13 @@ function RosterReta({ r, onInvitar }) {
       </div>
       <div className="flex flex-wrap gap-1.5">
         {jugadores.map((j, i) => (
-          <span key={i} className="px-2.5 py-1 bg-sp-green-light text-sp-green-dark rounded-full text-xs font-semibold">
-            {String(j.nombre || 'Jugador').split(' ')[0]}
+          <span
+            key={i}
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+              j.yo ? 'bg-sp-green text-white' : 'bg-sp-green-light text-sp-green-dark'
+            }`}
+          >
+            {j.yo ? 'Tú' : String(j.nombre || 'Jugador').split(' ')[0]}
           </span>
         ))}
         {Array.from({ length: libres }).map((_, i) => (
@@ -70,8 +75,10 @@ function RosterReta({ r, onInvitar }) {
           </span>
         ))}
       </div>
-      {jugadores.length === 0 && (
-        <p className="text-xs text-gray-400 mt-1.5">Invita a los que juegan contigo: check-in más rápido y cada quien su cuenta.</p>
+      {libres > 0 && (
+        <p className="text-xs text-gray-400 mt-1.5">
+          Ya estás apuntado. Invita a los que faltan: check-in más rápido y cada quien su cuenta.
+        </p>
       )}
     </div>
   );
