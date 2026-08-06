@@ -13,6 +13,7 @@ export default function Botanero() {
   const [loading, setLoading] = useState(true);
   const [accion, setAccion] = useState(false);
   const [error, setError] = useState('');
+  const [pideSexo, setPideSexo] = useState(null); // turno para el que falta declarar H/M
 
   const cargar = useCallback(async () => {
     const [d, r, j] = await Promise.all([
@@ -26,10 +27,15 @@ export default function Botanero() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  async function apuntarse(turno) {
+  // Las canchas del Botanero no se mezclan: hay canchas de hombres y canchas de
+  // mujeres. Por eso se pide una sola vez; si el cliente ya lo declaró antes
+  // (mi_sexo_guardado) se apunta directo y nunca vuelve a ver esta pregunta.
+  async function apuntarse(turno, sexo) {
     if (accion) return;
-    setAccion(true); setError('');
-    const d = await apiFetch('/botanero/apuntarse', { method: 'POST', body: JSON.stringify({ turno }) });
+    const yaLoSe = sexo || data?.mi_sexo_guardado;
+    if (!yaLoSe) { setPideSexo(turno); return; }
+    setAccion(true); setError(''); setPideSexo(null);
+    const d = await apiFetch('/botanero/apuntarse', { method: 'POST', body: JSON.stringify({ turno, sexo: yaLoSe }) });
     if (!d.ok) setError(d.error || 'No se pudo. Intenta de nuevo.');
     await cargar();
     setAccion(false);
@@ -106,6 +112,13 @@ export default function Botanero() {
                 </div>
               </div>
 
+              {(t.hombres > 0 || t.mujeres > 0) && (
+                <p className="text-[12px] mt-2 flex gap-3">
+                  <span className="text-blue-600 font-bold">♂ {t.hombres} {t.hombres % 4 ? `· faltan ${4 - (t.hombres % 4)} para otra cancha` : ''}</span>
+                  <span className="text-pink-600 font-bold">♀ {t.mujeres} {t.mujeres % 4 ? `· faltan ${4 - (t.mujeres % 4)} para otra cancha` : ''}</span>
+                </p>
+              )}
+
               {t.nombres?.length > 0 && (
                 <p className="text-gray-400 text-[12px] mt-2 leading-relaxed">
                   Van: {t.nombres.join(', ')}
@@ -127,10 +140,23 @@ export default function Botanero() {
                     <button onClick={() => bajarse(t.turno)} disabled={accion} className="text-[13px] text-gray-400 underline px-2">Salirme</button>
                   </div>
                 )}
-                {!t.mi_estado && (
+                {!t.mi_estado && pideSexo !== t.turno && (
                   <button onClick={() => apuntarse(t.turno)} disabled={accion} className="btn-green w-full disabled:opacity-50">
                     {lleno || t.estado === 'cerrada' ? 'Anotarme en la espera' : '¡Me apunto!'}
                   </button>
+                )}
+                {!t.mi_estado && pideSexo === t.turno && (
+                  <div className="rounded-xl border border-gray-200 p-3">
+                    <p className="text-[13px] font-bold text-gray-700 mb-1">¿En qué canchas juegas?</p>
+                    <p className="text-[12px] text-gray-400 mb-2.5">Las canchas del Botanero son de hombres o de mujeres, no mixtas. Solo te lo preguntamos esta vez.</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => apuntarse(t.turno, 'H')} disabled={accion}
+                        className="flex-1 rounded-xl py-2.5 font-bold text-[14px] border-2 border-blue-200 text-blue-600 bg-blue-50 disabled:opacity-50">♂ Hombres</button>
+                      <button onClick={() => apuntarse(t.turno, 'M')} disabled={accion}
+                        className="flex-1 rounded-xl py-2.5 font-bold text-[14px] border-2 border-pink-200 text-pink-600 bg-pink-50 disabled:opacity-50">♀ Mujeres</button>
+                    </div>
+                    <button onClick={() => setPideSexo(null)} className="text-[12px] text-gray-400 underline mt-2">Cancelar</button>
+                  </div>
                 )}
               </div>
             </div>
