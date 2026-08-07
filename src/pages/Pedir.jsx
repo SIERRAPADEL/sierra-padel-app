@@ -162,29 +162,34 @@ export default function Pedir() {
     });
   }
 
+  // OJO: un mismo producto aparece en MÁS DE UNA sección del menú — los de
+  // "⭐ Más pedidos" salen ahí Y en su categoría. Recorrer las secciones para sumar
+  // contaba ese producto DOS VECES: el total se duplicaba, el pedido viajaba con la
+  // línea repetida y, al aceptarlo la caja, se generaban DOS cargos (cobro doble).
+  // El carrito es la única fuente de verdad de qué se pidió; el menú sólo sirve para
+  // buscar el precio, y para eso ya existe el índice por id.
   function totalCarrito() {
+    const idx = menuPorId();
     let total = 0;
-    for (const [cat, items] of Object.entries(menu)) {
-      for (const item of items) {
-        if (carrito[item.id]) total += item.precio * carrito[item.id];
-      }
+    for (const [id, cant] of Object.entries(carrito)) {
+      const item = idx[id];
+      if (item && cant > 0) total += item.precio * cant;
     }
     return total;
   }
 
   function itemsCarrito() {
+    const idx = menuPorId();
     const lista = [];
-    for (const items of Object.values(menu)) {
-      for (const item of items) {
-        if (carrito[item.id]) {
-          lista.push({
-            item_id:  item.id,
-            nombre:   item.nombre,
-            cantidad: carrito[item.id],
-            precio:   item.precio,
-          });
-        }
-      }
+    for (const [id, cant] of Object.entries(carrito)) {
+      const item = idx[id];
+      if (!item || !(cant > 0)) continue;
+      lista.push({
+        item_id:  item.id,
+        nombre:   item.nombre,
+        cantidad: cant,
+        precio:   item.precio,
+      });
     }
     return lista;
   }
