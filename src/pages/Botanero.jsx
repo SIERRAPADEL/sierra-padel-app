@@ -112,7 +112,12 @@ export default function Botanero() {
                 </div>
               </div>
 
-              {(t.hombres > 0 || t.mujeres > 0) && (
+              {t.mixto ? (
+                <p className="text-[12px] mt-2 font-bold text-sp-green-dark">
+                  👫 Este turno se juega MIXTO — las canchas no se separan
+                  <span className="text-gray-400 font-normal"> · ♂ {t.hombres} · ♀ {t.mujeres}</span>
+                </p>
+              ) : (t.hombres > 0 || t.mujeres > 0) && (
                 <p className="text-[12px] mt-2 flex gap-3">
                   <span className="text-blue-600 font-bold">♂ {t.hombres} {t.hombres % 4 ? `· faltan ${4 - (t.hombres % 4)} para otra cancha` : ''}</span>
                   <span className="text-pink-600 font-bold">♀ {t.mujeres} {t.mujeres % 4 ? `· faltan ${4 - (t.mujeres % 4)} para otra cancha` : ''}</span>
