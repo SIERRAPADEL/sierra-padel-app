@@ -4,70 +4,35 @@ import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
 
-// Estilo por nivel víbora (bolsa única): color + emoji.
+// Estilo por nivel víbora (bolsa única): color + dibujo propio.
+// Los niveles se pintaban con EMOJIS del sistema (🪱 / 🐍 / 🐍🔥 / 👑🐍). Cada teléfono los
+// dibuja distinto, y los de nivel 3 y 4 eran dos emojis pegados que en varios aparatos
+// salen separados o en blanco. German mandó ilustraciones propias (2026-08-10): se ven
+// IGUAL en cualquier aparato y sistema operativo. El emoji queda sólo como respaldo de
+// texto para donde no cabe una imagen.
+// Los colores salen de cada dibujo, para que la insignia y el color del nivel no peleen.
 const NIVEL_STYLE = {
-  1: { color: '#a8b3bf', emoji: '🪱' },     // Lombriz
-  2: { color: '#7bbf1a', emoji: '🐍' },     // Víbora
-  3: { color: '#e0a91f', emoji: '🐍🔥' },   // Cobra
-  4: { color: '#b06cff', emoji: '👑🐍' },   // Mamba
+  1: { color: '#E8607A', emoji: '🪱', img: '/lealtad/lombriz.png' },  // Lombriz
+  2: { color: '#6B7A45', emoji: '🐍', img: '/lealtad/vibora.png'  },  // Víbora
+  3: { color: '#A67C34', emoji: '🐍', img: '/lealtad/cobra.png'   },  // Cobra
+  4: { color: '#3A3A3A', emoji: '🐍', img: '/lealtad/mamba.png'   },  // Mamba
 };
+// Insignia del nivel. Si el admin cargó un `badge_svg` en la base, ese manda (permite
+// cambiar el arte sin desplegar); si no, el dibujo. `alt` lleva el nombre para que un
+// lector de pantalla diga "Cobra" y no "imagen".
+function NivelIcono({ nivel, orden, nombre, size = 40 }) {
+  const st = NIVEL_STYLE[orden] || NIVEL_STYLE[1];
+  if (nivel && nivel.badge_svg) {
+    return <div style={{ width: size, height: size }} dangerouslySetInnerHTML={{ __html: nivel.badge_svg }} />;
+  }
+  return (
+    <img src={st.img} alt={nombre || ''} width={size} height={size}
+         style={{ width: size, height: size, objectFit: 'contain', display: 'block' }} />
+  );
+}
 const fmtMoney = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
 // Regalo tangible por día que juega, según nivel (Fase 2 al cobrar renta).
 const TANGIBLE_NIVEL = { 2: 'Agua 500 ml gratis', 3: 'Agua de 1 L gratis', 4: 'Overgrip SP gratis' };
-
-// ── Badge SVG placeholder para cada nivel (orden 1-4) ─────────────────────────
-function NivelBadge({ nivel, size = 56 }) {
-  if (!nivel) return null;
-
-  // Si el nivel tiene un badge_svg personalizado lo renderizamos directamente
-  if (nivel.badge_svg) {
-    return (
-      <div
-        style={{ width: size, height: size }}
-        dangerouslySetInnerHTML={{ __html: nivel.badge_svg }}
-      />
-    );
-  }
-
-  // Placeholders geometricos por orden
-  const color = nivel.color || '#96C800';
-  const orden = nivel.orden || 1;
-
-  const shapes = {
-    1: ( // Circulo simple
-      <svg width={size} height={size} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="28" cy="28" r="24" stroke={color} strokeWidth="3" fill="none"/>
-        <circle cx="28" cy="28" r="16" fill={color} fillOpacity="0.15"/>
-        <text x="28" y="33" textAnchor="middle" fontSize="14" fontWeight="900" fill={color}>1</text>
-      </svg>
-    ),
-    2: ( // Escudo / pentagon
-      <svg width={size} height={size} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M28 6 L48 16 L48 32 C48 42 38 50 28 52 C18 50 8 42 8 32 L8 16 Z"
-          stroke={color} strokeWidth="3" fill={color} fillOpacity="0.12"/>
-        <text x="28" y="33" textAnchor="middle" fontSize="14" fontWeight="900" fill={color}>2</text>
-      </svg>
-    ),
-    3: ( // Estrella de 6 puntas
-      <svg width={size} height={size} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="28,4 33,18 47,18 36,27 40,41 28,33 16,41 20,27 9,18 23,18"
-          stroke={color} strokeWidth="2.5" fill={color} fillOpacity="0.15" strokeLinejoin="round"/>
-        <text x="28" y="33" textAnchor="middle" fontSize="14" fontWeight="900" fill={color}>3</text>
-      </svg>
-    ),
-    4: ( // Diamante / rombo doble
-      <svg width={size} height={size} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="28,4 50,28 28,52 6,28" stroke={color} strokeWidth="3"
-          fill={color} fillOpacity="0.15" strokeLinejoin="round"/>
-        <polygon points="28,12 44,28 28,44 12,28" stroke={color} strokeWidth="1.5"
-          fill={color} fillOpacity="0.1" strokeLinejoin="round"/>
-        <text x="28" y="33" textAnchor="middle" fontSize="12" fontWeight="900" fill={color}>4</text>
-      </svg>
-    ),
-  };
-
-  return shapes[orden] || shapes[1];
-}
 
 // ── Countdown hook ─────────────────────────────────────────────────────────────
 function useCountdown(expiresAt) {
@@ -299,7 +264,7 @@ export default function Puntos() {
           <div className="mx-4 mt-3 card flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-3xl leading-none">{st.emoji}</span>
+                <NivelIcono nivel={miNivel.nivel} orden={miNivel.nivel.nivel} nombre={miNivel.nivel.nombre} size={48} />
                 <div>
                   <span className="font-black text-lg" style={{ color: st.color }}>{miNivel.nivel.nombre}</span>
                   <p className="text-gray-400 text-xs">Ganas ×{miNivel.nivel.mult} puntos en cada visita</p>
@@ -374,7 +339,7 @@ export default function Puntos() {
                 const regalo = TANGIBLE_NIVEL[n.nivel];
                 return (
                   <div key={n.nivel} className={`flex items-start gap-3 py-2 px-3 rounded-xl ${esActual ? 'bg-gray-50' : ''}`}>
-                    <span className="text-2xl leading-none mt-0.5">{st.emoji}</span>
+                    <NivelIcono nivel={n} orden={n.nivel} nombre={n.nombre} size={34} />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-bold" style={{ color: st.color }}>{n.nombre}</p>
