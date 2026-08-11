@@ -122,6 +122,64 @@ function Capturar({ reta, onListo, onCancelar }) {
   );
 }
 
+// ── Un marcador que capturó otro: confirmarlo o poner cómo quedó de verdad ───────
+function RevisarCard({ j, onObjetar, ocupado }) {
+  const [corrigiendo, setCorrigiendo] = useState(false);
+  const [mis, setMis] = useState('');
+  const [sus, setSus] = useState('');
+  const puede = mis !== '' && sus !== '' && Number(mis) !== Number(sus);
+  return (
+    <div className="card mb-2">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="font-black text-sp-gray text-[15px]">
+            {j.gane ? '🏆 Ganaste' : 'Perdiste'} <span className="font-mono">{j.marcador}</span>
+          </p>
+          <p className="text-gray-400 text-xs mt-0.5">
+            {fmtFecha(j.fecha)}{j.cancha ? ` · Cancha ${j.cancha}` : ''} · vs {j.contra.map(nombreCorto).join(' y ')}
+          </p>
+          <p className="text-gray-300 text-[11px] mt-0.5">Si no dices nada, en {j.horas_restantes} h queda firme</p>
+        </div>
+        {!corrigiendo && (
+          <button type="button" onClick={() => setCorrigiendo(true)}
+            className="px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 whitespace-nowrap">
+            No quedó así
+          </button>
+        )}
+      </div>
+
+      {corrigiendo && (
+        <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F1F3EC' }}>
+          <p className="text-xs font-bold text-gray-500 mb-2">¿Cómo quedó? Pon el marcador y se lo mandamos para que lo confirme.</p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">Ustedes</span>
+            <input type="number" inputMode="numeric" min="0" max="30" value={mis} placeholder="0"
+              onChange={e => setMis(e.target.value)}
+              className="w-16 text-center rounded-lg border border-gray-200 py-2 font-black" />
+            <span className="text-gray-300 font-black">–</span>
+            <input type="number" inputMode="numeric" min="0" max="30" value={sus} placeholder="0"
+              onChange={e => setSus(e.target.value)}
+              className="w-16 text-center rounded-lg border border-gray-200 py-2 font-black" />
+            <span className="text-xs text-gray-400">Ellos</span>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2">
+            Si no se ponen de acuerdo, el juego no cuenta para nadie.
+          </p>
+          <div className="flex gap-2 mt-3">
+            <button type="button" onClick={() => setCorrigiendo(false)}
+              className="flex-1 py-2 rounded-xl border border-gray-200 font-bold text-gray-500 text-sm">Cancelar</button>
+            <button type="button" disabled={!puede || ocupado} onClick={() => onObjetar(j.id, mis, sus)}
+              className="flex-[1.4] py-2 rounded-xl font-black text-sm disabled:opacity-40"
+              style={{ background: '#2F6BFF', color: '#fff' }}>
+              {ocupado ? 'Enviando…' : 'Enviar mi marcador'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Marcadores() {
   const { apiFetch } = useApi();
   const { user } = useAuth();
@@ -135,17 +193,32 @@ export default function Marcadores() {
   }, [apiFetch]);
   useEffect(() => { cargar(); }, [cargar]);
 
-  async function objetar(id) {
+  // Objetar no es decir "no", es decir "así quedó": si no propones marcador, no hay nada
+  // que el otro pueda aceptar y el desacuerdo no se resuelve solo.
+  async function objetar(id, mis, sus) {
     setObjetando(id);
-    const d = await apiFetch(`/historial/${id}/objetar`, { method: 'POST', body: JSON.stringify({}) });
+    const d = await apiFetch(`/historial/${id}/objetar`, {
+      method: 'POST', body: JSON.stringify({ mis_games: Number(mis), sus_games: Number(sus) }),
+    });
     setObjetando('');
-    setMsg(d.ok ? { ok: true, t: 'Listo, lo marcamos para que el club lo revise.' } : { ok: false, t: d.error || 'No se pudo objetar' });
+    setMsg(d.ok
+      ? { ok: true, t: 'Listo. Le avisamos a quien lo capturó para que lo confirme.' }
+      : { ok: false, t: d.error || 'No se pudo enviar' });
+    if (d.ok) cargar();
+  }
+
+  async function resolver(id, acepto) {
+    setObjetando(id);
+    const d = await apiFetch(`/historial/${id}/resolver`, { method: 'POST', body: JSON.stringify({ acepto }) });
+    setObjetando('');
+    setMsg(d.ok ? { ok: true, t: d.data.mensaje } : { ok: false, t: d.error || 'No se pudo' });
     if (d.ok) cargar();
   }
 
   const porCapturar = (data && data.por_capturar) || [];
   const porRevisar  = (data && data.por_revisar) || [];
-  const nada = data && !porCapturar.length && !porRevisar.length;
+  const porResolver = (data && data.por_resolver) || [];
+  const nada = data && !porCapturar.length && !porRevisar.length && !porResolver.length;
 
   return (
     <div className="page safe-bottom">
@@ -171,28 +244,49 @@ export default function Marcadores() {
         </div>
       )}
 
+      {porResolver.length > 0 && (
+        <div className="mx-4 mt-4">
+          <p className="text-sm font-black text-sp-gray mb-1">No están de acuerdo contigo</p>
+          <p className="text-gray-400 text-xs mb-2">Pusiste un marcador y un rival dice que quedó de otra forma. Si aceptas, cuenta el suyo; si no, el juego no cuenta para nadie.</p>
+          {porResolver.map(j => (
+            <div key={j.id} className="card mb-2">
+              <p className="font-black text-sp-gray text-[15px]">
+                {fmtFecha(j.fecha)}{j.cancha ? ` · Cancha ${j.cancha}` : ''} · vs {j.contra.map(nombreCorto).join(' y ')}
+              </p>
+              <div className="flex items-center gap-4 mt-2">
+                <div>
+                  <p className="text-[11px] text-gray-400">Pusiste</p>
+                  <p className="font-mono font-black text-gray-400 line-through">{j.pusiste}</p>
+                </div>
+                <span className="text-gray-300">→</span>
+                <div>
+                  <p className="text-[11px] text-gray-400">{nombreCorto(j.quien)} dice</p>
+                  <p className="font-mono font-black" style={{ color: '#2F6BFF' }}>{j.dice}</p>
+                </div>
+              </div>
+              {j.motivo && <p className="text-xs text-gray-400 mt-2">“{j.motivo}”</p>}
+              <div className="flex gap-2 mt-3">
+                <button type="button" onClick={() => resolver(j.id, false)} disabled={objetando === j.id}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-500 text-sm disabled:opacity-40">
+                  No fue así
+                </button>
+                <button type="button" onClick={() => resolver(j.id, true)} disabled={objetando === j.id}
+                  className="flex-[1.4] py-2.5 rounded-xl font-black text-sm disabled:opacity-40"
+                  style={{ background: '#96C800', color: '#fff' }}>
+                  {objetando === j.id ? '…' : 'Tiene razón'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {porRevisar.length > 0 && (
         <div className="mx-4 mt-4">
           <p className="text-sm font-black text-sp-gray mb-1">Revisa estos marcadores</p>
           <p className="text-gray-400 text-xs mb-2">Los capturó otro jugador. Si algo no cuadra, dilo y el club lo revisa. Si no, en unas horas quedan firmes.</p>
           {porRevisar.map(j => (
-            <div key={j.id} className="card mb-2">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-black text-sp-gray text-[15px]">
-                    {j.gane ? '🏆 Ganaste' : 'Perdiste'} <span className="font-mono">{j.marcador}</span>
-                  </p>
-                  <p className="text-gray-400 text-xs mt-0.5">
-                    {fmtFecha(j.fecha)}{j.cancha ? ` · Cancha ${j.cancha}` : ''} · vs {j.contra.map(nombreCorto).join(' y ')}
-                  </p>
-                  <p className="text-gray-300 text-[11px] mt-0.5">Quedan {j.horas_restantes} h para objetar</p>
-                </div>
-                <button type="button" onClick={() => objetar(j.id)} disabled={objetando === j.id}
-                  className="px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 disabled:opacity-40 whitespace-nowrap">
-                  {objetando === j.id ? '…' : 'No quedó así'}
-                </button>
-              </div>
-            </div>
+            <RevisarCard key={j.id} j={j} onObjetar={objetar} ocupado={objetando === j.id} />
           ))}
         </div>
       )}

@@ -375,8 +375,13 @@ function AvisoMarcadores() {
   }, []);
   const cap = (p && p.por_capturar.length) || 0;
   const rev = (p && p.por_revisar.length) || 0;
-  if (!cap && !rev) return null;
-  const texto = cap
+  const res = (p && p.por_resolver && p.por_resolver.length) || 0;
+  if (!cap && !rev && !res) return null;
+  // Primero lo que trae a alguien esperando respuesta: si no contestas, ese juego se
+  // invalida para los dos. Luego lo tuyo por capturar, y al final lo que sólo hay que ojear.
+  const texto = res
+    ? (res === 1 ? 'Un rival no está de acuerdo con tu marcador' : `${res} rivales no están de acuerdo con tus marcadores`)
+    : cap
     ? (cap === 1 ? 'Tienes una reta sin marcador' : `Tienes ${cap} retas sin marcador`)
     : (rev === 1 ? 'Revisa el marcador de tu reta' : `Revisa ${rev} marcadores de tus retas`);
   return (
