@@ -17,6 +17,7 @@ import Terminos from './pages/Terminos';
 import Retas from './pages/Retas';
 import Botanero from './pages/Botanero';
 import Ligas from './pages/Ligas';
+import Marcadores from './pages/Marcadores';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -37,6 +38,7 @@ function AppRoutes() {
       <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route path="/reservar" element={<ProtectedRoute><Reservar /></ProtectedRoute>} />
       <Route path="/retas" element={<ProtectedRoute><Retas /></ProtectedRoute>} />
+      <Route path="/marcadores" element={<ProtectedRoute><Marcadores /></ProtectedRoute>} />
       <Route path="/ligas" element={<ProtectedRoute><Ligas /></ProtectedRoute>} />
       <Route path="/botanero" element={<ProtectedRoute><Botanero /></ProtectedRoute>} />
       <Route path="/torneos" element={<ProtectedRoute><Torneos /></ProtectedRoute>} />

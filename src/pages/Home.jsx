@@ -363,6 +363,32 @@ function PromoBienvenida({ apiFetch, navigate }) {
 }
 
 // ── Pagina principal ──────────────────────────────────────────────────────────
+// ── Aviso de marcadores pendientes ──────────────────────────────────────────────
+// Sólo aparece si hay algo que hacer. Un acceso permanente a una pantalla vacía se
+// vuelve ruido y la gente deja de verlo; así, cuando sale, significa algo.
+function AvisoMarcadores() {
+  const { apiFetch } = useApi();
+  const navigate = useNavigate();
+  const [p, setP] = useState(null);
+  useEffect(() => {
+    apiFetch('/historial/mis-pendientes').then(d => { if (d.ok) setP(d.data); }).catch(() => {});
+  }, []);
+  const cap = (p && p.por_capturar.length) || 0;
+  const rev = (p && p.por_revisar.length) || 0;
+  if (!cap && !rev) return null;
+  const texto = cap
+    ? (cap === 1 ? 'Tienes una reta sin marcador' : `Tienes ${cap} retas sin marcador`)
+    : (rev === 1 ? 'Revisa el marcador de tu reta' : `Revisa ${rev} marcadores de tus retas`);
+  return (
+    <button type="button" onClick={() => navigate('/marcadores')}
+      className="w-full text-left px-5 py-3 flex items-center justify-between gap-3 active:opacity-80"
+      style={{ background: '#EDF7D6' }}>
+      <span className="text-sm font-black" style={{ color: '#4F7A2E' }}>🎾 {texto}</span>
+      <span className="text-xs font-bold" style={{ color: '#7aaa00' }}>Abrir ›</span>
+    </button>
+  );
+}
+
 export default function Home() {
   const { user, updateUser } = useAuth();
   const { apiFetch } = useApi();
@@ -394,6 +420,7 @@ export default function Home() {
         />
       )}
       {/* ── Header ── */}
+      <AvisoMarcadores />
       <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-4">
         <div className="flex items-center justify-between pt-3">
           <div>
