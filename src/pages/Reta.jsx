@@ -108,8 +108,15 @@ export function Ganador({ d }) {
       style={{ background: 'linear-gradient(160deg,#1b2b00 0%,#3f6300 55%,#96C800 100%)' }}
     >
       <div className="px-5 pt-6 pb-5 text-center">
-        <p className="text-white/50 text-[11px] font-black tracking-[.22em] uppercase">Sierra Padel</p>
-        <p className="text-white/80 text-[12px] font-semibold mt-1">
+        {/* EL LOGO (German: "hay que poner el logo de Sierra Padel en algun lugar porque es
+            importante"). Va aqui y no en otro lado: esta tarjeta es la que acaba en redes,
+            asi que es donde la marca trabaja. Se usa el isotipo BLANCO sobre transparente,
+            que es el que se ve en fondo oscuro. */}
+        <div className="flex items-center justify-center gap-2">
+          <img src="/icons/isotipo-mask.png" alt="" width="26" height="26" style={{ opacity: 0.9 }} />
+          <p className="text-white/70 text-[12px] font-black tracking-[.22em] uppercase">Sierra Padel</p>
+        </div>
+        <p className="text-white/80 text-[12px] font-semibold mt-1.5">
           {fmtFechaLarga(d.fecha)} · Cancha {d.cancha}
         </p>
 
@@ -167,6 +174,8 @@ export default function Reta() {
   const [sets, setSets] = useState([{ a: '', b: '' }]);
   const [guardando, setGuardando] = useState(false);
   const [msg, setMsg] = useState(null);
+  // Terminar la reta es irreversible: el primer toque avisa, el segundo lo hace.
+  const [confirmar, setConfirmar] = useState(false);
 
   const cargar = useCallback(() => {
     setCargando(true);
@@ -191,6 +200,7 @@ export default function Reta() {
 
   function tocar(id) {
     if (!id || !puedeEditarParejas) return;
+    setConfirmar(false);   // cambiar las parejas desarma el "sí, terminar"
     setEquipo(prev => {
       const sig = prev[id] === 'a' ? 'b' : prev[id] === 'b' ? undefined : 'a';
       const n = { ...prev };
@@ -315,6 +325,15 @@ export default function Reta() {
               {guardando ? 'Guardando…' : d.parejas ? 'Actualizar parejas' : 'Guardar parejas'}
             </button>
           )}
+          {puedeEditarParejas && d.parejas && (
+            // German (13-ago): "tambien la opcion de cambiar de pareja disponible". Guardar
+            // las parejas NO las congela — se siguen cambiando tocando a la gente hasta que
+            // la reta se termina. Se dice con todas sus letras porque el boton "Guardar"
+            // sugiere lo contrario.
+            <p className="text-[12px] text-gray-400 text-center mt-2">
+              Puedes cambiarlas: toca a los jugadores otra vez.
+            </p>
+          )}
         </div>
 
         {/* Marcador */}
@@ -326,34 +345,67 @@ export default function Reta() {
           )
         ) : d.voy && parejasOk ? (
           <div className="card">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Marcador</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Marcador</p>
+            {/* Cada columna con el COLOR de su pareja y su nombre encima: sin esto hay que
+                acordarse de cual numero es de quien, y ahi es donde se equivoca uno. */}
+            <div className="flex items-center gap-3 mb-2">
+              <span className="w-12" />
+              {[{ k: 'a', c: '#96C800', l: enA }, { k: 'b', c: '#3B6FD4', l: enB }].map(({ k, c, l }) => (
+                <span key={k} className="flex-1 text-center text-[12px] font-black truncate" style={{ color: c }}>
+                  {l.map(j => j.nombre_corto).join(' · ') || k.toUpperCase()}
+                </span>
+              ))}
+            </div>
             {sets.map((s, i) => (
               <div key={i} className="flex items-center gap-3 mb-2">
                 <span className="text-[13px] font-bold text-gray-400 w-12">Set {i + 1}</span>
-                <input
-                  inputMode="numeric" value={s.a} placeholder="0"
-                  onChange={e => setSets(v => v.map((x, k) => k === i ? { ...x, a: e.target.value.replace(/\D/g, '').slice(0, 2) } : x))}
-                  className="input-field text-center font-black tabular-nums flex-1"
-                />
-                <span className="text-gray-300 font-black">–</span>
-                <input
-                  inputMode="numeric" value={s.b} placeholder="0"
-                  onChange={e => setSets(v => v.map((x, k) => k === i ? { ...x, b: e.target.value.replace(/\D/g, '').slice(0, 2) } : x))}
-                  className="input-field text-center font-black tabular-nums flex-1"
-                />
+                {[{ k: 'a', c: '#96C800' }, { k: 'b', c: '#3B6FD4' }].map(({ k, c }) => (
+                  <input
+                    key={k}
+                    inputMode="numeric" value={s[k]} placeholder="0"
+                    onChange={e => { setConfirmar(false); setSets(v => v.map((x, n) => n === i ? { ...x, [k]: e.target.value.replace(/\D/g, '').slice(0, 2) } : x)); }}
+                    className="text-center font-black tabular-nums flex-1 rounded-xl px-4 py-3 text-lg outline-none border-2 transition-colors"
+                    style={{ borderColor: c, background: `${c}10`, color: c }}
+                  />
+                ))}
               </div>
             ))}
             {sets.length < 5 && (
-              <button onClick={() => setSets(v => [...v, { a: '', b: '' }])} className="text-sp-green-dark text-sm font-bold py-1">
+              // German: "poner mas grande el boton de proximo set". Se teclea con el pulgar
+              // sudado al terminar de jugar.
+              <button
+                onClick={() => setSets(v => [...v, { a: '', b: '' }])}
+                className="w-full border-2 border-dashed border-gray-200 text-gray-500 font-bold py-3.5 rounded-xl text-[15px] active:scale-95 transition-transform mt-1"
+              >
                 + Otro set
               </button>
             )}
-            <button onClick={guardarMarcador} disabled={!setsOk || guardando} className="btn-green mt-3 disabled:opacity-40">
-              {guardando ? 'Guardando…' : 'Guardar marcador'}
+
+            {/* German: "si le das guardar se cierra y ya no puedes modificar nada, se puede
+                prestar a muchos errores; en lugar de guardar debe decir terminar reta".
+                Lo vivio el mismo: cerro la reta de prueba sin querer. Ahora el boton dice lo
+                que hace, y el primer toque solo AVISA — el mismo patron del arqueo de caja. */}
+            <button
+              onClick={() => { if (!confirmar) setConfirmar(true); else guardarMarcador(); }}
+              disabled={!setsOk || guardando}
+              className={`btn-green mt-3 disabled:opacity-40 ${confirmar ? 'bg-red-500' : ''}`}
+            >
+              {guardando ? 'Guardando…' : confirmar ? '⚠️ Sí, terminar la reta' : '🏁 Terminar reta'}
             </button>
-            <p className="text-[11px] text-gray-400 text-center mt-2">
-              Lo captura cualquiera de los que jugaron; los rivales pueden objetarlo.
-            </p>
+            {confirmar ? (
+              <div className="mt-2">
+                <p className="text-[12px] text-red-500 text-center font-semibold">
+                  Se guarda el resultado y ya no se puede cambiar aquí.
+                </p>
+                <button onClick={() => setConfirmar(false)} className="w-full text-gray-400 text-[13px] font-bold py-2">
+                  Mejor no, sigo editando
+                </button>
+              </div>
+            ) : (
+              <p className="text-[11px] text-gray-400 text-center mt-2">
+                Termínala sólo cuando el marcador esté completo. Después los rivales pueden objetarlo.
+              </p>
+            )}
           </div>
         ) : d.voy ? (
           <div className="card text-center py-6">
