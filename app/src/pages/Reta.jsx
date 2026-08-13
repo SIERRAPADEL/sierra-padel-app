@@ -268,14 +268,21 @@ export default function Reta() {
 
   function agregarJuego() {
     setConfirmar(false);
+    let nuevoIdx = 0;
     setJuegos(v => {
       const ult = v[v.length - 1];
       // Sin rotar, el set nuevo hereda la pareja: es la misma gente todo el rato.
       const base = rotar && combinaciones
         ? combinaciones[(combinaciones.findIndex(c => mismoCombo(c, ult)) + 1) % combinaciones.length]
         : ult;
+      nuevoIdx = v.length;
       return [...v, { a: base.a, b: base.b, ga: '', gb: '' }];
     });
+    // El cursor cae solo en el cuadro nuevo: agregar set y teclear sin tocar la pantalla.
+    setTimeout(() => {
+      const el = document.getElementById(`g-${nuevoIdx}-ga`);
+      if (el) el.focus();
+    }, 0);
   }
   function quitarJuego(i) {
     setConfirmar(false);
@@ -295,9 +302,27 @@ export default function Reta() {
         : { a: sig.a, b: sig.b, ga: '', gb: '' });
     });
   }
+  // SALTO AUTOMATICO AL SIGUIENTE CUADRO (German, 13-ago: "que el espacio para marcador
+  // brinque al siguiente cuadro de manera horizontal despues de capturar el primero, para
+  // mayor agilidad"). Se teclea con una mano, de pie en la cancha: cada toque de menos vale.
+  //
+  // Salta con UN digito y sólo cuando el cuadro estaba VACIO. Dos motivos:
+  //   · los games de padel son 0-7; esperar un segundo digito haria que nunca saltara.
+  //   · al CORREGIR un numero ya escrito no debe saltar, o no se puede arreglar nada.
+  // Si alguien necesita un 10+, toca el cuadro y escribe: el limite de 2 digitos sigue ahi.
   function setGames(i, lado, val) {
     setConfirmar(false);
-    setJuegos(v => v.map((j, n) => n === i ? { ...j, [lado]: val.replace(/\D/g, '').slice(0, 2) } : j));
+    const limpio = val.replace(/\D/g, '').slice(0, 2);
+    const estabaVacio = (juegos[i] || {})[lado] === '';
+    setJuegos(v => v.map((j, n) => n === i ? { ...j, [lado]: limpio } : j));
+    if (estabaVacio && limpio.length === 1) {
+      const sig = lado === 'ga' ? `g-${i}-gb` : `g-${i + 1}-ga`;
+      // En el siguiente tick: el input destino puede no existir hasta que React repinte.
+      setTimeout(() => {
+        const el = document.getElementById(sig);
+        if (el) { el.focus(); el.select(); }
+      }, 0);
+    }
   }
 
   const juegosLlenos = juegos.filter(j => j.ga !== '' && j.gb !== '');
@@ -447,8 +472,12 @@ export default function Reta() {
                         // min-w-0 + w-full: un <input> no se encoge bajo su ancho propio
                         <input
                           key={g}
+                          id={`g-${i}-${g}`}
                           inputMode="numeric" value={j[g]} placeholder="0"
                           onChange={e => setGames(i, g, e.target.value)}
+                          // Al entrar al cuadro se selecciona lo que haya: escribir encima
+                          // corrige de un toque, sin tener que borrar antes.
+                          onFocus={e => e.target.select()}
                           className="text-center font-black tabular-nums flex-1 w-full min-w-0 rounded-xl px-2 py-3 text-lg outline-none border-2"
                           style={{ borderColor: c, background: `${c}10`, color: c }}
                         />
