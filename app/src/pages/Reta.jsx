@@ -26,6 +26,10 @@ const fmtFechaLarga = (iso) => {
 // Para el marcador se usan nombres de pila: dos nombres completos por lado no caben en un
 // telefono y se cortaban con "...", que en una foto para redes se ve descuidado.
 const pila = (n) => String(n || '').trim().split(/\s+/)[0];
+// TODOS los nombres de jugador van en MAYUSCULAS (German, 13-ago). Se hace en JS y no con
+// la clase `uppercase` de CSS: asi el texto ya viaja en mayusculas y sale igual en el
+// screenshot, en el ticket o donde sea que se reuse este componente.
+const MAY = (n) => String(n || '').toUpperCase();
 // Identifica una pareja por sus jugadores, sin importar el orden.
 const clave = (p) => (Array.isArray(p) ? p : []).map(x => x && x.cliente_id).filter(Boolean).sort().join('|');
 // Dos repartos son el MISMO aunque vengan con los lados o el orden cambiados.
@@ -85,11 +89,18 @@ export function Ganador({ d }) {
         {fija ? (
           <>
             <p className="text-[72px] leading-none mt-8">{p.ganador ? '🏆' : '🤝'}</p>
-            <p className="text-white font-black text-[34px] leading-[1.1] mt-4 px-1">
+            {/* UN NOMBRE POR RENGLON (German, 13-ago: "1 nombre por renglon, mas limpio
+                mejor presentacion"). Dos nombres largos en una linea se partian donde caia
+                y se veia descuidado en la foto. */}
+            <div className="mt-4 px-1">
               {p.ganador
-                ? (p.ganador === 'a' ? p.a : p.b).map(x => x.nombre).join('  ·  ')
-                : 'Empate'}
-            </p>
+                ? (p.ganador === 'a' ? p.a : p.b).map(x => (
+                    <p key={x.cliente_id || x.nombre} className="text-white font-black text-[34px] leading-[1.15]">
+                      {MAY(x.nombre)}
+                    </p>
+                  ))
+                : <p className="text-white font-black text-[34px] leading-[1.15]">EMPATE</p>}
+            </div>
             <p className="text-white/60 text-[15px] font-bold mt-2 tracking-[.2em]">
               {p.ganador ? 'GANADORES' : 'EMPATADOS'}
             </p>
@@ -98,8 +109,12 @@ export function Ganador({ d }) {
             <div className="mt-9 rounded-3xl bg-black/25 px-5 py-4 text-left">
               {[{ lado: 'a', jug: p.a, sets: p.sets_a }, { lado: 'b', jug: p.b, sets: p.sets_b }].map(({ lado, jug, sets }) => (
                 <div key={lado} className={`flex items-center gap-3 py-3 ${p.ganador === lado || !p.ganador ? '' : 'opacity-70'}`}>
-                  <span className="text-white font-bold text-[19px] flex-1 min-w-0 leading-tight">
-                    {(jug || []).map(x => pila(x.nombre)).join(' · ')}
+                  <span className="flex-1 min-w-0">
+                    {(jug || []).map(x => (
+                      <span key={x.cliente_id || x.nombre} className="block text-white font-bold text-[19px] leading-[1.25]">
+                        {MAY(pila(x.nombre))}
+                      </span>
+                    ))}
                   </span>
                   <span className="flex items-center gap-2 shrink-0">
                     {(r.juegos || []).map(j => {
@@ -122,15 +137,21 @@ export function Ganador({ d }) {
             {campeon ? (
               <>
                 <p className="text-[72px] leading-none mt-8">🏆</p>
-                <p className="text-white font-black text-[38px] leading-[1.1] mt-4 px-1">{campeon.nombre}</p>
+                <p className="text-white font-black text-[38px] leading-[1.15] mt-4 px-1">{MAY(campeon.nombre)}</p>
                 <p className="text-white/60 text-[15px] font-bold mt-2 tracking-[.2em]">CAMPEÓN</p>
               </>
             ) : (
               <>
                 <p className="text-[64px] leading-none mt-8">🤝</p>
-                <p className="text-white font-black text-[30px] leading-[1.1] mt-4 px-1">
-                  {(r.empatados || []).map(t => pila(t.nombre)).join(' · ') || 'Empate'}
-                </p>
+                <div className="mt-4 px-1">
+                  {(r.empatados || []).length
+                    ? r.empatados.map(t => (
+                        <p key={t.cliente_id} className="text-white font-black text-[30px] leading-[1.15]">
+                          {MAY(pila(t.nombre))}
+                        </p>
+                      ))
+                    : <p className="text-white font-black text-[30px] leading-[1.15]">EMPATE</p>}
+                </div>
                 <p className="text-white/60 text-[15px] font-bold mt-2 tracking-[.2em]">EMPATADOS</p>
               </>
             )}
@@ -143,7 +164,7 @@ export function Ganador({ d }) {
                   <div key={t.cliente_id} className={`flex items-center gap-3 py-2.5 ${esCampeon ? '' : 'opacity-75'}`}>
                     <span className="text-white/40 font-black tabular-nums w-6 text-[18px] shrink-0">{t.pos}</span>
                     <span className="text-white font-bold text-[20px] flex-1 min-w-0 truncate leading-tight">
-                      {pila(t.nombre)}
+                      {MAY(pila(t.nombre))}
                     </span>
                     <span className="text-white font-black tabular-nums text-[22px] shrink-0">
                       {t.ganados}<span className="text-white/40">-{t.perdidos}</span>
@@ -218,15 +239,15 @@ export default function Reta() {
     ];
   })();
 
-  // Nombre con su numero de ranking del club pegado, estilo circuito profesional. Se
-  // devuelve como JSX y no como texto para poder pintar el numero mas chico y en gris.
-  const nombresDe = (ids) => (ids || []).map((id, n) => {
+  // UN NOMBRE POR RENGLON, en MAYUSCULAS, con su numero de ranking del club pegado al
+  // estilo del circuito profesional (German, 13-ago). Antes iban los dos en una linea
+  // separados por "+" y con nombres largos se partia donde caia.
+  const nombresDe = (ids) => (ids || []).map((id) => {
     const j = porId[id] || {};
     const pos = rankDe(j);
     return (
-      <span key={id}>
-        {n > 0 && <span className="text-gray-300 font-normal"> + </span>}
-        {j.nombre_corto || '?'}
+      <span key={id} className="block leading-[1.3]">
+        {MAY(j.nombre_corto || '?')}
         {pos && <span className="text-gray-400 font-bold"> #{pos}</span>}
       </span>
     );
@@ -415,7 +436,7 @@ export default function Reta() {
                 {!rotar && juegos[0] && (
                   <button
                     onClick={() => cambiarPareja(0)}
-                    className="w-full flex items-center gap-2 mb-3 text-left active:scale-[.99] transition-transform"
+                    className="w-full flex items-start gap-2 mb-3 text-left active:scale-[.99] transition-transform"
                   >
                     <span className="text-[14px] font-black flex-1 min-w-0 leading-tight" style={{ color: '#96C800' }}>
                       {nombresDe(juegos[0].a)}
@@ -434,7 +455,7 @@ export default function Reta() {
                     {rotar && (
                       <button
                         onClick={() => cambiarPareja(i)}
-                        className="w-full flex items-center gap-2 mb-1 text-left"
+                        className="w-full flex items-start gap-2 mb-1 text-left"
                       >
                         <span className="text-[12px] font-black flex-1 min-w-0 leading-tight" style={{ color: '#96C800' }}>
                           {nombresDe(j.a)}
