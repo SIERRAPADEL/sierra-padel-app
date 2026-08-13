@@ -15,6 +15,7 @@ import Noticias from './pages/Noticias';
 import Pedir from './pages/Pedir';
 import Terminos from './pages/Terminos';
 import Retas from './pages/Retas';
+import Reta from './pages/Reta';
 import Botanero from './pages/Botanero';
 import Ligas from './pages/Ligas';
 import Marcadores from './pages/Marcadores';
@@ -38,6 +39,9 @@ function AppRoutes() {
       <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route path="/reservar" element={<ProtectedRoute><Reservar /></ProtectedRoute>} />
       <Route path="/retas" element={<ProtectedRoute><Retas /></ProtectedRoute>} />
+      {/* La pantalla de UNA reta. Va despues de /retas: el orden importa para que
+          "/retas" no se coma la lista. */}
+      <Route path="/reta/:token" element={<ProtectedRoute><Reta /></ProtectedRoute>} />
       <Route path="/marcadores" element={<ProtectedRoute><Marcadores /></ProtectedRoute>} />
       <Route path="/ligas" element={<ProtectedRoute><Ligas /></ProtectedRoute>} />
       <Route path="/botanero" element={<ProtectedRoute><Botanero /></ProtectedRoute>} />

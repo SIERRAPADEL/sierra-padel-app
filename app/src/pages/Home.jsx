@@ -148,6 +148,57 @@ function MisReservas({ apiFetch, navigate }) {
   );
 }
 
+// ── La reta de HOY en la que voy: a todo el ancho, arriba de todo ─────────────
+// Pedido de German (13-ago): "si hay una reta activa, quiero que esa tarjeta pase a plano
+// principal tomando el ancho del display completo, al darle click entras a la pantalla de
+// la reta". Es la puerta a /reta/:token — por eso TODA la tarjeta es el boton, no un
+// enlace chiquito: se abre con el pulgar, de pie en la cancha.
+function RetaActiva({ r, onAbrir }) {
+  const completa = r.faltan === 0;
+  return (
+    <button
+      onClick={onAbrir}
+      className="w-full text-left rounded-3xl overflow-hidden active:scale-[.99] transition-transform"
+      style={{ background: 'linear-gradient(135deg,#7aaa00 0%,#96C800 100%)' }}
+    >
+      <div className="px-5 py-4">
+        <div className="flex items-center justify-between">
+          <span className="text-white/70 text-[11px] font-black tracking-[.18em] uppercase">
+            Tu reta de hoy
+          </span>
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 text-white">
+            {completa ? 'Completa' : r.faltan === 1 ? 'falta 1' : `faltan ${r.faltan}`}
+          </span>
+        </div>
+
+        <div className="flex items-end gap-3 mt-2">
+          <p className="text-white font-black leading-none tabular-nums" style={{ fontSize: 40 }}>
+            {r.hora_inicio}
+          </p>
+          <p className="text-white/85 font-bold text-[15px] pb-1">Cancha {r.cancha}</p>
+        </div>
+
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: r.cupo }).map((_, i) => (
+              <span key={i} style={{ width: 9, height: 9, borderRadius: 99, background: i < r.apuntados ? '#fff' : 'rgba(255,255,255,.35)' }} />
+            ))}
+            <span className="text-white/80 text-[12px] font-bold ml-1.5">
+              {r.apuntados} de {r.cupo}
+            </span>
+          </div>
+          <span className="text-white font-black text-[14px] flex items-center gap-1">
+            Abrir
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 // ── Seccion: Retas abiertas (matchmaking) ─────────────────────────────────────
 function RetasAbiertas({ apiFetch, navigate }) {
   const [retas, setRetas] = useState(null);
@@ -173,10 +224,20 @@ function RetasAbiertas({ apiFetch, navigate }) {
   // Sin retas no ocupamos espacio (la página completa vive en /retas)
   if (!retas?.length) return null;
 
-  const top = retas.slice(0, 3);
+  // LA RETA DE HOY EN LA QUE VOY sube a primer plano, a todo el ancho (German, 13-ago).
+  // Es la unica que tiene algo que hacer ahora mismo: armar parejas, ver con quien juegas
+  // y capturar el marcador al terminar. Las demas siguen en la lista de abajo.
+  const hoyISO = new Date().toLocaleDateString('sv-SE');
+  const activa = retas.find(r => (r.ya_apuntado || r.es_mia) && String(r.fecha).slice(0, 10) === hoyISO);
+  const top = retas.filter(r => r !== activa).slice(0, 3);
+
   return (
     <div className="flex flex-col gap-2">
-      <SectionHeader title="🎾 Retas abiertas" actionLabel="Ver todas" onAction={() => navigate('/retas')} />
+      {activa && <RetaActiva r={activa} onAbrir={() => navigate(`/reta/${activa.token}`)} />}
+
+      {top.length > 0 && (
+        <SectionHeader title="🎾 Retas abiertas" actionLabel="Ver todas" onAction={() => navigate('/retas')} />
+      )}
       {msg && (
         <p className={`text-[13px] text-center font-medium ${msg.ok ? 'text-sp-green' : 'text-red-500'}`}>{msg.text}</p>
       )}
