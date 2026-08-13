@@ -34,60 +34,11 @@ const mismoCombo = (x, y) => {
   return k(x) === k(y);
 };
 
-// ── Stats de un jugador, al lado de su nombre ────────────────────────────────────
-function Stats({ j }) {
-  const r = j.record;
-  return (
-    <div className="flex flex-wrap items-center gap-1.5 mt-1">
-      {j.nivel && (
-        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-sp-green-light text-sp-green-dark">
-          {j.nivel}
-        </span>
-      )}
-      {r ? (
-        <>
-          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-            {r.sets_g}-{r.sets_p} <span className="font-medium text-gray-400">sets</span>
-          </span>
-          {r.pos <= 10 && (
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-              #{r.pos} del club
-            </span>
-          )}
-        </>
-      ) : (
-        // Sin juegos NO es 0-0: un 0-0 se lee como "jugo y perdio todo".
-        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-50 text-gray-400">
-          sin juegos aun
-        </span>
-      )}
-    </div>
-  );
-}
-
-// ── Un jugador en la lista ───────────────────────────────────────────────────────
-// Ya NO se toca para armar parejas: las parejas viven en cada JUEGO, porque rotan. Aqui
-// solo se presenta a la gente con sus numeros.
-function Jugador({ j }) {
-  return (
-    <div className="w-full flex items-center gap-3 p-3 rounded-2xl border border-gray-100 bg-white text-left">
-      <div
-        className="flex items-center justify-center font-black text-white shrink-0"
-        style={{ width: 40, height: 40, borderRadius: 12, background: '#D1D5DB', fontSize: 15 }}
-      >
-        {(j.nombre_corto || '?').slice(0, 1).toUpperCase()}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="font-black text-sp-gray text-[15px] leading-tight truncate">
-          {j.nombre_corto}
-          {j.soy_yo && <span className="ml-1.5 text-[11px] font-bold text-sp-green">tú</span>}
-          {j.es_titular && <span className="ml-1.5 text-[11px] font-medium text-gray-400">organiza</span>}
-        </p>
-        <Stats j={j} />
-      </div>
-    </div>
-  );
-}
+// El numero de ranking del club, pegado al nombre como en el circuito profesional
+// (German, 13-ago: "en las stats podemos dejar solo el numero de ranking y ponerlo cerca
+// del nombre como si fuera un jugador profesional"). Nada mas: el nivel y el record eran
+// ruido al lado de esto.
+const rankDe = (j) => (j && j.record && j.record.pos) || null;
 
 // ── La decoracion del ganador: esto es lo que se va a screenshotear ──────────────
 // Sin botones ni nada tocable dentro: lo que se ve es lo que sale en la foto.
@@ -101,20 +52,30 @@ export function Ganador({ d }) {
   const fija = !!(r.parejas_fijas && r.pareja);   // jugaron con la misma pareja toda la reta
   const p = r.pareja;
   return (
+    // 📱 PANTALLA COMPLETA, FORMATO HISTORIA (German, 13-ago: "deberia ser mas grande; la
+    // pantalla completa como para subirlo a historias de IG"). Ocupa todo el alto de la
+    // pantalla para que el screenshot ya venga en proporcion de story, sin recortar.
+    // `100svh` y no `100vh`: en el celular, vh cuenta la barra del navegador y la tarjeta
+    // se desbordaba justo por lo que mide esa barra.
     <div
-      className="rounded-3xl overflow-hidden"
-      style={{ background: 'linear-gradient(160deg,#1b2b00 0%,#3f6300 55%,#96C800 100%)' }}
+      className="w-full flex flex-col justify-center"
+      style={{
+        minHeight: '100svh',
+        background: 'linear-gradient(160deg,#1b2b00 0%,#3f6300 55%,#96C800 100%)',
+      }}
     >
-      <div className="px-5 pt-6 pb-5 text-center">
-        {/* EL LOGO (German: "hay que poner el logo de Sierra Padel en algun lugar porque es
-            importante"). Va aqui y no en otro lado: esta tarjeta es la que acaba en redes,
-            asi que es donde la marca trabaja. Se usa el isotipo BLANCO sobre transparente,
-            que es el que se ve en fondo oscuro. */}
-        <div className="flex items-center justify-center gap-2">
-          <img src="/icons/isotipo-mask.png" alt="" width="26" height="26" style={{ opacity: 0.9 }} />
-          <p className="text-white/70 text-[12px] font-black tracking-[.22em] uppercase">Sierra Padel</p>
+      <div className="px-6 py-8 text-center">
+        {/* EL LOGO Y EL NOMBRE DEL CLUB, en grande (German: "podemos aprovechar para poner
+            mas grande el nombre del club"). Esta pantalla es la que acaba en redes: es
+            donde la marca trabaja. Isotipo BLANCO sobre transparente, el que se ve en
+            fondo oscuro. */}
+        <div className="flex items-center justify-center gap-3">
+          <img src="/icons/isotipo-mask.png" alt="" width="42" height="42" style={{ opacity: 0.95 }} />
+          <p className="text-white text-[22px] font-black tracking-[.16em] uppercase leading-none">
+            Sierra Padel
+          </p>
         </div>
-        <p className="text-white/80 text-[12px] font-semibold mt-1.5">
+        <p className="text-white/70 text-[14px] font-semibold mt-3">
           {fmtFechaLarga(d.fecha)} · Cancha {d.cancha}
         </p>
 
@@ -123,33 +84,33 @@ export function Ganador({ d }) {
               · rotando     → gana UNO. Liguilla. */}
         {fija ? (
           <>
-            <p className="text-[42px] leading-none mt-4">{p.ganador ? '🏆' : '🤝'}</p>
-            <p className="text-white font-black text-[21px] leading-tight mt-2 px-2">
+            <p className="text-[72px] leading-none mt-8">{p.ganador ? '🏆' : '🤝'}</p>
+            <p className="text-white font-black text-[34px] leading-[1.1] mt-4 px-1">
               {p.ganador
                 ? (p.ganador === 'a' ? p.a : p.b).map(x => x.nombre).join('  ·  ')
                 : 'Empate'}
             </p>
-            <p className="text-white/60 text-[12px] font-bold mt-1 tracking-[.15em]">
+            <p className="text-white/60 text-[15px] font-bold mt-2 tracking-[.2em]">
               {p.ganador ? 'GANADORES' : 'EMPATADOS'}
             </p>
 
             {/* Tablero de dos renglones: pareja, sus games por set, y sets ganados */}
-            <div className="mt-5 rounded-2xl bg-black/25 px-4 py-3 text-left">
+            <div className="mt-9 rounded-3xl bg-black/25 px-5 py-4 text-left">
               {[{ lado: 'a', jug: p.a, sets: p.sets_a }, { lado: 'b', jug: p.b, sets: p.sets_b }].map(({ lado, jug, sets }) => (
-                <div key={lado} className={`flex items-center gap-3 py-1.5 ${p.ganador === lado || !p.ganador ? '' : 'opacity-70'}`}>
-                  <span className="text-white font-bold text-[14px] flex-1 min-w-0 leading-tight">
+                <div key={lado} className={`flex items-center gap-3 py-3 ${p.ganador === lado || !p.ganador ? '' : 'opacity-70'}`}>
+                  <span className="text-white font-bold text-[19px] flex-1 min-w-0 leading-tight">
                     {(jug || []).map(x => pila(x.nombre)).join(' · ')}
                   </span>
-                  <span className="flex items-center gap-1.5 shrink-0">
+                  <span className="flex items-center gap-2 shrink-0">
                     {(r.juegos || []).map(j => {
                       // El lado puede venir volteado entre sets: se toma el games que le
                       // toca a ESTA pareja, no el de la columna.
                       const esA = clave(j.pareja_a) === clave(p.a);
                       const g = (lado === 'a') === esA ? j.games_a : j.games_b;
-                      return <span key={j.set} className="text-white/60 text-[13px] font-bold tabular-nums w-5 text-center">{g}</span>;
+                      return <span key={j.set} className="text-white/55 text-[18px] font-bold tabular-nums w-6 text-center">{g}</span>;
                     })}
                   </span>
-                  <span className={`font-black tabular-nums w-7 text-center shrink-0 ${p.ganador === lado ? 'text-white text-[24px]' : 'text-white/60 text-[20px]'}`}>
+                  <span className={`font-black tabular-nums w-10 text-center shrink-0 ${p.ganador === lado ? 'text-white text-[38px]' : 'text-white/55 text-[30px]'}`}>
                     {sets}
                   </span>
                 </div>
@@ -160,34 +121,34 @@ export function Ganador({ d }) {
           <>
             {campeon ? (
               <>
-                <p className="text-[42px] leading-none mt-4">🏆</p>
-                <p className="text-white font-black text-[24px] leading-tight mt-2 px-2">{campeon.nombre}</p>
-                <p className="text-white/60 text-[12px] font-bold mt-1 tracking-[.15em]">CAMPEÓN</p>
+                <p className="text-[72px] leading-none mt-8">🏆</p>
+                <p className="text-white font-black text-[38px] leading-[1.1] mt-4 px-1">{campeon.nombre}</p>
+                <p className="text-white/60 text-[15px] font-bold mt-2 tracking-[.2em]">CAMPEÓN</p>
               </>
             ) : (
               <>
-                <p className="text-[38px] leading-none mt-4">🤝</p>
-                <p className="text-white font-black text-[19px] leading-tight mt-2 px-2">
+                <p className="text-[64px] leading-none mt-8">🤝</p>
+                <p className="text-white font-black text-[30px] leading-[1.1] mt-4 px-1">
                   {(r.empatados || []).map(t => pila(t.nombre)).join(' · ') || 'Empate'}
                 </p>
-                <p className="text-white/60 text-[12px] font-bold mt-1 tracking-[.15em]">EMPATADOS</p>
+                <p className="text-white/60 text-[15px] font-bold mt-2 tracking-[.2em]">EMPATADOS</p>
               </>
             )}
 
             {/* La tabla individual: es lo que hace que se presuma */}
-            <div className="mt-5 rounded-2xl bg-black/25 px-3 py-2 text-left">
+            <div className="mt-9 rounded-3xl bg-black/25 px-4 py-3 text-left">
               {tabla.map(t => {
                 const esCampeon = campeon && t.cliente_id === campeon.cliente_id;
                 return (
-                  <div key={t.cliente_id} className={`flex items-center gap-2 py-1.5 ${esCampeon ? '' : 'opacity-75'}`}>
-                    <span className="text-white/40 font-black tabular-nums w-4 text-[13px] shrink-0">{t.pos}</span>
-                    <span className="text-white font-bold text-[14px] flex-1 min-w-0 truncate leading-tight">
+                  <div key={t.cliente_id} className={`flex items-center gap-3 py-2.5 ${esCampeon ? '' : 'opacity-75'}`}>
+                    <span className="text-white/40 font-black tabular-nums w-6 text-[18px] shrink-0">{t.pos}</span>
+                    <span className="text-white font-bold text-[20px] flex-1 min-w-0 truncate leading-tight">
                       {pila(t.nombre)}
                     </span>
-                    <span className="text-white font-black tabular-nums text-[15px] shrink-0">
+                    <span className="text-white font-black tabular-nums text-[22px] shrink-0">
                       {t.ganados}<span className="text-white/40">-{t.perdidos}</span>
                     </span>
-                    <span className="text-white/50 font-bold tabular-nums text-[12px] w-9 text-right shrink-0">
+                    <span className="text-white/50 font-bold tabular-nums text-[16px] w-12 text-right shrink-0">
                       {t.dif_games > 0 ? '+' : ''}{t.dif_games}
                     </span>
                   </div>
@@ -257,7 +218,19 @@ export default function Reta() {
     ];
   })();
 
-  const nombresDe = (ids) => (ids || []).map(id => (porId[id] || {}).nombre_corto || '?').join(' + ');
+  // Nombre con su numero de ranking del club pegado, estilo circuito profesional. Se
+  // devuelve como JSX y no como texto para poder pintar el numero mas chico y en gris.
+  const nombresDe = (ids) => (ids || []).map((id, n) => {
+    const j = porId[id] || {};
+    const pos = rankDe(j);
+    return (
+      <span key={id}>
+        {n > 0 && <span className="text-gray-300 font-normal"> + </span>}
+        {j.nombre_corto || '?'}
+        {pos && <span className="text-gray-400 font-bold"> #{pos}</span>}
+      </span>
+    );
+  });
 
   // Al entrar ya hay un set listo con la primera combinacion: el caso normal es pareja fija,
   // y asi se teclea el marcador sin tocar nada mas.
@@ -360,6 +333,34 @@ export default function Reta() {
     );
   }
 
+  // 📱 RETA TERMINADA = LA PANTALLA ES LA FOTO. Sin encabezado verde de la app, sin
+  // márgenes: el screenshot se sube tal cual a una historia. El unico control es una
+  // flecha flotante para volver, chiquita y en una esquina — si sale en la foto, no
+  // estorba, y sin ella la pantalla seria una trampa sin salida.
+  if (hayResultado) {
+    return (
+      <div className="relative">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Atrás"
+          className="absolute z-10 flex items-center justify-center rounded-full bg-black/25 text-white active:scale-90 transition-transform"
+          style={{ top: 'calc(env(safe-area-inset-top) + 12px)', left: 12, width: 38, height: 38 }}
+        >
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+            <path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <Ganador d={d} />
+        {/* Debajo del pliegue, fuera de la foto: es informacion de tramite. */}
+        {d.resultado.estado === 'propuesto' && (
+          <p className="text-[12px] text-gray-400 text-center py-4 px-6 leading-snug bg-sp-gray-light">
+            Marcador recién capturado — los que jugaron pueden objetarlo si algo no cuadra.
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="page safe-bottom">
       {/* Encabezado: el horario y la cancha, que es lo que se pregunta al abrir */}
@@ -396,27 +397,8 @@ export default function Reta() {
           </p>
         )}
 
-        {/* Si ya termino, la tarjeta va ARRIBA: es lo que se viene a ver y a compartir */}
-        {hayResultado && (
-          <div>
-            <Ganador d={d} />
-            {/* FUERA de la tarjeta a proposito: es informacion de tramite y no tiene por
-                que salir en el screenshot que se sube a redes. */}
-            {d.resultado.estado === 'propuesto' && (
-              <p className="text-[12px] text-gray-400 text-center mt-2 px-4 leading-snug">
-                Marcador recién capturado — los que jugaron pueden objetarlo si algo no cuadra.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Jugadores + stats */}
-        <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide px-1 mb-2">Quiénes juegan</p>
-          <div className="flex flex-col gap-2">
-            {jugadores.map(j => <Jugador key={j.cliente_id || j.nombre} j={j} />)}
-          </div>
-        </div>
+        {/* Ya NO hay lista de "Quiénes juegan" (German, 13-ago: "es redundante"): los cuatro
+            nombres ya salen en el marcador, con su numero de ranking al lado. */}
 
         {puedeCapturar && (
           <div className="card">
@@ -435,11 +417,11 @@ export default function Reta() {
                     onClick={() => cambiarPareja(0)}
                     className="w-full flex items-center gap-2 mb-3 text-left active:scale-[.99] transition-transform"
                   >
-                    <span className="text-[14px] font-black flex-1 min-w-0 truncate" style={{ color: '#96C800' }}>
+                    <span className="text-[14px] font-black flex-1 min-w-0 leading-tight" style={{ color: '#96C800' }}>
                       {nombresDe(juegos[0].a)}
                     </span>
                     <span className="text-gray-300 font-bold text-[13px] shrink-0">vs</span>
-                    <span className="text-[14px] font-black flex-1 min-w-0 truncate text-right" style={{ color: '#3B6FD4' }}>
+                    <span className="text-[14px] font-black flex-1 min-w-0 leading-tight text-right" style={{ color: '#3B6FD4' }}>
                       {nombresDe(juegos[0].b)}
                     </span>
                     <span className="text-gray-300 text-[16px] shrink-0">↻</span>
@@ -454,11 +436,11 @@ export default function Reta() {
                         onClick={() => cambiarPareja(i)}
                         className="w-full flex items-center gap-2 mb-1 text-left"
                       >
-                        <span className="text-[12px] font-black flex-1 min-w-0 truncate" style={{ color: '#96C800' }}>
+                        <span className="text-[12px] font-black flex-1 min-w-0 leading-tight" style={{ color: '#96C800' }}>
                           {nombresDe(j.a)}
                         </span>
                         <span className="text-gray-300 font-bold text-[11px] shrink-0">vs</span>
-                        <span className="text-[12px] font-black flex-1 min-w-0 truncate text-right" style={{ color: '#3B6FD4' }}>
+                        <span className="text-[12px] font-black flex-1 min-w-0 leading-tight text-right" style={{ color: '#3B6FD4' }}>
                           {nombresDe(j.b)}
                         </span>
                         <span className="text-gray-300 text-[14px] shrink-0">↻</span>
