@@ -26,6 +26,8 @@ const fmtFechaLarga = (iso) => {
 // Para el marcador se usan nombres de pila: dos nombres completos por lado no caben en un
 // telefono y se cortaban con "...", que en una foto para redes se ve descuidado.
 const pila = (n) => String(n || '').trim().split(/\s+/)[0];
+// Identifica una pareja por sus jugadores, sin importar el orden.
+const clave = (p) => (Array.isArray(p) ? p : []).map(x => x && x.cliente_id).filter(Boolean).sort().join('|');
 // Dos repartos son el MISMO aunque vengan con los lados o el orden cambiados.
 const mismoCombo = (x, y) => {
   const k = (c) => [[...(c.a || [])].sort().join(), [...(c.b || [])].sort().join()].sort().join('|');
@@ -96,6 +98,8 @@ export function Ganador({ d }) {
   const r = d.resultado;
   const tabla = r.tabla || [];
   const campeon = r.campeon;
+  const fija = !!(r.parejas_fijas && r.pareja);   // jugaron con la misma pareja toda la reta
+  const p = r.pareja;
   return (
     <div
       className="rounded-3xl overflow-hidden"
@@ -114,62 +118,86 @@ export function Ganador({ d }) {
           {fmtFechaLarga(d.fecha)} · Cancha {d.cancha}
         </p>
 
-        {/* Con las parejas rotando, el que gana es un JUGADOR, no una pareja. */}
-        {campeon ? (
+        {/* LAS DOS FORMAS DE JUGAR UNA RETA, y no se leen igual:
+              · pareja fija → ganan DOS juntos. Partido de toda la vida.
+              · rotando     → gana UNO. Liguilla. */}
+        {fija ? (
           <>
-            <p className="text-[42px] leading-none mt-4">🏆</p>
-            <p className="text-white font-black text-[24px] leading-tight mt-2 px-2">
-              {campeon.nombre}
+            <p className="text-[42px] leading-none mt-4">{p.ganador ? '🏆' : '🤝'}</p>
+            <p className="text-white font-black text-[21px] leading-tight mt-2 px-2">
+              {p.ganador
+                ? (p.ganador === 'a' ? p.a : p.b).map(x => x.nombre).join('  ·  ')
+                : 'Empate'}
             </p>
-            <p className="text-white/60 text-[12px] font-bold mt-1 tracking-[.15em]">CAMPEÓN</p>
+            <p className="text-white/60 text-[12px] font-bold mt-1 tracking-[.15em]">
+              {p.ganador ? 'GANADORES' : 'EMPATADOS'}
+            </p>
+
+            {/* Tablero de dos renglones: pareja, sus games por set, y sets ganados */}
+            <div className="mt-5 rounded-2xl bg-black/25 px-4 py-3 text-left">
+              {[{ lado: 'a', jug: p.a, sets: p.sets_a }, { lado: 'b', jug: p.b, sets: p.sets_b }].map(({ lado, jug, sets }) => (
+                <div key={lado} className={`flex items-center gap-3 py-1.5 ${p.ganador === lado || !p.ganador ? '' : 'opacity-70'}`}>
+                  <span className="text-white font-bold text-[14px] flex-1 min-w-0 leading-tight">
+                    {(jug || []).map(x => pila(x.nombre)).join(' · ')}
+                  </span>
+                  <span className="flex items-center gap-1.5 shrink-0">
+                    {(r.juegos || []).map(j => {
+                      // El lado puede venir volteado entre sets: se toma el games que le
+                      // toca a ESTA pareja, no el de la columna.
+                      const esA = clave(j.pareja_a) === clave(p.a);
+                      const g = (lado === 'a') === esA ? j.games_a : j.games_b;
+                      return <span key={j.set} className="text-white/60 text-[13px] font-bold tabular-nums w-5 text-center">{g}</span>;
+                    })}
+                  </span>
+                  <span className={`font-black tabular-nums w-7 text-center shrink-0 ${p.ganador === lado ? 'text-white text-[24px]' : 'text-white/60 text-[20px]'}`}>
+                    {sets}
+                  </span>
+                </div>
+              ))}
+            </div>
           </>
         ) : (
           <>
-            <p className="text-[38px] leading-none mt-4">🤝</p>
-            <p className="text-white font-black text-[19px] leading-tight mt-2 px-2">
-              {(r.empatados || []).map(t => pila(t.nombre)).join(' · ') || 'Empate'}
-            </p>
-            <p className="text-white/60 text-[12px] font-bold mt-1 tracking-[.15em]">EMPATADOS</p>
+            {campeon ? (
+              <>
+                <p className="text-[42px] leading-none mt-4">🏆</p>
+                <p className="text-white font-black text-[24px] leading-tight mt-2 px-2">{campeon.nombre}</p>
+                <p className="text-white/60 text-[12px] font-bold mt-1 tracking-[.15em]">CAMPEÓN</p>
+              </>
+            ) : (
+              <>
+                <p className="text-[38px] leading-none mt-4">🤝</p>
+                <p className="text-white font-black text-[19px] leading-tight mt-2 px-2">
+                  {(r.empatados || []).map(t => pila(t.nombre)).join(' · ') || 'Empate'}
+                </p>
+                <p className="text-white/60 text-[12px] font-bold mt-1 tracking-[.15em]">EMPATADOS</p>
+              </>
+            )}
+
+            {/* La tabla individual: es lo que hace que se presuma */}
+            <div className="mt-5 rounded-2xl bg-black/25 px-3 py-2 text-left">
+              {tabla.map(t => {
+                const esCampeon = campeon && t.cliente_id === campeon.cliente_id;
+                return (
+                  <div key={t.cliente_id} className={`flex items-center gap-2 py-1.5 ${esCampeon ? '' : 'opacity-75'}`}>
+                    <span className="text-white/40 font-black tabular-nums w-4 text-[13px] shrink-0">{t.pos}</span>
+                    <span className="text-white font-bold text-[14px] flex-1 min-w-0 truncate leading-tight">
+                      {pila(t.nombre)}
+                    </span>
+                    <span className="text-white font-black tabular-nums text-[15px] shrink-0">
+                      {t.ganados}<span className="text-white/40">-{t.perdidos}</span>
+                    </span>
+                    <span className="text-white/50 font-bold tabular-nums text-[12px] w-9 text-right shrink-0">
+                      {t.dif_games > 0 ? '+' : ''}{t.dif_games}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
           </>
         )}
 
-        {/* La tabla: es lo que hace que se presuma. Un renglon por jugador. */}
-        <div className="mt-5 rounded-2xl bg-black/25 px-3 py-2 text-left">
-          {tabla.map(t => {
-            const esCampeon = campeon && t.cliente_id === campeon.cliente_id;
-            return (
-              <div key={t.cliente_id} className={`flex items-center gap-2 py-1.5 ${esCampeon ? '' : 'opacity-75'}`}>
-                <span className="text-white/40 font-black tabular-nums w-4 text-[13px] shrink-0">{t.pos}</span>
-                <span className="text-white font-bold text-[14px] flex-1 min-w-0 truncate leading-tight">
-                  {pila(t.nombre)}
-                </span>
-                <span className="text-white font-black tabular-nums text-[15px] shrink-0">
-                  {t.ganados}<span className="text-white/40">-{t.perdidos}</span>
-                </span>
-                <span className="text-white/50 font-bold tabular-nums text-[12px] w-9 text-right shrink-0">
-                  {t.dif_games > 0 ? '+' : ''}{t.dif_games}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Los juegos, en chiquito: el detalle de como se llego ahi */}
-        <div className="mt-3 flex flex-col gap-1">
-          {(r.juegos || []).map(j => (
-            <p key={j.set} className="text-white/45 text-[11px] leading-tight">
-              {(j.pareja_a || []).map(p => pila(p.nombre)).join('+')}
-              <span className="text-white/70 font-bold tabular-nums"> {j.games_a}-{j.games_b} </span>
-              {(j.pareja_b || []).map(p => pila(p.nombre)).join('+')}
-            </p>
-          ))}
-        </div>
-
-        {r.estado === 'propuesto' && (
-          <p className="text-white/45 text-[11px] mt-3">
-            Marcador recién capturado — los rivales pueden objetarlo
-          </p>
-        )}
       </div>
     </div>
   );
@@ -192,6 +220,10 @@ export default function Reta() {
   const [msg, setMsg] = useState(null);
   // Terminar la reta es irreversible: el primer toque avisa, el segundo lo hace.
   const [confirmar, setConfirmar] = useState(false);
+  // ROTAR PAREJAS (German, 13-ago: "mejor debes poner un checkbox de rotar parejas para
+  // esos casos"). Apagado por default porque el caso normal es jugar con el mismo compañero
+  // toda la reta; con las tres combinaciones siempre a la vista la pantalla era puro ruido.
+  const [rotar, setRotar] = useState(false);
 
   const cargar = useCallback(() => {
     setCargando(true);
@@ -227,24 +259,41 @@ export default function Reta() {
 
   const nombresDe = (ids) => (ids || []).map(id => (porId[id] || {}).nombre_corto || '?').join(' + ');
 
-  function agregarJuego(combo) {
+  // Al entrar ya hay un set listo con la primera combinacion: el caso normal es pareja fija,
+  // y asi se teclea el marcador sin tocar nada mas.
+  useEffect(() => {
+    if (!puedeCapturar || !combinaciones || juegos.length) return;
+    setJuegos([{ a: combinaciones[0].a, b: combinaciones[0].b, ga: '', gb: '' }]);
+  }, [puedeCapturar, combinaciones, juegos.length]);
+
+  function agregarJuego() {
     setConfirmar(false);
-    setJuegos(v => [...v, { a: combo.a, b: combo.b, ga: '', gb: '' }]);
+    setJuegos(v => {
+      const ult = v[v.length - 1];
+      // Sin rotar, el set nuevo hereda la pareja: es la misma gente todo el rato.
+      const base = rotar && combinaciones
+        ? combinaciones[(combinaciones.findIndex(c => mismoCombo(c, ult)) + 1) % combinaciones.length]
+        : ult;
+      return [...v, { a: base.a, b: base.b, ga: '', gb: '' }];
+    });
   }
   function quitarJuego(i) {
     setConfirmar(false);
-    setJuegos(v => v.filter((_, n) => n !== i));
+    setJuegos(v => (v.length <= 1 ? v : v.filter((_, n) => n !== i)));
   }
-  // Cambiar la pareja de UN juego no toca los demas: cada uno es independiente. Pero sí
-  // limpia SU marcador, porque esos games ya no dicen lo mismo con otra pareja.
-  function rotarJuego(i) {
+  // Cambia el reparto. Sin rotar cambia el de TODOS (es una sola pareja para la reta);
+  // rotando cambia solo el de ese juego. En los dos casos limpia los games afectados:
+  // esos numeros ya no dicen lo mismo con otra pareja.
+  function cambiarPareja(i) {
+    if (!combinaciones) return;
     setConfirmar(false);
-    setJuegos(v => v.map((j, n) => {
-      if (n !== i || !combinaciones) return j;
-      const actual = combinaciones.findIndex(c => mismoCombo(c, j));
+    setJuegos(v => {
+      const actual = combinaciones.findIndex(c => mismoCombo(c, v[i]));
       const sig = combinaciones[(actual + 1 + combinaciones.length) % combinaciones.length];
-      return { a: sig.a, b: sig.b, ga: '', gb: '' };
-    }));
+      return v.map((j, n) => (rotar && n !== i)
+        ? j
+        : { a: sig.a, b: sig.b, ga: '', gb: '' });
+    });
   }
   function setGames(i, lado, val) {
     setConfirmar(false);
@@ -322,8 +371,19 @@ export default function Reta() {
           </p>
         )}
 
-        {/* Si ya termino, la tarjeta del campeon va ARRIBA: es lo que se viene a ver */}
-        {hayResultado && <Ganador d={d} />}
+        {/* Si ya termino, la tarjeta va ARRIBA: es lo que se viene a ver y a compartir */}
+        {hayResultado && (
+          <div>
+            <Ganador d={d} />
+            {/* FUERA de la tarjeta a proposito: es informacion de tramite y no tiene por
+                que salir en el screenshot que se sube a redes. */}
+            {d.resultado.estado === 'propuesto' && (
+              <p className="text-[12px] text-gray-400 text-center mt-2 px-4 leading-snug">
+                Marcador recién capturado — los que jugaron pueden objetarlo si algo no cuadra.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Jugadores + stats */}
         <div>
@@ -333,81 +393,96 @@ export default function Reta() {
           </div>
         </div>
 
-        {/* LOS JUEGOS DE LA RETA. Cada uno con SU pareja y SU marcador — las parejas rotan. */}
         {puedeCapturar && (
           <div className="card">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Juegos</p>
-            <p className="text-[13px] text-sp-gray mt-1 mb-3 leading-snug">
-              Agrega un juego por cada vez que cambiaron de pareja. Al terminar, sale la tabla
-              con quién ganó más.
-            </p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Marcador</p>
 
-            {juegos.map((j, i) => (
-              <div key={i} className="rounded-2xl border border-gray-100 p-3 mb-2">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-black text-gray-400 uppercase tracking-wide">
-                    Juego {i + 1}
-                  </span>
-                  <div className="flex items-center gap-3">
-                    {combinaciones && (
-                      <button onClick={() => rotarJuego(i)} className="text-[12px] font-bold text-sp-green-dark">
-                        ↻ Cambiar parejas
+            {!combinaciones ? (
+              <p className="text-[13px] text-gray-400 text-center py-3">
+                Se necesitan los 4 jugadores apuntados para capturar el marcador.
+              </p>
+            ) : (
+              <>
+                {/* SIN ROTAR: la pareja se enseña UNA vez arriba y los sets van debajo, pelados.
+                    Antes cada set repetia los nombres y era puro ruido. */}
+                {!rotar && juegos[0] && (
+                  <button
+                    onClick={() => cambiarPareja(0)}
+                    className="w-full flex items-center gap-2 mb-3 text-left active:scale-[.99] transition-transform"
+                  >
+                    <span className="text-[14px] font-black flex-1 min-w-0 truncate" style={{ color: '#96C800' }}>
+                      {nombresDe(juegos[0].a)}
+                    </span>
+                    <span className="text-gray-300 font-bold text-[13px] shrink-0">vs</span>
+                    <span className="text-[14px] font-black flex-1 min-w-0 truncate text-right" style={{ color: '#3B6FD4' }}>
+                      {nombresDe(juegos[0].b)}
+                    </span>
+                    <span className="text-gray-300 text-[16px] shrink-0">↻</span>
+                  </button>
+                )}
+
+                {juegos.map((j, i) => (
+                  <div key={i} className="mb-2">
+                    {/* ROTANDO: cada set enseña SU pareja, porque cambia */}
+                    {rotar && (
+                      <button
+                        onClick={() => cambiarPareja(i)}
+                        className="w-full flex items-center gap-2 mb-1 text-left"
+                      >
+                        <span className="text-[12px] font-black flex-1 min-w-0 truncate" style={{ color: '#96C800' }}>
+                          {nombresDe(j.a)}
+                        </span>
+                        <span className="text-gray-300 font-bold text-[11px] shrink-0">vs</span>
+                        <span className="text-[12px] font-black flex-1 min-w-0 truncate text-right" style={{ color: '#3B6FD4' }}>
+                          {nombresDe(j.b)}
+                        </span>
+                        <span className="text-gray-300 text-[14px] shrink-0">↻</span>
                       </button>
                     )}
-                    <button onClick={() => quitarJuego(i)} className="text-[12px] font-bold text-gray-300">
-                      Quitar
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-bold text-gray-400 w-10 shrink-0">
+                        {rotar ? `#${i + 1}` : `Set ${i + 1}`}
+                      </span>
+                      {[{ c: '#96C800', g: 'ga' }, { c: '#3B6FD4', g: 'gb' }].map(({ c, g }) => (
+                        // min-w-0 + w-full: un <input> no se encoge bajo su ancho propio
+                        <input
+                          key={g}
+                          inputMode="numeric" value={j[g]} placeholder="0"
+                          onChange={e => setGames(i, g, e.target.value)}
+                          className="text-center font-black tabular-nums flex-1 w-full min-w-0 rounded-xl px-2 py-3 text-lg outline-none border-2"
+                          style={{ borderColor: c, background: `${c}10`, color: c }}
+                        />
+                      ))}
+                      {juegos.length > 1 && (
+                        <button onClick={() => quitarJuego(i)} className="text-gray-200 text-[20px] font-bold w-6 shrink-0">×</button>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {[{ lado: 'a', c: '#96C800', ids: j.a, g: 'ga' }, { lado: 'b', c: '#3B6FD4', ids: j.b, g: 'gb' }].map(
-                    ({ lado, c, ids, g }, n) => (
-                      <div key={lado} className="flex-1 min-w-0 flex items-center gap-2">
-                        {n === 1 && <span className="text-gray-300 font-black shrink-0">–</span>}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[12px] font-black truncate mb-1" style={{ color: c }}>
-                            {nombresDe(ids)}
-                          </p>
-                          {/* min-w-0 + w-full: un <input> no se encoge bajo su ancho propio */}
-                          <input
-                            inputMode="numeric" value={j[g]} placeholder="0"
-                            onChange={e => setGames(i, g, e.target.value)}
-                            className="text-center font-black tabular-nums w-full min-w-0 rounded-xl px-2 py-3 text-lg outline-none border-2"
-                            style={{ borderColor: c, background: `${c}10`, color: c }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {/* Las 3 combinaciones posibles, de un toque. Con 4 jugadores no hay mas. */}
-            {combinaciones ? (
-              <div className="flex flex-col gap-2 mt-1">
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
-                  {juegos.length ? 'Agregar otro juego' : 'Elige quién jugó contra quién'}
-                </p>
-                {combinaciones.map((c, i) => (
-                  <button
-                    key={i}
-                    onClick={() => agregarJuego(c)}
-                    className="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 px-3 active:scale-95 transition-transform"
-                  >
-                    <span className="text-[13px] font-black" style={{ color: '#96C800' }}>{nombresDe(c.a)}</span>
-                    <span className="text-gray-300 font-bold mx-2">vs</span>
-                    <span className="text-[13px] font-black" style={{ color: '#3B6FD4' }}>{nombresDe(c.b)}</span>
-                  </button>
                 ))}
-              </div>
-            ) : (
-              <p className="text-[13px] text-gray-400 text-center py-3">
-                Se necesitan los 4 jugadores apuntados para capturar los juegos.
-              </p>
+
+                <button
+                  onClick={agregarJuego}
+                  className="w-full border-2 border-dashed border-gray-200 text-gray-500 font-bold py-3.5 rounded-xl text-[15px] active:scale-95 transition-transform mt-1"
+                >
+                  + Otro set
+                </button>
+
+                {/* El checkbox: apagado por default, que es el caso normal */}
+                <label className="flex items-center gap-2.5 mt-3 py-1 cursor-pointer">
+                  <input
+                    type="checkbox" checked={rotar}
+                    onChange={e => { setConfirmar(false); setRotar(e.target.checked); }}
+                    className="w-5 h-5 accent-sp-green shrink-0"
+                  />
+                  <span className="text-[14px] text-sp-gray font-semibold">
+                    Rotamos parejas
+                    <span className="text-gray-400 font-normal"> · cada set con distinto compañero</span>
+                  </span>
+                </label>
+              </>
             )}
 
-            {juegos.length > 0 && (
+            {combinaciones && (
               <>
                 <button
                   onClick={() => { if (!confirmar) setConfirmar(true); else guardarMarcador(); }}
@@ -419,7 +494,7 @@ export default function Reta() {
                 {confirmar ? (
                   <div className="mt-2">
                     <p className="text-[12px] text-red-500 text-center font-semibold">
-                      Se guardan los {juegosLlenos.length} juego(s) y ya no se puede cambiar aquí.
+                      Se guardan {juegosLlenos.length} set(s) y ya no se puede cambiar aquí.
                     </p>
                     <button onClick={() => setConfirmar(false)} className="w-full text-gray-400 text-[13px] font-bold py-2">
                       Mejor no, sigo editando
