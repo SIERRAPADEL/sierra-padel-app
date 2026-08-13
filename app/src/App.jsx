@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import BottomNav from './components/BottomNav';
 import InstallGuide from './components/InstallGuide';
 import NotificationSetup from './components/NotificationSetup';
+import NuevaVersion from './components/NuevaVersion';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
 import Home from './pages/Home';
@@ -67,6 +68,9 @@ function LayoutWrapper() {
       {showNav && <BottomNav />}
       <InstallGuide />
       <NotificationSetup />
+      {/* Avisa cuando hay version nueva: una app abierta no vuelve a pedir el index.html
+          y se queda corriendo el codigo viejo sin que nadie se entere (paso el 13-ago). */}
+      <NuevaVersion />
     </div>
   );
 }

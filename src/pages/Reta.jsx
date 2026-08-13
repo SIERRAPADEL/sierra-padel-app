@@ -201,6 +201,18 @@ export default function Reta() {
   function tocar(id) {
     if (!id || !puedeEditarParejas) return;
     setConfirmar(false);   // cambiar las parejas desarma el "sí, terminar"
+    // 🔑 CAMBIAR LAS PAREJAS BORRA EL MARCADOR YA TECLEADO (German, 13-ago: "no respeta y
+    // se cambian todos los resultados por igual"). Los games estan atados a la COLUMNA A/B,
+    // no a las personas: al mover a alguien de pareja, un 6-4 que decia "gano German" pasa
+    // a decir "gano Angel" sin que nadie lo toque. Antes que reasignar en silencio, se
+    // limpia y se avisa — el marcador se vuelve a poner en diez segundos, un resultado mal
+    // atribuido se queda en el historial del club.
+    setSets(prev => {
+      const habiaAlgo = prev.some(s => s.a !== '' || s.b !== '');
+      if (!habiaAlgo) return prev;
+      setMsg({ ok: false, text: 'Cambiaste las parejas — vuelve a poner el marcador' });
+      return [{ a: '', b: '' }];
+    });
     setEquipo(prev => {
       const sig = prev[id] === 'a' ? 'b' : prev[id] === 'b' ? undefined : 'a';
       const n = { ...prev };
@@ -298,10 +310,16 @@ export default function Reta() {
 
         {/* Jugadores + stats */}
         <div>
-          <div className="flex items-baseline justify-between px-1 mb-2">
+          <div className="px-1 mb-2">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Quiénes juegan</p>
             {puedeEditarParejas && d.jugadores.length >= 2 && (
-              <p className="text-[11px] text-gray-400">toca para armar parejas</p>
+              // Instruccion explicita (German: "no me quedo claro como hacer el cambio de
+              // pareja"). Un "toca para armar parejas" en gris chiquito no lo leyo nadie.
+              <p className="text-[13px] text-sp-gray mt-1 leading-snug">
+                <b>Toca a cada jugador</b> para ponerlo en la pareja <span style={{ color: '#96C800', fontWeight: 800 }}>A</span>,
+                luego en la <span style={{ color: '#3B6FD4', fontWeight: 800 }}>B</span>, y otra vez para quitarlo.
+                {enA.length + enB.length > 0 && ' Puedes cambiarlas las veces que quieras.'}
+              </p>
             )}
           </div>
           <div className="flex flex-col gap-2">
@@ -325,13 +343,9 @@ export default function Reta() {
               {guardando ? 'Guardando…' : d.parejas ? 'Actualizar parejas' : 'Guardar parejas'}
             </button>
           )}
-          {puedeEditarParejas && d.parejas && (
-            // German (13-ago): "tambien la opcion de cambiar de pareja disponible". Guardar
-            // las parejas NO las congela — se siguen cambiando tocando a la gente hasta que
-            // la reta se termina. Se dice con todas sus letras porque el boton "Guardar"
-            // sugiere lo contrario.
+          {puedeEditarParejas && parejasOk && (
             <p className="text-[12px] text-gray-400 text-center mt-2">
-              Puedes cambiarlas: toca a los jugadores otra vez.
+              Guardarlas es opcional: sirve para que los demás las vean antes de jugar.
             </p>
           )}
         </div>
@@ -348,23 +362,26 @@ export default function Reta() {
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Marcador</p>
             {/* Cada columna con el COLOR de su pareja y su nombre encima: sin esto hay que
                 acordarse de cual numero es de quien, y ahi es donde se equivoca uno. */}
-            <div className="flex items-center gap-3 mb-2">
-              <span className="w-12" />
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-10 shrink-0" />
               {[{ k: 'a', c: '#96C800', l: enA }, { k: 'b', c: '#3B6FD4', l: enB }].map(({ k, c, l }) => (
-                <span key={k} className="flex-1 text-center text-[12px] font-black truncate" style={{ color: c }}>
+                <span key={k} className="flex-1 min-w-0 text-center text-[12px] font-black truncate" style={{ color: c }}>
                   {l.map(j => j.nombre_corto).join(' · ') || k.toUpperCase()}
                 </span>
               ))}
             </div>
             {sets.map((s, i) => (
-              <div key={i} className="flex items-center gap-3 mb-2">
-                <span className="text-[13px] font-bold text-gray-400 w-12">Set {i + 1}</span>
+              <div key={i} className="flex items-center gap-2 mb-2">
+                <span className="text-[13px] font-bold text-gray-400 w-10 shrink-0">Set {i + 1}</span>
                 {[{ k: 'a', c: '#96C800' }, { k: 'b', c: '#3B6FD4' }].map(({ k, c }) => (
+                  // 🔑 min-w-0 + w-full: un <input> trae un ancho intrinseco de ~20 caracteres
+                  // y `flex-1` NO lo encoge por debajo de eso (min-width:auto), asi que los dos
+                  // cuadros se salian de la pantalla del telefono. Reportado por German.
                   <input
                     key={k}
                     inputMode="numeric" value={s[k]} placeholder="0"
                     onChange={e => { setConfirmar(false); setSets(v => v.map((x, n) => n === i ? { ...x, [k]: e.target.value.replace(/\D/g, '').slice(0, 2) } : x)); }}
-                    className="text-center font-black tabular-nums flex-1 rounded-xl px-4 py-3 text-lg outline-none border-2 transition-colors"
+                    className="text-center font-black tabular-nums flex-1 min-w-0 w-full rounded-xl px-2 py-3 text-lg outline-none border-2 transition-colors"
                     style={{ borderColor: c, background: `${c}10`, color: c }}
                   />
                 ))}
