@@ -47,6 +47,11 @@ function isStandalone() {
   );
 }
 
+// Se exportan para que la portada pueda ofrecer activar los avisos de forma PERMANENTE:
+// este componente es un aviso pasajero (sale a los 3 s, y si lo descartan una vez no vuelve
+// nunca), y por eso se quedó en 30 personas desde el 31-jul.
+export { isPushSupported, isStandalone, usePushSubscription };
+
 // ─── Hook: logica de suscripcion ─────────────────────────────────────────────
 function usePushSubscription(apiFetch) {
   const [subscribing, setSubscribing] = useState(false);

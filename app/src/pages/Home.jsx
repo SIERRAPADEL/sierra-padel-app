@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
 import PromoExpressBanner from '../components/PromoExpressBanner';
+import AvisosApagados from '../components/AvisosApagados';
 import NivelSelector from '../components/NivelSelector';
 import { BACKEND } from '../lib/constants';
 import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/format';
@@ -554,6 +555,10 @@ export default function Home() {
 
         {/* Retas abiertas (matchmaking) */}
         <RetasAbiertas apiFetch={apiFetch} navigate={navigate} />
+
+        {/* Sin avisos el jugador no se entera de que lo invitaron a una reta. Va aquí abajo,
+            pegado a las retas, porque es justo lo que se está perdiendo. */}
+        <AvisosApagados />
 
         {/* Mis reservas */}
         <MisReservas apiFetch={apiFetch} navigate={navigate} />
