@@ -1,0 +1,20 @@
+App: una liga compartida ya no se pierde al iniciar sesion
+
+Las ligas que se comparten (la convocatoria de un torneo, una invitacion de
+pareja) apuntan a rutas protegidas. Quien las abria SIN sesion caia en /login y,
+al entrar, aparecia en Inicio: la liga se perdia y habia que buscar la pantalla
+a mano. Para una convocatoria mandada a 300 personas, la mayoria sin sesion
+abierta, eso se come casi todo el trafico.
+
+Ahora ProtectedRoute guarda el destino en ?next= y Login/Registro vuelven ahi.
+La cadena completa queda cubierta: liga -> login -> "Registrate aqui" ->
+registro -> destino. Los enlaces cruzados entre Login y Registro arrastran el
+?next= para no romperla a medio camino.
+
+Helper nuevo en src/lib/destino.js. Solo acepta rutas INTERNAS: un next con URL
+externa (o con //, que el navegador lee como protocolo relativo) seria un
+redirect abierto - bastaria mandar .../login?next=https://sitio-falso para que
+la app llevara al socio ahi despues de teclear su PIN.
+
+Aplicado en las dos copias del repo (raiz src/ y la anidada app/).
+Build local verificado.

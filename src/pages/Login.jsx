@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { destinoTrasEntrar } from '../lib/destino';
 import { useAuth } from '../context/AuthContext';
 import Isotipo from '../components/Isotipo';
 import PinInput from '../components/PinInput';
@@ -48,7 +49,7 @@ export default function Login() {
     setError('');
     try {
       await login(telefono, pinFinal);
-      navigate('/home');
+      navigate(destinoTrasEntrar(window.location.search));
     } catch (err) {
       setError(err.message || 'PIN incorrecto. Verifica e intenta de nuevo.');
       setPin('');
@@ -94,7 +95,7 @@ export default function Login() {
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'El codigo es incorrecto o ya expiro. Solicita uno nuevo.');
       adoptarSesion(data.data.token, data.data.cliente);
-      navigate('/home');
+      navigate(destinoTrasEntrar(window.location.search));
     } catch (err) {
       setError(err.message);
       setOtp('');
@@ -142,7 +143,7 @@ export default function Login() {
           </button>
           <p className="text-white/50 text-xs text-center">
             ¿No tienes cuenta?{' '}
-            <Link to="/registro" className="text-white font-semibold underline">Registrate aqui</Link>
+            <Link to={`/registro${window.location.search}`} className="text-white font-semibold underline">Registrate aqui</Link>
           </p>
         </form>
       )}

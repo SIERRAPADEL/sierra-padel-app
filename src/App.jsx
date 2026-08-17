@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { destinoTrasEntrar } from './lib/destino';
 import BottomNav from './components/BottomNav';
 import InstallGuide from './components/InstallGuide';
 import NotificationSetup from './components/NotificationSetup';
@@ -23,18 +24,29 @@ import Marcadores from './pages/Marcadores';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-4 border-sp-green border-t-transparent rounded-full animate-spin" /></div>;
-  if (!user) return <Navigate to="/login" replace />;
+  // Guarda A DÓNDE iba para volver ahí tras entrar. Sin esto, una liga compartida
+  // (la convocatoria de un torneo, una invitación de pareja) se perdía: el socio
+  // entraba y aparecía en Inicio, sin la pantalla que le habían mandado.
+  if (!user) {
+    const destino = location.pathname + (location.search || '');
+    return <Navigate to={`/login?next=${encodeURIComponent(destino)}`} replace />;
+  }
   return children;
 }
 
 function AppRoutes() {
   const { user } = useAuth();
+  const location = useLocation();
+  // Si ya hay sesión y aun así se abre /login o /registro con un ?next=, se respeta el
+  // destino en vez de mandar a Inicio (pasa al reabrir una liga ya estando dentro).
+  const yaDentro = <Navigate to={destinoTrasEntrar(location.search)} replace />;
   return (
     <Routes>
       <Route path="/" element={<Navigate to={user ? '/home' : '/login'} replace />} />
-      <Route path="/login" element={user ? <Navigate to="/home" replace /> : <Login />} />
-      <Route path="/registro" element={user ? <Navigate to="/home" replace /> : <Registro />} />
+      <Route path="/login" element={user ? yaDentro : <Login />} />
+      <Route path="/registro" element={user ? yaDentro : <Registro />} />
       <Route path="/unirse/:token" element={<Unirse />} />
       <Route path="/terminos" element={<Terminos />} />
       <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />

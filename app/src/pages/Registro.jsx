@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { destinoTrasEntrar } from '../lib/destino';
 import { useAuth } from '../context/AuthContext';
 import Isotipo from '../components/Isotipo';
 import PinInput from '../components/PinInput';
@@ -51,7 +52,7 @@ export default function Registro() {
       });
       // Marca para que la app ofrezca activar notificaciones push de inmediato
       localStorage.setItem('recienRegistrado', '1');
-      navigate('/home');
+      navigate(destinoTrasEntrar(window.location.search));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -96,7 +97,7 @@ export default function Registro() {
             </div>
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
             <button type="submit" className="btn-green">Continuar</button>
-            <Link to="/login" className="text-center text-gray-400 text-sm">¿Ya tienes cuenta? Entrar</Link>
+            <Link to={`/login${window.location.search}`} className="text-center text-gray-400 text-sm">¿Ya tienes cuenta? Entrar</Link>
           </form>
         )}
 
