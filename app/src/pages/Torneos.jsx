@@ -53,9 +53,17 @@ function pairName(insc) {
 // El torneo NO tiene un estado único: cada categoría avanza por su cuenta (el backend expone
 // `estado_global` + `torneo_categorias[].estado`). Derivamos un estado "de tarjeta" para decidir
 // qué mostrar: inscripción abierta → Inscribirme; hay calendario/partidos → Ver partidos.
+// 🐛 2026-08-16: la app comparaba contra 'inscripciones', pero ese valor NO EXISTE en la base:
+// el CHECK de `torneo_categorias.estado` sólo permite borrador | inscripciones_abiertas |
+// inscripciones_cerradas | draw_generado | calendario_publicado | en_curso | finalizado.
+// Resultado: el botón "Inscribirme" NUNCA aparecía y la lista de categorías salía vacía —
+// inscribirse a un torneo desde la app era imposible. Se acepta el valor REAL y se deja el
+// viejo por si algún día el backend lo normaliza.
+const ABIERTA = (e) => e === 'inscripciones_abiertas' || e === 'inscripciones';
+
 function torneoEstado(t) {
   const est = (t?.torneo_categorias || []).map(c => c.estado);
-  if (est.some(e => e === 'inscripciones')) return 'inscripciones';
+  if (est.some(ABIERTA)) return 'inscripciones';
   if (est.some(e => ['draw_generado', 'calendario_publicado', 'en_curso', 'finalizado'].includes(e))) return 'calendario_publicado';
   return t?.estado_global || 'borrador';
 }
@@ -360,9 +368,8 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
 // InscripcionFlow
 // ──────────────────────────────────────────────────────────
 function InscripcionFlow({ torneo, onDone, apiFetch }) {
-  const cats = (torneo.torneo_categorias || []).filter(c =>
-    ['inscripciones'].includes(c.estado)
-  );
+  // Mismo arreglo que en torneoEstado(): el estado real en base es 'inscripciones_abiertas'.
+  const cats = (torneo.torneo_categorias || []).filter(c => ABIERTA(c.estado));
 
   const [step, setStep]     = useState(1);
   const [catSel, setCatSel] = useState(null);
