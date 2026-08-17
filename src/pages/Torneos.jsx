@@ -12,6 +12,48 @@ function fmtFecha(str) {
   return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
 }
 
+// Media del torneo (thumbnail + patrocinador). Supabase devuelve la relación como
+// OBJETO o como ARREGLO según el caso — ya nos mordió antes con los marcadores —,
+// así que se lee tolerando las dos formas.
+function mediaDe(t) {
+  const m = t?.torneo_media;
+  return (Array.isArray(m) ? m[0] : m) || {};
+}
+
+// Thumbnail del torneo. Si no tiene imagen cargada no se pinta nada: vale más una
+// tarjeta limpia que un cuadro gris de relleno.
+function TorneoThumb({ torneo, size = 52 }) {
+  const url = mediaDe(torneo).logo_torneo_url;
+  if (!url) return null;
+  return (
+    <img
+      src={url}
+      alt=""
+      loading="lazy"
+      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      style={{ width: size, height: size }}
+      className="rounded-xl object-cover flex-shrink-0 bg-gray-50 border border-gray-100"
+    />
+  );
+}
+
+// Patrocinador PUNTUAL del torneo: encabeza su página (regla de German 17-ago-2026).
+// No es el patrocinador del club ni un carrusel — es el de este torneo y va arriba.
+function SponsorBanner({ torneo }) {
+  const { sponsor_principal_url: url, sponsor_principal_nombre: nombre } = mediaDe(torneo);
+  if (!url && !nombre) return null;
+  return (
+    <div className="mx-4 mb-4 rounded-2xl border border-gray-100 bg-white px-4 py-3 flex items-center gap-3 shadow-sm">
+      <span className="text-[10px] font-black tracking-widest text-gray-400 flex-shrink-0">PATROCINA</span>
+      {url
+        ? <img src={url} alt={nombre || 'Patrocinador'} loading="lazy"
+               onError={(e) => { e.currentTarget.style.display = 'none'; }}
+               className="h-9 max-w-[60%] object-contain" />
+        : <span className="font-black text-sp-gray text-[15px] truncate">{nombre}</span>}
+    </div>
+  );
+}
+
 function EstadoBadge({ estado }) {
   const map = {
     inscripciones:         { label: 'Inscripciones',  cls: 'bg-green-100 text-green-700' },
@@ -731,6 +773,7 @@ export default function Torneos() {
       {/* ── INSCRIPCION FLOW ── */}
       {view === 'inscripcion' && torneoSel && (
         <div className="overflow-y-auto py-4">
+          <SponsorBanner torneo={torneoSel} />
           <InscripcionFlow torneo={torneoSel} onDone={goBack} apiFetch={apiFetch} />
         </div>
       )}
@@ -738,6 +781,7 @@ export default function Torneos() {
       {/* ── DETALLE ── */}
       {view === 'detalle' && torneoSel && (
         <div className="overflow-y-auto py-4">
+          <SponsorBanner torneo={torneoSel} />
           <TorneoDetail torneo={torneoSel} apiFetch={apiFetch} miTelefono={miTelefono} />
         </div>
       )}
@@ -759,8 +803,9 @@ export default function Torneos() {
           )}
           {!loading && (mainTab === 'proximos' ? proximos : pasados).map(t => (
             <div key={t.id} className="card">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex-1 pr-3">
+              <div className="flex justify-between items-start mb-2 gap-3">
+                <TorneoThumb torneo={t} />
+                <div className="flex-1 min-w-0 pr-1">
                   <p className="font-black text-sp-gray text-base leading-tight">{t.nombre}</p>
                   {(t.fecha_inicio || t.fecha_fin) && (
                     <p className="text-xs text-gray-400 mt-0.5">
