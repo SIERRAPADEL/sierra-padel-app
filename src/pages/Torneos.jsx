@@ -408,6 +408,15 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
     }
   }
 
+  // Busca SOLA al completar el décimo dígito: un botón menos que apretar. El guard de
+  // `pareja`/`buscando` evita repetir la consulta con el resultado ya en pantalla; al
+  // editar el número, el onChange del input limpia `pareja` y vuelve a habilitarla.
+  // El botón se queda como reintento por si falla la red.
+  useEffect(() => {
+    if (tel2.replace(/[^0-9]/g, '').length === 10 && !pareja && !buscando) buscarPareja();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tel2]);
+
   async function handleInscribir() {
     if (!catSel || !pareja) return;
     setLoading(true);
@@ -518,7 +527,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
         <>
           <button onClick={() => { setStep(1); setPareja(null); setTel2(''); }} className="text-sm text-sp-green font-semibold self-start">← Cambiar categoria</button>
           <p className="text-sm font-bold text-sp-gray">Busca a tu pareja</p>
-          <p className="text-xs text-gray-400">Ingresa el numero de WhatsApp de tu pareja (10 digitos)</p>
+          <p className="text-xs text-gray-400">Escribe el numero de WhatsApp de tu pareja. Al completar los 10 digitos la buscamos solos.</p>
 
           <div className="card flex flex-col gap-3">
             <input
@@ -536,7 +545,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
               onClick={buscarPareja}
               disabled={buscando || tel2.replace(/[^0-9]/g,'').length < 10}
             >
-              {buscando ? 'Buscando…' : 'Buscar'}
+              {buscando ? 'Buscando…' : 'Buscar de nuevo'}
             </button>
           </div>
 
