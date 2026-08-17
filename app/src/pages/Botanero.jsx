@@ -95,6 +95,26 @@ export default function Botanero() {
         <p className="text-white/85 text-[13px] mt-1 capitalize">{fechaBonita}</p>
       </div>
 
+      {/* Patrocinador PUNTUAL que encabeza la página de la liga (German 17-ago-2026).
+          Puede ser de la temporada completa o de esta jornada: el backend ya resuelve
+          cuál manda (la jornada le gana a la liga). */}
+      {(data?.media?.sponsor_url || data?.media?.sponsor_nombre) && (
+        <div className="mx-4 mt-4 rounded-2xl border border-gray-100 bg-white px-4 py-3 flex items-center gap-3 shadow-sm">
+          <span className="text-[10px] font-black tracking-widest text-gray-400 flex-shrink-0">PATROCINA</span>
+          {data.media.sponsor_url ? (
+            <img
+              src={data.media.sponsor_url}
+              alt={data.media.sponsor_nombre || 'Patrocinador'}
+              loading="lazy"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              className="h-9 max-w-[60%] object-contain"
+            />
+          ) : (
+            <span className="font-black text-sp-gray text-[15px] truncate">{data.media.sponsor_nombre}</span>
+          )}
+        </div>
+      )}
+
       <div className="px-4 mt-4 flex flex-col gap-3">
         <div className="card py-4">
           <p className="text-sp-gray font-bold text-[15px]">La liga de los viernes 🎾⚽</p>
