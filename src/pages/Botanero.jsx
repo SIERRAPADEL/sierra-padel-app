@@ -14,6 +14,38 @@ export default function Botanero() {
   const [accion, setAccion] = useState(false);
   const [error, setError] = useState('');
   const [pideSexo, setPideSexo] = useState(null); // turno para el que falta declarar H/M
+  // Captura del marcador por el propio jugador (como en las retas). 3 sets, games de
+  // cada pareja. La rotación de parejas la sabe el servidor: aquí sólo se anotan games.
+  const [capturando, setCapturando] = useState(null);      // turno cuyo marcador se está capturando
+  const [sets, setSets] = useState([['', ''], ['', ''], ['', '']]);
+  const [okMarcador, setOkMarcador] = useState('');
+
+  function setGame(i, lado, v) {
+    const limpio = v.replace(/[^0-9]/g, '').slice(0, 1);
+    setSets(s => s.map((par, idx) => idx === i ? (lado === 0 ? [limpio, par[1]] : [par[0], limpio]) : par));
+  }
+
+  async function enviarMarcador(turno) {
+    if (accion) return;
+    const nums = sets.map(([a, b]) => [Number(a), Number(b)]);
+    if (nums.some(([a, b]) => !(a >= 0 && a <= 9) || !(b >= 0 && b <= 9) || (a === '' && b === '')))
+      { setError('Escribe los games de los 3 sets.'); return; }
+    if (sets.some(([a, b]) => a === '' || b === '')) { setError('Faltan games por capturar.'); return; }
+    if (nums.some(([a, b]) => a === b)) { setError('No puede haber empates: desempaten con punto de oro.'); return; }
+    setAccion(true); setError(''); setOkMarcador('');
+    // Se manda "los nuestros / los suyos", nunca lado A/B: quién es A y quién es B depende
+    // de la posición en la cancha, y el servidor es el único que sabe la rotación. Mandar
+    // a/b desde aquí es cómo se invierte un marcador sin que nadie lo note.
+    const d = await apiFetch('/botanero/mi-marcador', {
+      method: 'POST', body: JSON.stringify({ turno, sets: nums.map(([mios, suyos]) => ({ mios, suyos })) }),
+    });
+    if (d.ok) {
+      setOkMarcador('¡Listo! Tu marcador quedó registrado y el ranking ya se actualizó.');
+      setCapturando(null); setSets([['', ''], ['', ''], ['', '']]);
+    } else setError(d.error || 'No se pudo guardar el marcador.');
+    await cargar();
+    setAccion(false);
+  }
 
   const cargar = useCallback(async () => {
     const [d, r, j] = await Promise.all([
@@ -62,6 +94,26 @@ export default function Botanero() {
         <h1 className="text-white font-black text-2xl">🍻 Viernes Botanero</h1>
         <p className="text-white/85 text-[13px] mt-1 capitalize">{fechaBonita}</p>
       </div>
+
+      {/* Patrocinador PUNTUAL que encabeza la página de la liga (German 17-ago-2026).
+          Puede ser de la temporada completa o de esta jornada: el backend ya resuelve
+          cuál manda (la jornada le gana a la liga). */}
+      {(data?.media?.sponsor_url || data?.media?.sponsor_nombre) && (
+        <div className="mx-4 mt-4 rounded-2xl border border-gray-100 bg-white px-4 py-3 flex items-center gap-3 shadow-sm">
+          <span className="text-[10px] font-black tracking-widest text-gray-400 flex-shrink-0">PATROCINA</span>
+          {data.media.sponsor_url ? (
+            <img
+              src={data.media.sponsor_url}
+              alt={data.media.sponsor_nombre || 'Patrocinador'}
+              loading="lazy"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              className="h-9 max-w-[60%] object-contain"
+            />
+          ) : (
+            <span className="font-black text-sp-gray text-[15px] truncate">{data.media.sponsor_nombre}</span>
+          )}
+        </div>
+      )}
 
       <div className="px-4 mt-4 flex flex-col gap-3">
         <div className="card py-4">
@@ -138,6 +190,91 @@ export default function Botanero() {
                     </span>
                     <button onClick={() => bajarse(t.turno)} disabled={accion} className="text-[13px] text-gray-400 underline px-2">Bajarme</button>
                   </div>
+                )}
+
+                {/* Con quién juega cada set, ANTES de capturar: llegando a la cancha ya sabe
+                    con quién le toca en cada uno, sin tener que preguntar. */}
+                {t.mi_estado === 'apuntado' && t.mis_sets && capturando !== t.turno && (
+                  <div className="mt-2 rounded-xl bg-gray-50 border border-gray-200 p-2.5">
+                    <div className="text-[11.5px] font-bold text-gray-400 mb-1.5">TUS PAREJAS DE HOY</div>
+                    {t.mis_sets.map(s => (
+                      <div key={s.set} className="flex items-baseline gap-2 text-[13px] leading-relaxed">
+                        <span className="text-gray-400 shrink-0">S{s.set}</span>
+                        <span className="text-gray-700">
+                          <b className="text-sp-green">Tú y {s.companero}</b>
+                          <span className="text-gray-400"> vs </span>
+                          {s.rivales.join(' y ')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Al terminar, el propio jugador captura el marcador de SU cancha — igual
+                    que en las retas. Antes dependía de que alguien del club fuera cancha por
+                    cancha, y si no lo hacía esa noche NO había ranking. */}
+                {t.mi_estado === 'apuntado' && t.mi_cancha && capturando !== t.turno && !okMarcador && (
+                  <button onClick={() => { setCapturando(t.turno); setError(''); }}
+                          className="w-full mt-2 text-[13.5px] font-bold text-sp-green border border-sp-green/40 rounded-xl py-2.5">
+                    🏓 Capturar el marcador de mi cancha
+                  </button>
+                )}
+
+                {capturando === t.turno && (
+                  <div className="mt-2 p-3 rounded-xl bg-gray-50 border border-gray-200">
+                    <p className="text-[12.5px] text-gray-500 leading-snug mb-2">
+                      Games de cada set en tu <b>Cancha {t.mi_cancha}</b>. En cada set cambian
+                      las parejas: anota los games <b>de cada lado</b> como aparecen abajo.
+                    </p>
+                    {/* Con NOMBRES: el jugador tiene que ver de quién es cada marcador. Sin
+                        esto captura a ciegas y basta con que vaya en la pareja 3&4 para que
+                        el set se lo acredite a sus rivales. */}
+                    {sets.map((par, i) => {
+                      const ms = t.mis_sets && t.mis_sets[i];
+                      return (
+                        <div key={i} className="mb-2.5 rounded-lg bg-white border border-gray-200 p-2">
+                          <div className="text-[11.5px] font-bold text-gray-400 mb-1">SET {i + 1}</div>
+                          {ms ? (
+                            <>
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <span className="text-[13.5px] font-bold text-sp-green truncate">
+                                  Tú y {ms.companero}
+                                </span>
+                                <input inputMode="numeric" value={par[0]} onChange={e => setGame(i, 0, e.target.value)}
+                                       className="w-14 shrink-0 text-center text-[17px] font-bold border-2 border-sp-green/40 rounded-lg py-1.5" placeholder="0" />
+                              </div>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[13.5px] text-gray-600 truncate">
+                                  {ms.rivales.join(' y ')}
+                                </span>
+                                <input inputMode="numeric" value={par[1]} onChange={e => setGame(i, 1, e.target.value)}
+                                       className="w-14 shrink-0 text-center text-[17px] font-bold border rounded-lg py-1.5" placeholder="0" />
+                              </div>
+                            </>
+                          ) : (
+                            // Cancha incompleta: sin los 4 no hay parejas que nombrar.
+                            <div className="flex items-center gap-2">
+                              <span className="text-[12.5px] text-gray-500 flex-1">Ustedes — Ellos</span>
+                              <input inputMode="numeric" value={par[0]} onChange={e => setGame(i, 0, e.target.value)}
+                                     className="w-14 text-center text-[16px] font-bold border rounded-lg py-1.5" placeholder="0" />
+                              <input inputMode="numeric" value={par[1]} onChange={e => setGame(i, 1, e.target.value)}
+                                     className="w-14 text-center text-[16px] font-bold border rounded-lg py-1.5" placeholder="0" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <div className="flex gap-2 mt-1">
+                      <button onClick={() => { setCapturando(null); setError(''); }}
+                              className="flex-1 text-[13px] text-gray-500 py-2">Cancelar</button>
+                      <button onClick={() => enviarMarcador(t.turno)} disabled={accion}
+                              className="flex-1 btn-green disabled:opacity-50">Guardar marcador</button>
+                    </div>
+                  </div>
+                )}
+
+                {okMarcador && t.mi_estado === 'apuntado' && (
+                  <p className="mt-2 text-center text-[13px] font-bold text-green-600">{okMarcador}</p>
                 )}
                 {t.mi_estado === 'espera' && (
                   <div className="flex items-center gap-2">

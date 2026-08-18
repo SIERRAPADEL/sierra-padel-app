@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
 import PromoExpressBanner from '../components/PromoExpressBanner';
+import AvisosApagados from '../components/AvisosApagados';
 import NivelSelector from '../components/NivelSelector';
 import { BACKEND } from '../lib/constants';
 import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/format';
@@ -278,6 +279,34 @@ function RetasAbiertas({ apiFetch, navigate }) {
   );
 }
 
+// Avatar del torneo en el Home: su thumbnail si está cargado, y si no el trofeo de
+// siempre (German 17-ago: "cuando esté vacía que se sigan mostrando los emojis de
+// trofeo"). Si la imagen falla al cargar también cae al trofeo — un hueco gris se ve
+// peor que el emoji. La relación torneo_media llega como objeto O arreglo según el
+// caso, por eso se lee tolerando las dos formas.
+function TorneoAvatar({ torneo }) {
+  const m = torneo?.torneo_media;
+  const url = ((Array.isArray(m) ? m[0] : m) || {}).logo_torneo_url;
+  const [falló, setFalló] = useState(false);
+  const caja = {
+    width: 44, height: 44, borderRadius: 10, background: '#1a1a2e',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0, fontSize: 20, overflow: 'hidden',
+  };
+  if (!url || falló) return <div style={caja}>🏆</div>;
+  return (
+    <div style={caja}>
+      <img
+        src={url}
+        alt=""
+        loading="lazy"
+        onError={() => setFalló(true)}
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      />
+    </div>
+  );
+}
+
 // ── Seccion: Proximos torneos ─────────────────────────────────────────────────
 function ProximosTorneos({ apiFetch, navigate }) {
   const [torneos, setTorneos] = useState(null);
@@ -329,9 +358,7 @@ function ProximosTorneos({ apiFetch, navigate }) {
                 className="card flex items-center gap-3 py-3 active:scale-[0.98] transition-transform cursor-pointer"
                 onClick={() => navigate('/torneos')}
               >
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
-                  🏆
-                </div>
+                <TorneoAvatar torneo={t} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sp-gray font-bold text-[15px] truncate">{t.nombre}</p>
                   <p className="text-gray-400 text-[13px]">
@@ -554,6 +581,10 @@ export default function Home() {
 
         {/* Retas abiertas (matchmaking) */}
         <RetasAbiertas apiFetch={apiFetch} navigate={navigate} />
+
+        {/* Sin avisos el jugador no se entera de que lo invitaron a una reta. Va aquí abajo,
+            pegado a las retas, porque es justo lo que se está perdiendo. */}
+        <AvisosApagados />
 
         {/* Mis reservas */}
         <MisReservas apiFetch={apiFetch} navigate={navigate} />

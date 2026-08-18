@@ -10,6 +10,7 @@ export default function Ligas() {
   const [botanero, setBotanero] = useState(null);
   const [lider, setLider] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [imgFalló, setImgFalló] = useState(false);
 
   useEffect(() => {
     Promise.all([apiFetch('/botanero/estado'), apiFetch('/botanero/ranking')])
@@ -46,7 +47,20 @@ export default function Ligas() {
           <button onClick={() => navigate('/botanero')} className="text-left active:scale-[0.98] transition-transform">
             <div className="card p-0 overflow-hidden">
               <div className="px-4 py-3 flex items-center gap-3" style={{ background: '#2e1b06' }}>
-                <span style={{ fontSize: 26 }}>🍻</span>
+                {/* Thumbnail de la liga si está cargado; si no —o si la imagen falla al
+                    cargar— el emoji de siempre. Un hueco vacío se ve peor que el emoji. */}
+                {botanero?.media?.thumbnail_url && !imgFalló ? (
+                  <img
+                    src={botanero.media.thumbnail_url}
+                    alt=""
+                    loading="lazy"
+                    onError={() => setImgFalló(true)}
+                    style={{ width: 42, height: 42 }}
+                    className="rounded-xl object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <span style={{ fontSize: 26 }}>🍻</span>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-black text-[16px] leading-tight">Liga Viernes Botanero</p>
                   <p className="text-amber-200/90 text-[12px]">Individual · todos los viernes · futbol en pantallas</p>
