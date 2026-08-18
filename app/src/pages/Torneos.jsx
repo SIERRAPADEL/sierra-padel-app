@@ -20,20 +20,28 @@ function mediaDe(t) {
   return (Array.isArray(m) ? m[0] : m) || {};
 }
 
-// Thumbnail del torneo. Si no tiene imagen cargada no se pinta nada: vale más una
-// tarjeta limpia que un cuadro gris de relleno.
+// Thumbnail del torneo. Si no hay imagen —o si falla al cargar— sale el 🏆, igual que
+// en el Home (German 17-ago). Mismo recuadro oscuro en las dos pantallas para que se
+// vean como lo mismo.
 function TorneoThumb({ torneo, size = 52 }) {
   const url = mediaDe(torneo).logo_torneo_url;
-  if (!url) return null;
+  const [falló, setFalló] = useState(false);
+  const caja = {
+    width: size, height: size, borderRadius: 12, background: '#1a1a2e',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0, fontSize: Math.round(size * 0.45), overflow: 'hidden',
+  };
+  if (!url || falló) return <div style={caja}>🏆</div>;
   return (
-    <img
-      src={url}
-      alt=""
-      loading="lazy"
-      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-      style={{ width: size, height: size }}
-      className="rounded-xl object-cover flex-shrink-0 bg-gray-50 border border-gray-100"
-    />
+    <div style={caja}>
+      <img
+        src={url}
+        alt=""
+        loading="lazy"
+        onError={() => setFalló(true)}
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      />
+    </div>
   );
 }
 
