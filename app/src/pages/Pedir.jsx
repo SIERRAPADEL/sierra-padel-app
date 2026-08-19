@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BACKEND, UBICACIONES } from '../lib/constants';
+import { BACKEND, UBICACIONES, PASO_A_RECOGER } from '../lib/constants';
 
 const CAT_LABEL = {
   bebidas:    'Bebidas',
@@ -14,6 +14,10 @@ export default function Pedir() {
   const [loading, setLoading]     = useState(true);
   const [carrito, setCarrito]     = useState({});  // { itemId: cantidad }
   const [ubicacion, setUbicacion] = useState('');
+  // "Paso a recoger" no es un lugar donde esperar, así que ni el pin 📍 ni el "llegará
+  // hasta donde estés" aplican: se cambia el ícono y el texto para que el cliente no
+  // se quede sentado esperando algo que nadie va a llevarle.
+  const esRecoger = ubicacion === PASO_A_RECOGER;
   const [notas, setNotas]         = useState('');
   const [enviando, setEnviando]   = useState(false);
   const [errorEnvio, setErrorEnvio] = useState('');
@@ -276,7 +280,9 @@ export default function Pedir() {
             {v.sub}
           </p>
           <p className="text-gray-500 text-sm mb-6">
-            Ubicacion: <strong className="text-sp-gray">{pedidoOk.ubicacion}</strong>
+            {pedidoOk.ubicacion === PASO_A_RECOGER
+              ? <>Lo recoges en: <strong className="text-sp-gray">la barra</strong></>
+              : <>Ubicacion: <strong className="text-sp-gray">{pedidoOk.ubicacion}</strong></>}
           </p>
 
           {/* Barra de avance (oculta si fue rechazado) */}
@@ -357,7 +363,7 @@ export default function Pedir() {
           style={{ background: 'white', color: ubicacion ? '#575757' : '#9ca3af' }}
         >
           <span>
-            📍 {ubicacion || '¿Dónde estás?'}
+            {esRecoger ? '🛍️' : '📍'} {ubicacion || '¿Dónde estás?'}
             {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
               <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}> · tu cuenta abierta</span>
             )}
@@ -558,7 +564,7 @@ export default function Pedir() {
               className="w-full rounded-xl px-3.5 py-3 mb-3 text-left flex items-center justify-between bg-gray-50 border border-gray-200"
             >
               <span className="text-[15px] font-bold text-sp-gray">
-                📍 {ubicacion || 'Falta decir dónde estás'}
+                {esRecoger ? '🛍️' : '📍'} {ubicacion || 'Falta decir dónde estás'}
                 {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
                   <span className="text-[12px] text-sp-green-dark"> · tu cuenta abierta</span>
                 )}
@@ -595,7 +601,23 @@ export default function Pedir() {
             onClick={e => e.stopPropagation()}
           >
             <p className="text-sp-gray font-black text-lg text-center mb-1">📍 ¿Dónde estás?</p>
-            <p className="text-gray-400 text-[13px] text-center mb-4">Tu pedido llegará hasta donde estés</p>
+            <p className="text-gray-400 text-[13px] text-center mb-4">Te lo llevamos, o pasas tú por él</p>
+
+            {/* Va PRIMERO y de ancho completo: si se mezclara en la parrilla quedaría
+                escondido entre las canchas y nadie lo encontraría. */}
+            <button
+              onClick={() => { setUbicacion(PASO_A_RECOGER); setPickUbi(false); }}
+              className={`w-full py-3.5 rounded-xl text-[15px] font-bold border transition-colors mb-3 ${
+                ubicacion === PASO_A_RECOGER ? 'bg-sp-green text-white border-sp-green' : 'bg-white text-sp-gray border-gray-200'
+              }`}
+            >
+              🛍️ {PASO_A_RECOGER}
+              <span className={`block text-[12px] font-semibold ${ubicacion === PASO_A_RECOGER ? 'text-white/80' : 'text-gray-400'}`}>
+                Yo paso a la barra por mi pedido
+              </span>
+            </button>
+
+            <p className="text-gray-400 text-[12px] text-center mb-2.5">o te lo llevamos a…</p>
             <div className="grid grid-cols-2 gap-2.5">
               {UBICACIONES.map(u => (
                 <button
