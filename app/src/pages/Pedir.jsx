@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BACKEND, UBICACIONES, PASO_A_RECOGER } from '../lib/constants';
+import { BACKEND, UBICACIONES, PARA_LLEVAR } from '../lib/constants';
 
 const CAT_LABEL = {
   bebidas:    'Bebidas',
@@ -14,10 +14,9 @@ export default function Pedir() {
   const [loading, setLoading]     = useState(true);
   const [carrito, setCarrito]     = useState({});  // { itemId: cantidad }
   const [ubicacion, setUbicacion] = useState('');
-  // "Paso a recoger" no es un lugar donde esperar, así que ni el pin 📍 ni el "llegará
-  // hasta donde estés" aplican: se cambia el ícono y el texto para que el cliente no
-  // se quede sentado esperando algo que nadie va a llevarle.
-  const esRecoger = ubicacion === PASO_A_RECOGER;
+  // "Para llevar" no es un lugar donde esperar —el cliente puede ni estar en el club—,
+  // así que ni el pin 📍 ni el "llegará hasta donde estés" aplican.
+  const esLlevar = ubicacion === PARA_LLEVAR;
   const [notas, setNotas]         = useState('');
   const [enviando, setEnviando]   = useState(false);
   const [errorEnvio, setErrorEnvio] = useState('');
@@ -280,8 +279,8 @@ export default function Pedir() {
             {v.sub}
           </p>
           <p className="text-gray-500 text-sm mb-6">
-            {pedidoOk.ubicacion === PASO_A_RECOGER
-              ? <>Lo recoges en: <strong className="text-sp-gray">la barra</strong></>
+            {pedidoOk.ubicacion === PARA_LLEVAR
+              ? <>Lo recoges en: <strong className="text-sp-gray">la barra del club</strong></>
               : <>Ubicacion: <strong className="text-sp-gray">{pedidoOk.ubicacion}</strong></>}
           </p>
 
@@ -363,7 +362,7 @@ export default function Pedir() {
           style={{ background: 'white', color: ubicacion ? '#575757' : '#9ca3af' }}
         >
           <span>
-            {esRecoger ? '🛍️' : '📍'} {ubicacion || '¿Dónde estás?'}
+            {esLlevar ? '🥡' : '📍'} {ubicacion || '¿Dónde estás?'}
             {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
               <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}> · tu cuenta abierta</span>
             )}
@@ -564,7 +563,7 @@ export default function Pedir() {
               className="w-full rounded-xl px-3.5 py-3 mb-3 text-left flex items-center justify-between bg-gray-50 border border-gray-200"
             >
               <span className="text-[15px] font-bold text-sp-gray">
-                {esRecoger ? '🛍️' : '📍'} {ubicacion || 'Falta decir dónde estás'}
+                {esLlevar ? '🥡' : '📍'} {ubicacion || 'Falta decir dónde estás'}
                 {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
                   <span className="text-[12px] text-sp-green-dark"> · tu cuenta abierta</span>
                 )}
@@ -601,19 +600,19 @@ export default function Pedir() {
             onClick={e => e.stopPropagation()}
           >
             <p className="text-sp-gray font-black text-lg text-center mb-1">📍 ¿Dónde estás?</p>
-            <p className="text-gray-400 text-[13px] text-center mb-4">Te lo llevamos, o pasas tú por él</p>
+            <p className="text-gray-400 text-[13px] text-center mb-4">Te lo llevamos a tu lugar, o lo preparamos para llevar</p>
 
             {/* Va PRIMERO y de ancho completo: si se mezclara en la parrilla quedaría
                 escondido entre las canchas y nadie lo encontraría. */}
             <button
-              onClick={() => { setUbicacion(PASO_A_RECOGER); setPickUbi(false); }}
+              onClick={() => { setUbicacion(PARA_LLEVAR); setPickUbi(false); }}
               className={`w-full py-3.5 rounded-xl text-[15px] font-bold border transition-colors mb-3 ${
-                ubicacion === PASO_A_RECOGER ? 'bg-sp-green text-white border-sp-green' : 'bg-white text-sp-gray border-gray-200'
+                ubicacion === PARA_LLEVAR ? 'bg-sp-green text-white border-sp-green' : 'bg-white text-sp-gray border-gray-200'
               }`}
             >
-              🛍️ {PASO_A_RECOGER}
-              <span className={`block text-[12px] font-semibold ${ubicacion === PASO_A_RECOGER ? 'text-white/80' : 'text-gray-400'}`}>
-                Yo paso a la barra por mi pedido
+              🥡 {PARA_LLEVAR}
+              <span className={`block text-[12px] font-semibold ${ubicacion === PARA_LLEVAR ? 'text-white/80' : 'text-gray-400'}`}>
+                Paso por él — no hace falta que esté en el club
               </span>
             </button>
 

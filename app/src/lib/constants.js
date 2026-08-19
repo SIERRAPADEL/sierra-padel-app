@@ -8,9 +8,12 @@ export const UBICACIONES = [
   'Cancha 5', 'Cancha 6', 'Cancha 7', 'Bar / Mesa', 'Terraza', 'Recepcion',
 ];
 
-// PASO A RECOGER (German, 19-ago). NO es una ubicación más: es lo contrario de una entrega
-// —nadie sale a llevarlo, el cliente viene por él— y por eso vive aparte de UBICACIONES.
-// Mezclarlo en esa lista lo dejaría escondido entre las canchas y un mesero saldría a
-// buscar una cancha que no existe. Se guarda en el mismo campo `ubicacion` del pedido para
-// no partir el modelo de datos; lo que cambia es cómo se presenta y cómo se atiende.
-export const PASO_A_RECOGER = 'Paso a recoger';
+// PARA LLEVAR (German, 19-ago): "vengo de fuera y paso por él. Quiero un café, lo pido y
+// paso a recogerlo aunque no esté en el club".
+// 🔑 NO es una ubicación más — es lo contrario de una entrega, y encima el cliente puede no
+// estar aquí. Por eso vive aparte de UBICACIONES: mezclarlo entre las canchas lo dejaría
+// escondido y un mesero saldría a buscar una cancha vacía.
+// El nombre es el que YA usa el sistema: las cuentas tipo 'llevar' y la comanda imprimen
+// "Para llevar". Una sola palabra en la app, en la caja y en el papel.
+// Se guarda en el mismo campo `ubicacion` del pedido para no partir el modelo de datos.
+export const PARA_LLEVAR = 'Para llevar';
