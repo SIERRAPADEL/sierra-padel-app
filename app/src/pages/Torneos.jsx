@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, Fragment } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
+import { isPushSupported, usePushSubscription } from '../components/NotificationSetup';
 
 // ──────────────────────────────────────────────────────────
 // Helpers
@@ -437,6 +438,29 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
   const [success, setSuccess] = useState(false);
   const [aceptoReglamento, setAceptoReglamento] = useState(false);
 
+  // ── Avisos del torneo ────────────────────────────────────────────────────
+  // German (19-ago): "al momento de inscribirse den un acepto y ahí vengan las
+  // notificaciones... es importante buscar la mayor cantidad de apps con las notificaciones
+  // prendidas". Medido ese día: 55 clientes con app y sólo ~la mitad recibe avisos.
+  // ⚠️ Una palomita NO puede prender el permiso: el navegador lo pide con su propio diálogo
+  // y exige un gesto de la persona. Por eso va en dos tiempos — aquí se marca la intención,
+  // y en la pantalla de "inscripción enviada" un botón dispara el permiso de verdad.
+  // Se pide AQUÍ y no en la portada porque es el momento en que el aviso le sirve: acaba de
+  // inscribirse y quiere saber a qué hora juega.
+  const { subscribe, subscribing } = usePushSubscription(apiFetch);
+  const yaTieneAvisos = typeof localStorage !== 'undefined' && localStorage.getItem('pushSubscribed') === '1';
+  const puedeAvisos = isPushSupported() && !yaTieneAvisos;
+  const [quiereAvisos, setQuiereAvisos] = useState(true);
+  const [avisosListos, setAvisosListos] = useState(false);
+  const [avisosError, setAvisosError] = useState('');
+
+  async function activarAvisos() {
+    setAvisosError('');
+    const ok = await subscribe();
+    if (ok) setAvisosListos(true);
+    else setAvisosError('No se pudieron activar. Puedes hacerlo después desde la portada.');
+  }
+
   // El torneo exige aceptar reglamento solo si está configurado (versión + URL/texto).
   const reglamentoActivo = !!(torneo.reglamento_version && (torneo.reglamento_url || torneo.reglamento_texto));
 
@@ -509,6 +533,30 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
           <p>📲 Tu pareja recibio una notificacion por WhatsApp.</p>
           <p>💳 Acude al club para confirmar el pago y asegurar tu lugar.</p>
         </div>
+
+        {/* EL MOMENTO de pedir el permiso: acaba de inscribirse y quiere saber a qué hora
+            juega, así que el aviso tiene un para-qué concreto y no es una petición suelta.
+            El navegador exige un gesto propio, por eso es un botón y no algo automático. */}
+        {puedeAvisos && quiereAvisos && !avisosListos && (
+          <div className="bg-white border-2 border-sp-green rounded-2xl px-5 py-4 w-full max-w-xs space-y-3">
+            <p className="text-sm text-sp-gray font-bold">🔔 Falta un paso</p>
+            <p className="text-xs text-gray-500">
+              Toca el botón y acepta para que te avisemos a qué hora juegas. Sin esto no te
+              llega nada al teléfono.
+            </p>
+            <button className="btn-green w-full" onClick={activarAvisos} disabled={subscribing}>
+              {subscribing ? 'Activando…' : 'Activar avisos'}
+            </button>
+            {avisosError && <p className="text-xs text-red-500">{avisosError}</p>}
+          </div>
+        )}
+        {avisosListos && (
+          <div className="bg-sp-green-light rounded-2xl px-5 py-3 w-full max-w-xs">
+            <p className="text-sm text-sp-green-dark font-bold">🔔 Avisos activados</p>
+            <p className="text-xs text-sp-green-dark/80">Te avisamos a qué hora juegas.</p>
+          </div>
+        )}
+
         <button className="btn-green w-full max-w-xs" onClick={onDone}>
           Ver torneos
         </button>
@@ -691,6 +739,23 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
                     Ver reglamento
                   </a>
                 )}
+              </span>
+            </label>
+          )}
+
+          {/* Avisos del torneo: sólo se ofrece a quien todavía no los tiene. A quien ya los
+              activó no se le vuelve a preguntar — repetir la pregunta la vuelve ruido. */}
+          {puedeAvisos && (
+            <label className="flex items-start gap-2 bg-sp-green-light border border-sp-green/30 rounded-2xl px-4 py-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={quiereAvisos}
+                onChange={e => setQuiereAvisos(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span className="text-xs text-sp-green-dark">
+                <b>Avísame por notificación</b> a qué hora juego, si mi pareja confirma y cuándo
+                salen los resultados.
               </span>
             </label>
           )}
