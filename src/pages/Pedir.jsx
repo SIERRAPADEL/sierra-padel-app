@@ -29,7 +29,35 @@ export default function Pedir() {
   const [habitos, setHabitos]     = useState(null); // { frecuentes, ultimo, total_pedidos }
   const [seguim, setSeguim]       = useState(null); // estado EN VIVO del pedido enviado
 
-  useEffect(() => { fetchMenu(); fetchHabitos(); fetchCuentaAbierta(); }, []);
+  // Horario y tiempos de preparación: se consultan al abrir para (a) avisar ANTES de que
+  // el cliente arme un carrito que no se va a poder mandar y (b) poder decirle en cuánto
+  // estará listo sin otra ida al servidor.
+  const [horario, setHorario] = useState(null);
+
+  useEffect(() => { fetchMenu(); fetchHabitos(); fetchCuentaAbierta(); fetchHorario(); }, []);
+
+  async function fetchHorario() {
+    try {
+      const r = await fetch(`${BACKEND}/api/pedidos/horario`);
+      const d = await r.json();
+      if (d.ok) setHorario(d);
+    } catch { }
+  }
+
+  // Minutos que se le prometen al cliente: manda el MÁS LENTO del carrito. Un café con
+  // unos tacos no está listo en 5 minutos, y prometer de menos es peor que no prometer.
+  function estimadoMin() {
+    const t = (horario && horario.tiempos) || { cocina: 20, barra: 5, tienda: 5, default: 5 };
+    const idx = menuPorId();
+    let max = 0;
+    for (const [id, cant] of Object.entries(carrito)) {
+      if (!cant || cant <= 0) continue;
+      const it = idx[id];
+      const m = (it && t[it.area] != null) ? t[it.area] : t.default;
+      if (m > max) max = m;
+    }
+    return max || t.default;
+  }
 
   // Si el cliente ya tiene cuenta abierta, el sistema sabe dónde está: la ubicación
   // se pre-llena sola y el pedido se agiliza (solo queda confirmar).
@@ -283,6 +311,13 @@ export default function Pedir() {
               ? <>Lo recoges en: <strong className="text-sp-gray">la barra del club</strong></>
               : <>Ubicacion: <strong className="text-sp-gray">{pedidoOk.ubicacion}</strong></>}
           </p>
+          {/* El estimado viene del servidor, que lo calcula contra el área REAL de cada
+              producto: es el dato bueno, no el que adivinó el carrito. */}
+          {!rechazado && pedidoOk.listo_en_min && (
+            <p className="text-[15px] font-bold mb-6" style={{ color: '#7aaa00' }}>
+              ⏱️ {pedidoOk.ubicacion === PARA_LLEVAR ? 'Pasa por él en' : 'Listo en'} ~{pedidoOk.listo_en_min} min
+            </p>
+          )}
 
           {/* Barra de avance (oculta si fue rechazado) */}
           {!rechazado && (
@@ -557,6 +592,11 @@ export default function Pedir() {
               <div className="flex justify-between pt-2 mt-1 border-t border-gray-200 font-black text-sp-green-dark">
                 <span>Total</span><span>${totalCarrito().toFixed(0)}</span>
               </div>
+              {/* Lo que se le promete al cliente. Manda el producto más lento del carrito. */}
+              <div className="flex justify-between pt-1.5 text-[13px] text-gray-500">
+                <span>Listo en aprox.</span>
+                <span className="font-bold text-sp-gray">{estimadoMin()} min</span>
+              </div>
             </div>
             <button
               onClick={() => setPickUbi(true)}
@@ -571,14 +611,28 @@ export default function Pedir() {
               <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
             </button>
             {notas && <p className="text-gray-400 text-[13px] mb-3">📝 {notas}</p>}
+            {/* Fuera de horario: se avisa y se apaga el botón. El reloj del celular NO
+                manda —el backend rechaza igual—, pero avisar aquí evita que el cliente
+                arme el carrito completo para que se lo rebote al final. */}
+            {horario && !horario.abierto && (
+              <div className="rounded-xl px-3.5 py-3 mb-3 border" style={{ background: '#fff7ed', borderColor: '#fed7aa' }}>
+                <p className="text-[14px] font-bold" style={{ color: '#9a3412' }}>🌙 Cocina y barra cerradas</p>
+                <p className="text-[13px] mt-0.5" style={{ color: '#9a3412' }}>
+                  Los pedidos por la app son de {horario.abre_txt} a {horario.cierra_txt}.
+                </p>
+              </div>
+            )}
             <button
               onClick={enviarPedido}
-              disabled={enviando || !ubicacion}
+              disabled={enviando || !ubicacion || (horario && !horario.abierto)}
               className={`w-full py-3.5 rounded-xl font-black text-[15px] ${
-                !ubicacion ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'
+                (!ubicacion || (horario && !horario.abierto)) ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'
               }`}
             >
-              {enviando ? 'Enviando...' : !ubicacion ? 'Elige tu ubicación primero' : '✅ Confirmar pedido'}
+              {enviando ? 'Enviando...'
+                : (horario && !horario.abierto) ? `Abrimos a las ${horario.abre_txt}`
+                : !ubicacion ? 'Elige tu ubicación primero'
+                : '✅ Confirmar pedido'}
             </button>
             <button onClick={() => setConfirmando(false)} className="w-full text-center text-gray-400 text-sm font-semibold mt-3">
               Volver
