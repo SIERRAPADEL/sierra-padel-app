@@ -374,7 +374,17 @@ for (let m = 7 * 60; m <= 22 * 60; m += 30) {
   HORARIOS.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
 }
 
-function hoyISO() { return new Date().toISOString().split('T')[0]; }
+// HOY EN EL CLUB, no en Londres. German (19-ago): "el calendario te está mostrando el día 20
+// de entrada... en lugar de mostrar el 19".
+// 🔑 `toISOString()` devuelve UTC. Monclova va 6 horas atrás, así que TODOS LOS DÍAS a partir
+// de las 6 de la tarde el calendario abría en MAÑANA: el cliente entraba a reservar y veía el
+// día equivocado. Justo la hora en que la gente reserva.
+// Se usa la zona del club y no la del celular a propósito: quien reserva desde fuera de
+// Monclova —de viaje, o con el teléfono en otra zona— tiene que ver el día del CLUB.
+function hoyISO() {
+  // 'en-CA' da exactamente AAAA-MM-DD, que es lo que espera un <input type="date">.
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
+}
 
 function formatDate(iso) {
   return new Date(iso + 'T12:00').toLocaleDateString('es-MX', {
