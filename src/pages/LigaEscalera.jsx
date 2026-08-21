@@ -11,9 +11,10 @@ import { useApi } from '../hooks/useApi';
  * quién se queda y quién baja. Eso es lo que hay que explicar en dos líneas, porque es
  * justo lo que hace que la gente quiera seguir viniendo.
  *
- * Lo que NO se promete aquí: pagar desde la app. El pago no existe todavía, así que
- * apuntarse deja el cargo en la cuenta y se paga en el club. Decir otra cosa sería
- * mandar a alguien a buscar un botón que no está.
+ * Lo que NO se promete aquí: pagar desde la app. Apuntarse aparta el lugar y deja
+ * anotado el adeudo; se cobra cuando la persona llega al club. Inscribirse no es estar
+ * en el club ni haber pagado (German, 21-ago), así que no se abre ninguna cuenta en la
+ * caja: eso trabaría el cierre del corte por alguien que ni está ahí.
  */
 export default function LigaEscalera() {
   const { id } = useParams();
@@ -49,7 +50,7 @@ export default function LigaEscalera() {
     setApuntando(false);
     if (!r?.ok) { setAviso({ malo: true, txt: r?.error || 'No se pudo. Intenta de nuevo.' }); return; }
     if (r.data?.aviso_cobro) {
-      setAviso({ txt: 'Ya estás dentro. Tu cargo se registra en recepción cuando llegues.' });
+      setAviso({ txt: 'Ya estás dentro. Pasa a recepción para dejar registrada tu inscripción.' });
     } else {
       setAviso({ txt: r.ya_estaba ? 'Ya estabas inscrito.' : '¡Listo, ya estás dentro!' });
     }
@@ -119,11 +120,11 @@ export default function LigaEscalera() {
                 {' '}{mi.sets_ganados} sets ganados
               </p>
             )}
-            {mi.cuenta && (
-              <p className={`text-[13px] mt-2 font-bold ${mi.cuenta.pagado ? 'text-green-700' : 'text-amber-700'}`}>
-                {mi.cuenta.pagado
+            {mi.adeudo && (
+              <p className={`text-[13px] mt-2 font-bold ${mi.adeudo.pagado ? 'text-green-700' : 'text-amber-700'}`}>
+                {mi.adeudo.pagado
                   ? '✓ Inscripción pagada'
-                  : `Falta pagar $${Number(mi.cuenta.monto).toLocaleString('es-MX')} — en recepción`}
+                  : `Falta pagar $${Number(mi.adeudo.saldo).toLocaleString('es-MX')} — te la cobran en el club`}
               </p>
             )}
           </div>
@@ -232,7 +233,8 @@ export default function LigaEscalera() {
               {apuntando ? 'Apuntándote…' : 'Apuntarme a la liga'}
             </button>
             <p className="text-gray-400 text-[12px] text-center mt-2 leading-snug">
-              Se aparta tu lugar al momento. {precio > 0 ? 'El pago es en el club.' : ''}
+              Se aparta tu lugar al momento.{precio > 0
+                ? ' No se cobra nada ahora: te la cobran cuando llegues al club.' : ''}
             </p>
           </div>
         )}
