@@ -20,6 +20,7 @@ import Retas from './pages/Retas';
 import Reta from './pages/Reta';
 import Botanero from './pages/Botanero';
 import Ligas from './pages/Ligas';
+import LigaEscalera from './pages/LigaEscalera';
 import Marcadores from './pages/Marcadores';
 
 function ProtectedRoute({ children }) {
@@ -57,6 +58,7 @@ function AppRoutes() {
       <Route path="/reta/:token" element={<ProtectedRoute><Reta /></ProtectedRoute>} />
       <Route path="/marcadores" element={<ProtectedRoute><Marcadores /></ProtectedRoute>} />
       <Route path="/ligas" element={<ProtectedRoute><Ligas /></ProtectedRoute>} />
+      <Route path="/liga/:id" element={<ProtectedRoute><LigaEscalera /></ProtectedRoute>} />
       <Route path="/botanero" element={<ProtectedRoute><Botanero /></ProtectedRoute>} />
       <Route path="/torneos" element={<ProtectedRoute><Torneos /></ProtectedRoute>} />
       <Route path="/puntos" element={<ProtectedRoute><Puntos /></ProtectedRoute>} />
