@@ -13,7 +13,8 @@ export default function Botanero() {
   const [loading, setLoading] = useState(true);
   const [accion, setAccion] = useState(false);
   const [error, setError] = useState('');
-  const [pideSexo, setPideSexo] = useState(null); // turno para el que falta declarar H/M
+  const [pideSexo, setPideSexo] = useState(null);      // turno para el que falta declarar H/M
+  const [avisoEspera, setAvisoEspera] = useState(null); // quedó en la espera: hay que decírselo
   // Captura del marcador por el propio jugador (como en las retas). 3 sets, games de
   // cada pareja. La rotación de parejas la sabe el servidor: aquí sólo se anotan games.
   const [capturando, setCapturando] = useState(null);      // turno cuyo marcador se está capturando
@@ -66,9 +67,13 @@ export default function Botanero() {
     if (accion) return;
     const yaLoSe = sexo || data?.mi_sexo_guardado;
     if (!yaLoSe) { setPideSexo(turno); return; }
-    setAccion(true); setError(''); setPideSexo(null);
+    setAccion(true); setError(''); setAvisoEspera(null); setPideSexo(null);
     const d = await apiFetch('/botanero/apuntarse', { method: 'POST', body: JSON.stringify({ turno, sexo: yaLoSe }) });
     if (!d.ok) setError(d.error || 'No se pudo. Intenta de nuevo.');
+    // Quedar en LISTA DE ESPERA no es lo mismo que tener lugar, y hay que decirlo aquí
+    // (German, 21-ago). Antes la pantalla sólo recargaba y quien se anotó tarde se podía
+    // ir creyendo que ya estaba dentro.
+    else if (d.data?.estado === 'espera') setAvisoEspera(d.data);
     await cargar();
     setAccion(false);
   }
@@ -89,6 +94,29 @@ export default function Botanero() {
 
   return (
     <div className="pb-24">
+      {avisoEspera && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4"
+             onClick={() => setAvisoEspera(null)}>
+          <div className="bg-white rounded-2xl p-5 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <p className="text-3xl text-center">⏳</p>
+            <p className="text-center font-black text-lg text-sp-gray mt-1">
+              Estás en lista de espera
+            </p>
+            <p className="text-center text-[15px] text-amber-700 font-bold mt-1">
+              Lugar #{avisoEspera.posicion_espera} · turno de {avisoEspera.hora}
+            </p>
+            <p className="text-[14px] text-gray-600 mt-3 leading-snug">
+              {avisoEspera.motivo_espera === 'cerrado'
+                ? <>La lista de este turno cerró a las <b>{avisoEspera.cierra}</b>, media hora antes de empezar.</>
+                : <>Este turno ya está lleno.</>}
+              {' '}<b>Todavía no tienes lugar.</b> Si alguien no llega o se baja, entras
+              automáticamente y te llega una notificación.
+            </p>
+            <button onClick={() => setAvisoEspera(null)}
+              className="btn-green w-full mt-4">Entendido</button>
+          </div>
+        </div>
+      )}
       <div className="bg-sp-green px-5 pt-5 pb-4">
         <button onClick={() => navigate('/ligas')} className="text-white/80 text-sm mb-1">‹ Ligas</button>
         <h1 className="text-white font-black text-2xl">🍻 Viernes Botanero</h1>
@@ -352,7 +380,9 @@ export default function Botanero() {
         )}
 
         <p className="text-gray-400 text-[12px] text-center px-4 leading-relaxed">
-          La cuota se paga en el club al llegar. Si se libera un lugar y estás en espera, te avisamos con una notificación.
+          La cuota se paga en el club al llegar. La lista de cada turno cierra <b>media hora
+          antes</b> de empezar; después te puedes anotar, pero quedas en lista de espera.
+          Si se libera un lugar, entras y te avisamos con una notificación.
           Si no vas a poder, bájate con tiempo — tu lugar es oro para el que sigue.
         </p>
       </div>
