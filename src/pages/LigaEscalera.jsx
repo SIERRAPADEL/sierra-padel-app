@@ -16,6 +16,14 @@ import { useApi } from '../hooks/useApi';
  * en el club ni haber pagado (German, 21-ago), así que no se abre ninguna cuenta en la
  * caja: eso trabaría el cierre del corte por alguien que ni está ahí.
  */
+// Los mismos colores que la lista de ligas (Ligas.jsx). Verde institucional para la varonil,
+// rosa para la femenil — la rama decide quién puede inscribirse, así que se ve antes de leer.
+const RAMA = {
+  Varonil: { fondo: '#1a7d1a', sub: 'rgba(217,249,157,.95)' },
+  Femenil: { fondo: '#be185d', sub: 'rgba(252,231,243,.95)' },
+  _:       { fondo: '#1a7d1a', sub: 'rgba(217,249,157,.95)' },
+};
+
 export default function LigaEscalera() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -86,11 +94,19 @@ export default function LigaEscalera() {
     </div>;
   }
 
+  // El mismo color con el que se vio en la lista: si la tarjeta era rosa, la liga abre rosa.
+  // Cambiar de color al entrar haría dudar de si se abrió la liga correcta.
+  const rama = RAMA[liga.categoria] || RAMA._;
+
   return (
     <div className="page safe-bottom">
-      <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-4">
+      <div className="px-5 pt-[env(safe-area-inset-top)] pb-4" style={{ background: rama.fondo }}>
         <button onClick={() => navigate('/ligas')} className="text-white/80 text-[13px] pt-3">← Ligas</button>
         <p className="text-white font-black text-xl mt-1">{liga.nombre}</p>
+        <p className="text-[12px] font-bold mt-0.5" style={{ color: rama.sub }}>
+          {liga.categoria === 'Femenil' ? 'Sólo para mujeres'
+            : liga.categoria === 'Varonil' ? 'Sólo para hombres' : 'Abierta a todos'}
+        </p>
         {fechaBonita && (
           <p className="text-white/85 text-[13px] mt-0.5 capitalize">
             Arranca el {fechaBonita} · {liga.n_jornadas} jornadas

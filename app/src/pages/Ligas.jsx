@@ -14,6 +14,16 @@ import { useApi } from '../hooks/useApi';
  * semanal con sus propias tablas y su propia pantalla. Meterlo al mismo molde sería
  * fingir que son lo mismo.
  */
+// ── LOS COLORES DE CADA RAMA ────────────────────────────────────────────────────
+// `categoria` de la liga escalera: 'Varonil' | 'Femenil' (o vacía = mixta/sin definir).
+// Verde institucional para la varonil, rosa para la femenil. La mixta se queda en el verde
+// oscuro neutro de siempre, que es lo que había antes de que existieran las ramas.
+const RAMA = {
+  Varonil: { fondo: '#1d3009', sub: 'rgba(217,249,157,.9)', acento: '#4d7c0f', etiqueta: 'Varonil · ' },
+  Femenil: { fondo: '#4a0d2e', sub: 'rgba(251,207,232,.92)', acento: '#be185d', etiqueta: 'Femenil · ' },
+  _:       { fondo: '#1d3009', sub: 'rgba(217,249,157,.9)', acento: '#4d7c0f', etiqueta: '' },
+};
+
 export default function Ligas() {
   const navigate = useNavigate();
   const { apiFetch } = useApi();
@@ -67,16 +77,23 @@ export default function Ligas() {
         {!loading && escaleras.map((l) => {
           const com = l.comercial;
           const bolsa = com ? Number(com.premio_efectivo || 0) + Number(com.premio_especie_valor || 0) : 0;
+          // LA RAMA SE VE ANTES DE LEER (German, 22-ago): "hombres verde institucional,
+          // mujeres rosa". No es adorno — a la varonil sólo entran hombres y a la femenil
+          // sólo mujeres, así que el color evita que alguien abra la liga equivocada y se
+          // lleve el rechazo hasta el final del formulario.
+          // El verde es el de la marca; el rosa se eligió con el mismo peso visual para que
+          // la femenil no se lea como una versión secundaria de la varonil.
+          const rama = RAMA[l.categoria] || RAMA._;
           return (
             <button key={l.id} onClick={() => navigate(`/liga/${l.id}`)}
                     className="text-left active:scale-[0.98] transition-transform">
               <div className="card p-0 overflow-hidden">
-                <div className="px-4 py-3 flex items-center gap-3" style={{ background: '#1d3009' }}>
+                <div className="px-4 py-3 flex items-center gap-3" style={{ background: rama.fondo }}>
                   <span style={{ fontSize: 26 }}>🪜</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-black text-[16px] leading-tight">{l.nombre}</p>
-                    <p className="text-lime-200/90 text-[12px]">
-                      Escalera por nivel · {l.n_jornadas} jornadas · 3 sets por noche
+                    <p className="text-[12px]" style={{ color: rama.sub }}>
+                      {rama.etiqueta}Escalera por nivel · {l.n_jornadas} jornadas · 3 sets por noche
                     </p>
                   </div>
                   <span className="text-[12px] font-bold px-2 py-1 rounded-lg bg-white/15 text-white flex-shrink-0">
@@ -105,7 +122,7 @@ export default function Ligas() {
                     <span className="text-[13px] text-gray-400">
                       Te acomodan por nivel · subes jugando
                     </span>
-                    <span className="text-[13px] font-bold text-sp-green-dark">Ver liga →</span>
+                    <span className="text-[13px] font-bold" style={{ color: rama.acento }}>Ver liga →</span>
                   </div>
                 </div>
               </div>
