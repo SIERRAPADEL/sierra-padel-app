@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
+import { isPushSupported } from '../components/NotificationSetup';
+import PrenderAvisos from '../components/PrenderAvisos';
 
 // Liga Viernes Botanero — Fase 1: apuntarse a la lista semanal (cupo + lista de espera).
 // Liga individual perpetua: 3 sets rotando pareja; el récord te va acomodando de cancha.
@@ -15,6 +17,18 @@ export default function Botanero() {
   const [error, setError] = useState('');
   const [pideSexo, setPideSexo] = useState(null);      // turno para el que falta declarar H/M
   const [avisoEspera, setAvisoEspera] = useState(null); // quedó en la espera: hay que decírselo
+
+  // ── PRENDER LAS NOTIFICACIONES, A UN TOQUE ─────────────────────────────────
+  // German (21-ago): *"necesitamos que tengan acceso al botón de prende tus notificaciones
+  // muy fácil, es la única manera que no tengan que buscarlo"*.
+  //
+  // El aviso automático (NotificationSetup) sólo sale si la app está INSTALADA, sólo si el
+  // permiso está sin decidir, y si lo descartan una vez no vuelve nunca: por eso lleva
+  // clavado en ~30 personas desde el 31-jul. Aquí el botón vive en la pantalla, siempre
+  // visible mientras no las tenga, y en el momento en que el aviso sirve — está apuntado
+  // a jugar y quiere saber su cancha.
+  const yaTieneAvisos = typeof localStorage !== 'undefined' && localStorage.getItem('pushSubscribed') === '1';
+  const faltanAvisos = isPushSupported() && !yaTieneAvisos;
   // Captura del marcador por el propio jugador (como en las retas). 3 sets, games de
   // cada pareja. La rotación de parejas la sabe el servidor: aquí sólo se anotan games.
   const [capturando, setCapturando] = useState(null);      // turno cuyo marcador se está capturando
@@ -112,8 +126,15 @@ export default function Botanero() {
               {' '}<b>Todavía no tienes lugar.</b> Si alguien no llega o se baja, entras
               automáticamente y te llega una notificación.
             </p>
+            {faltanAvisos && (
+              <div className="mt-4">
+                <PrenderAvisos compacto motivo="Te avisamos en cuanto se libere un lugar." />
+              </div>
+            )}
             <button onClick={() => setAvisoEspera(null)}
-              className="btn-green w-full mt-4">Entendido</button>
+              className={faltanAvisos
+                ? 'w-full mt-2 py-2.5 text-[14px] font-bold text-gray-500'
+                : 'btn-green w-full mt-4'}>Entendido</button>
           </div>
         </div>
       )}
@@ -142,6 +163,8 @@ export default function Botanero() {
           )}
         </div>
       )}
+
+      <PrenderAvisos motivo="Te avisamos en qué cancha juegas y con quién en cuanto se arman, y si se libera un lugar." />
 
       <div className="px-4 mt-4 flex flex-col gap-3">
         <div className="card py-4">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import PrenderAvisos from '../components/PrenderAvisos';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
@@ -539,6 +540,7 @@ export default function Home() {
       </div>
 
       {/* ── Contenido ── */}
+      <PrenderAvisos motivo="Te avisamos tu cancha, tus retas y cuando se libere un lugar." />
       <div className="px-4 py-4 flex flex-col gap-4">
         {/* Promo Express: sensible al tiempo, siempre hasta arriba */}
         <PromoExpressBanner />
