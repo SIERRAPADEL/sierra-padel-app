@@ -35,6 +35,8 @@ export default function LigaEscalera() {
   const [cargando, setCargando] = useState(true);
   const [apuntando, setApuntando] = useState(false);
   const [aviso, setAviso] = useState(null);
+  // La liga es de rama y no sabemos si juega varonil o femenil. Se pregunta UNA vez.
+  const [preguntaRama, setPreguntaRama] = useState(false);
 
   const cargar = useCallback(async () => {
     const [abiertas, mia, rank] = await Promise.all([
@@ -51,11 +53,21 @@ export default function LigaEscalera() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  async function apuntarme() {
+  async function apuntarme(sexo) {
     setApuntando(true);
     setAviso(null);
-    const r = await apiFetch(`/escalera/${id}/inscribirme`, { method: 'POST' });
+    // `sexo` sólo viaja cuando la liga es de rama y el sistema no lo tenía: es la persona
+    // declarándolo. La versión anterior lo ADIVINABA por la liga que abriera — un hombre sin
+    // dato entraba a la femenil y encima quedaba anotado como mujer. German lo cachó probando
+    // (22-ago). Son 38 de los 130 clientes con app los que no tienen el dato; a los demás la
+    // pregunta nunca les sale.
+    const r = await apiFetch(`/escalera/${id}/inscribirme`, {
+      method: 'POST',
+      ...(sexo ? { body: JSON.stringify({ sexo }) } : {}),
+    });
     setApuntando(false);
+    if (r?.codigo === 'FALTA_SEXO') { setPreguntaRama(true); return; }
+    setPreguntaRama(false);
     if (!r?.ok) { setAviso({ malo: true, txt: r?.error || 'No se pudo. Intenta de nuevo.' }); return; }
     if (r.data?.aviso_cobro) {
       setAviso({ txt: 'Ya estás dentro. Pasa a recepción para dejar registrada tu inscripción.' });
@@ -243,11 +255,36 @@ export default function LigaEscalera() {
             <button
               onClick={apuntarme}
               disabled={apuntando}
-              className="mt-3 w-full bg-sp-green text-white font-black py-3.5 rounded-xl
+              className="mt-3 w-full text-white font-black py-3.5 rounded-xl
                          active:scale-[0.98] transition-transform disabled:opacity-60"
+              style={{ background: rama.fondo }}
             >
               {apuntando ? 'Apuntándote…' : 'Apuntarme a la liga'}
             </button>
+
+            {preguntaRama && (
+              <div className="mt-3 rounded-xl border-2 p-4" style={{ borderColor: rama.fondo }}>
+                <p className="font-black text-[15px] text-sp-gray">¿En qué rama juegas?</p>
+                <p className="text-gray-500 text-[13px] mt-0.5 leading-snug">
+                  Te lo preguntamos una sola vez. Esta liga es{' '}
+                  {liga.categoria === 'Femenil' ? 'sólo para mujeres' : 'sólo para hombres'}.
+                </p>
+                <div className="flex gap-2 mt-3">
+                  <button type="button" disabled={apuntando} onClick={() => apuntarme('H')}
+                          className="flex-1 py-3 rounded-xl font-black text-white
+                                     active:scale-[0.98] transition-transform disabled:opacity-60"
+                          style={{ background: '#1a7d1a' }}>
+                    Varonil
+                  </button>
+                  <button type="button" disabled={apuntando} onClick={() => apuntarme('M')}
+                          className="flex-1 py-3 rounded-xl font-black text-white
+                                     active:scale-[0.98] transition-transform disabled:opacity-60"
+                          style={{ background: '#be185d' }}>
+                    Femenil
+                  </button>
+                </div>
+              </div>
+            )}
             <p className="text-gray-400 text-[12px] text-center mt-2 leading-snug">
               Se aparta tu lugar al momento.{precio > 0
                 ? ' No se cobra nada ahora: te la cobran cuando llegues al club.' : ''}
