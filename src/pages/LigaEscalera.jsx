@@ -53,7 +53,17 @@ export default function LigaEscalera() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  async function apuntarme(sexo) {
+  // 🔴 `sexo` SE FILTRA A LA FUERZA. Este mismo botón estaba cableado como `onClick={apuntarme}`,
+  // así que React le pasaba su evento como primer argumento: `sexo` llegaba siendo el evento,
+  // `JSON.stringify` reventaba por referencia circular, el throw se comía el `setApuntando(false)`
+  // y el botón se quedaba en «Apuntándote…» para siempre, SIN RESPUESTA. German lo vio en vivo
+  // (22-ago): "se quedo trabado; nunca dio respuesta".
+  //
+  // 🔑 Se arregló el cableado, pero la lista blanca es la que cierra el hueco de verdad: llamen
+  // a esta función como la llamen, aquí adentro sólo entra 'H' o 'M'. Un handler que acepta un
+  // argumento es una trampa en React, y el cableado se puede volver a romper mañana.
+  async function apuntarme(sexoCrudo) {
+    const sexo = (sexoCrudo === 'H' || sexoCrudo === 'M') ? sexoCrudo : null;
     setApuntando(true);
     setAviso(null);
     // `sexo` sólo viaja cuando la liga es de rama y el sistema no lo tenía: es la persona
@@ -61,20 +71,29 @@ export default function LigaEscalera() {
     // dato entraba a la femenil y encima quedaba anotado como mujer. German lo cachó probando
     // (22-ago). Son 38 de los 130 clientes con app los que no tienen el dato; a los demás la
     // pregunta nunca les sale.
-    const r = await apiFetch(`/escalera/${id}/inscribirme`, {
-      method: 'POST',
-      ...(sexo ? { body: JSON.stringify({ sexo }) } : {}),
-    });
-    setApuntando(false);
-    if (r?.codigo === 'FALTA_SEXO') { setPreguntaRama(true); return; }
-    setPreguntaRama(false);
-    if (!r?.ok) { setAviso({ malo: true, txt: r?.error || 'No se pudo. Intenta de nuevo.' }); return; }
-    if (r.data?.aviso_cobro) {
-      setAviso({ txt: 'Ya estás dentro. Pasa a recepción para dejar registrada tu inscripción.' });
-    } else {
-      setAviso({ txt: r.ya_estaba ? 'Ya estabas inscrito.' : '¡Listo, ya estás dentro!' });
+    // 🔑 try/finally: el boton VUELVE a habilitarse pase lo que pase. Sin esto, cualquier
+    // tropiezo aqui adentro deja «Apuntandote…» congelado y la persona sin saber si quedo
+    // inscrita — que es justo como se sintio el bug del evento. El apagador va en el finally,
+    // no despues del await, porque despues del await no se llega si algo truena.
+    try {
+      const r = await apiFetch(`/escalera/${id}/inscribirme`, {
+        method: 'POST',
+        ...(sexo ? { body: JSON.stringify({ sexo }) } : {}),
+      });
+      if (r?.codigo === 'FALTA_SEXO') { setPreguntaRama(true); return; }
+      setPreguntaRama(false);
+      if (!r?.ok) { setAviso({ malo: true, txt: r?.error || 'No se pudo. Intenta de nuevo.' }); return; }
+      if (r.data?.aviso_cobro) {
+        setAviso({ txt: 'Ya estás dentro. Pasa a recepción para dejar registrada tu inscripción.' });
+      } else {
+        setAviso({ txt: r.ya_estaba ? 'Ya estabas inscrito.' : '¡Listo, ya estás dentro!' });
+      }
+      cargar();
+    } catch (e) {
+      setAviso({ malo: true, txt: 'No se pudo completar. Intenta de nuevo.' });
+    } finally {
+      setApuntando(false);
     }
-    cargar();
   }
 
   const com = liga?.comercial;
@@ -253,7 +272,7 @@ export default function LigaEscalera() {
               </>
             )}
             <button
-              onClick={apuntarme}
+              onClick={() => apuntarme()}
               disabled={apuntando}
               className="mt-3 w-full text-white font-black py-3.5 rounded-xl
                          active:scale-[0.98] transition-transform disabled:opacity-60"
