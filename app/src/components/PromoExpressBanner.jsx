@@ -39,8 +39,14 @@ export default function PromoExpressBanner() {
     } catch { }
   }
 
+  // Una promo de CANCHA (tipo 2) no tiene ubicación: no se entrega en una mesa, se va a
+  // reservar. Preguntarle "¿mesa o barra?" a quien va a rentar cancha es fricción justo en
+  // el momento de convertir — y encima el dato no se usa para nada. Sólo el tipo 1 la pide.
+  const esDeCancha = String(promo?.tipo || '1') === '2';
+
   async function confirmarYReclamar() {
-    if (!promo || reclamando || !ubicacion) return;
+    if (!promo || reclamando) return;
+    if (!esDeCancha && !ubicacion) return;
     setReclamando(true);
     setConfirmando(false);
     setErrorMsg('');
@@ -49,12 +55,14 @@ export default function PromoExpressBanner() {
       const r = await fetch(`${BACKEND}/api/promos-express/${promo.id}/reclamar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ ubicacion }),
+        body: JSON.stringify(esDeCancha ? {} : { ubicacion }),
       });
       const d = await r.json();
       if (d.ok) {
         setReclamado({ ...d.data, tipo: d.tipo || promo.tipo || '1' });
-        if (d.tipo === '2') {
+        // Vale igual si es la primera vez o si ya lo tenía (d.repetido): en los dos casos
+        // hay que llevarlo a reservar, que es donde se usa el cupón.
+        if (String(d.tipo || promo.tipo) === '2') {
           const params = new URLSearchParams({
             promo:  d.data.codigo,
             titulo: promo.titulo,
@@ -115,6 +123,12 @@ export default function PromoExpressBanner() {
             <p className="text-xs font-bold uppercase tracking-wider text-sp-green mb-1">Confirmar promo</p>
             <p className="text-lg font-black text-sp-gray">{promo.titulo}</p>
             <p className="text-sm text-gray-500 mb-4">{promo.descripcion}</p>
+            {esDeCancha ? (
+              <p className="text-sm text-gray-500 mb-5">
+                Al confirmar te llevamos a <strong className="text-sp-gray">reservar tu cancha</strong> con
+                el precio de la promo ya puesto.
+              </p>
+            ) : (<>
             <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">¿Donde estas?</p>
             <div className="grid grid-cols-2 gap-2 mb-5">
               {UBICACIONES.map(u => (
@@ -129,6 +143,7 @@ export default function PromoExpressBanner() {
                 </button>
               ))}
             </div>
+            </>)}
             <div className="flex gap-2">
               <button
                 onClick={() => { setConfirmando(false); setUbicacion(''); }}
@@ -138,12 +153,12 @@ export default function PromoExpressBanner() {
               </button>
               <button
                 onClick={confirmarYReclamar}
-                disabled={!ubicacion}
+                disabled={!esDeCancha && !ubicacion}
                 className={`flex-[2] py-3 rounded-xl font-bold text-sm ${
-                  ubicacion ? 'bg-sp-green text-white' : 'bg-gray-100 text-gray-300'
+                  (esDeCancha || ubicacion) ? 'bg-sp-green text-white' : 'bg-gray-100 text-gray-300'
                 }`}
               >
-                {ubicacion ? 'Confirmar y reclamar ✓' : 'Selecciona ubicacion'}
+                {esDeCancha ? 'Reservar con la promo →' : (ubicacion ? 'Confirmar y reclamar ✓' : 'Selecciona ubicacion')}
               </button>
             </div>
           </div>
