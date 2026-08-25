@@ -87,6 +87,11 @@ export default function PromoExpressBanner() {
   // preguntarle «¿dónde estás?» es fricción justo al convertir, y el dato no se usa para nada.
   const pideUbicacion = it => it.origen === 'express' && String(it.tipo) === '1';
 
+  // El Botanero no se RECLAMA, se APUNTA: su tarjeta trae `url` y el botón navega en vez de
+  // pedir un cupón. Se pregunta por el CAMPO, no por el origen, para que la próxima fuente
+  // que sólo lleve a una pantalla funcione sin volver a tocar esto.
+  const esLink = it => !!(it && it.url);
+
   async function reclamar(it) {
     if (reclamando) return;
     setReclamando(true);
@@ -194,7 +199,9 @@ export default function PromoExpressBanner() {
                onClick={e => e.stopPropagation()}>
           <div className="overflow-y-auto overscroll-contain px-5 pt-5">
             <p className="text-xs font-bold uppercase tracking-wider text-sp-green mb-1">
-              {abierta.origen === 'beneficio' ? 'Para ti' : 'Promo del día'}
+              {abierta.origen === 'beneficio' ? 'Para ti'
+                : abierta.origen === 'botanero' ? 'Liga del viernes'
+                : 'Promo del día'}
             </p>
             <p className="text-2xl font-black text-sp-gray leading-tight" style={{ textWrap: 'balance' }}>
               {abierta.titulo}
@@ -215,7 +222,7 @@ export default function PromoExpressBanner() {
               </p>
             )}
 
-            {abierta.bloqueada ? (
+            {esLink(abierta) ? null : abierta.bloqueada ? (
               <div className="mt-4">
                 <PrenderAvisos compacto motivo={`Préndelas y reclama: ${abierta.titulo}.`} />
               </div>
@@ -245,7 +252,14 @@ export default function PromoExpressBanner() {
               fuera de la vista y la persona no podría ni reclamar ni cerrar — que es
               exactamente lo que pasaba. */}
           <div className="px-5 pt-3 pb-5 border-t border-gray-100 flex flex-col gap-2 bg-white">
-            {!abierta.bloqueada && abierta.reclamable && (
+            {esLink(abierta) && (
+              <button
+                onClick={() => { const u = abierta.url; setAbierta(null); navigate(u); }}
+                className="w-full py-3.5 rounded-xl font-black text-[15px] bg-sp-green text-white">
+                {abierta.cta || 'Ver más →'}
+              </button>
+            )}
+            {!esLink(abierta) && !abierta.bloqueada && abierta.reclamable && (
               <button
                 onClick={() => reclamar(abierta)}
                 disabled={reclamando || (pideUbicacion(abierta) && !ubicacion)}
@@ -278,7 +292,9 @@ export default function PromoExpressBanner() {
       >
         <div className="flex items-center justify-between gap-3">
           <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#96C800' }}>
-            {it.origen === 'beneficio' ? '🎁 Para ti' : '⚡ Promo del día'}
+            {it.origen === 'beneficio' ? '🎁 Para ti'
+              : it.origen === 'botanero' ? '🍻 Liga del viernes'
+              : '⚡ Promo del día'}
           </p>
           {segs !== null && (
             <p style={{ fontSize: 15, fontWeight: 900, color: urge ? '#f97316' : '#96C800', fontVariantNumeric: 'tabular-nums' }}>
@@ -293,7 +309,8 @@ export default function PromoExpressBanner() {
 
         {/* Una sola línea, y sólo cuando dice algo que el título no. */}
         <p className="text-[13px] font-bold mt-2" style={{ color: it.bloqueada ? '#fbbf24' : '#96C800' }}>
-          {it.bloqueada ? '🔔 Prende tus notificaciones'
+          {esLink(it) ? (it.cta || 'Ver más →')
+            : it.bloqueada ? '🔔 Prende tus notificaciones'
             : it.reclamable ? 'Ver promo →'
             : 'Ya cerró · ver detalle'}
         </p>
