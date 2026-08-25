@@ -186,7 +186,7 @@ export default function PromoExpressBanner() {
         //    reclamar y el de cerrar SIEMPRE están a la mano, aunque el texto sea largo.
         //  · Respeto del área segura de abajo, o el botón queda debajo de la barra del
         //    iPhone y no se puede tocar.
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60"
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60"
              style={{ padding: '16px', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
              onClick={() => { setAbierta(null); setUbicacion(''); }}>
           <div className="bg-white rounded-3xl w-full max-w-sm flex flex-col overflow-hidden"

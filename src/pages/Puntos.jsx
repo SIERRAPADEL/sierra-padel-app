@@ -475,7 +475,7 @@ export default function Puntos() {
       {/* Modal de confirmacion de canje */}
       {canjeModal && (
         <div
-          className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 px-4"
+          className="fixed inset-0 bg-black/60 flex items-end justify-center z-[60] px-4"
           style={{ paddingBottom: "max(32px, env(safe-area-inset-bottom))" }}
           onClick={() => setCanjeModal(null)}
         >

@@ -572,7 +572,7 @@ export default function Pedir() {
       {/* CONFIRMACIÓN — SIEMPRE se revisa el pedido antes de enviar (anti-dedazo) */}
       {confirmando && (
         <div
-          className="fixed inset-0 z-50 flex items-end"
+          className="fixed inset-0 z-[60] flex items-end"
           style={{ background: 'rgba(0,0,0,0.45)' }}
           onClick={() => setConfirmando(false)}
         >

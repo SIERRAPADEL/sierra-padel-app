@@ -109,7 +109,7 @@ export default function Botanero() {
   return (
     <div className="pb-24">
       {avisoEspera && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4"
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-end sm:items-center justify-center p-4"
              style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
              onClick={() => setAvisoEspera(null)}>
           {/* Tope de altura + scroll: sin esto, en un teléfono chico el bloque de avisos
