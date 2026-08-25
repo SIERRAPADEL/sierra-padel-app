@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
+import PrenderAvisos from '../components/PrenderAvisos';
 
 // Estilo por nivel víbora (bolsa única): color + dibujo propio.
 // Los niveles se pintaban con EMOJIS del sistema (🪱 / 🐍 / 🐍🔥 / 👑🐍). Cada teléfono los
@@ -376,7 +377,8 @@ export default function Puntos() {
             <div className="card text-center text-gray-400 text-sm py-6">No hay promos disponibles ahora</div>
           )}
           {promosDisp.map(p => (
-            <div key={p.id} className="card flex items-center justify-between gap-3">
+            <div key={p.id}>
+            <div className="card flex items-center justify-between gap-3">
               <div className="flex-1">
                 <p className="text-sm font-bold text-sp-gray">{p.nombre}</p>
                 <p className="text-xs text-sp-green font-semibold">{p.valor}</p>
@@ -387,15 +389,32 @@ export default function Puntos() {
                     {p.valido_hasta ? `Hasta ${String(p.valido_hasta).slice(0, 10)}` : ''}
                   </p>
                 )}
+                {/* 🔒 Promo atada a las notificaciones (German, 24-ago-2026: «condiciónale
+                    las cervezas a que prenda las notificaciones»). SE VE aunque no la pueda
+                    reclamar todavía: esconderla haría que nunca supiera que existe, y
+                    entonces no incentiva nada — que es justo para lo que se puso. */}
+                {p.bloqueada && (
+                  <p className="text-xs text-amber-500 font-semibold mt-1">
+                    🔔 {p.motivo_bloqueo}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => reclamarPromo(p.id)}
-                disabled={loadingPromo === p.id}
+                disabled={loadingPromo === p.id || p.bloqueada}
                 className="py-2 px-4 rounded-xl text-xs font-bold text-white active:scale-95 transition-transform disabled:opacity-50"
-                style={{ background: nivel.color }}
+                style={{ background: p.bloqueada ? '#9CA3AF' : nivel.color }}
               >
-                {loadingPromo === p.id ? '...' : 'Reclamar'}
+                {loadingPromo === p.id ? '...' : (p.bloqueada ? '🔒' : 'Reclamar')}
               </button>
+            </div>
+            {/* El botón para prenderlas, PEGADO a la promo que las pide. Mandarlo a buscarlo
+                a Perfil es donde se pierde la gente; aquí el premio y el paso están juntos. */}
+            {p.bloqueada && (
+              <div className="mt-2">
+                <PrenderAvisos compacto motivo={`Prende tus notificaciones y reclama: ${p.nombre}.`} />
+              </div>
+            )}
             </div>
           ))}
 
