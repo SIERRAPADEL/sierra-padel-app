@@ -10,7 +10,7 @@ export default function Botanero() {
   const navigate = useNavigate();
   const { apiFetch } = useApi();
   const [data, setData] = useState(null);
-  const [ranking, setRanking] = useState([]);
+  const [ranking, setRanking] = useState({ hombres: [], mujeres: [] });
   const [juegos, setJuegos] = useState(null);
   const [loading, setLoading] = useState(true);
   const [accion, setAccion] = useState(false);
@@ -67,7 +67,11 @@ export default function Botanero() {
       apiFetch('/botanero/estado'), apiFetch('/botanero/ranking'), apiFetch('/botanero/juegos'),
     ]);
     if (d.ok) setData(d.data);
-    if (r.ok) setRanking(r.data || []);
+    // Dos rankings, no uno (German, 25-ago): las canchas no se mezclan, así que comparar
+    // a todos en una tabla es comparar a gente que nunca se enfrentó. Si el backend fuera
+    // viejo y no mandara las listas separadas, se cae al ranking completo como hombres —
+    // más vale una tabla de más que una pantalla vacía.
+    if (r.ok) setRanking({ hombres: r.hombres || r.data || [], mujeres: r.mujeres || [] });
     if (j.ok) setJuegos(j.data);
     setLoading(false);
   }, [apiFetch]);
@@ -181,7 +185,11 @@ export default function Botanero() {
           </p>
         </div>
 
-        {ranking.length === 0 && data?.fecha && (
+        {/* ⚠️ Al partir el ranking en dos, `ranking` dejó de ser un arreglo: si esto siguiera
+            preguntando por `.length` daría `undefined` y el banner de arranque NO volvería a
+            salir nunca — un cambio de forma que se lleva por delante otra pantalla en
+            silencio. Se pregunta por las dos listas. */}
+        {ranking.hombres.length === 0 && ranking.mujeres.length === 0 && data?.fecha && (
           <div className="rounded-2xl px-4 py-3 text-center" style={{ background: '#2e1b06' }}>
             <p className="text-white font-black text-[15px]">🚀 ¡La liga arranca el {fechaBonita}!</p>
             <p className="text-amber-200/90 text-[12px] mt-0.5">Cuotas con precio de lanzamiento — apúntate y estrena el ranking.</p>
@@ -361,22 +369,31 @@ export default function Botanero() {
           );
         })}
 
-        {ranking.length > 0 && (
+        {(ranking.hombres.length > 0 || ranking.mujeres.length > 0) && (
           <div className="card py-4">
             <p className="text-sp-gray font-bold text-[15px] mb-2">🏆 Ranking de la liga</p>
-            <div className="flex flex-col">
-              {ranking.slice(0, 10).map(r => (
-                <div key={r.cliente_id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 last:border-0">
-                  <span className="w-7 text-center font-black text-[14px]">
-                    {r.pos === 1 ? '🥇' : r.pos === 2 ? '🥈' : r.pos === 3 ? '🥉' : r.pos}
-                  </span>
-                  <span className="flex-1 text-sp-gray text-[14px] font-semibold truncate">{r.nombre}</span>
-                  <span className="text-gray-400 text-[12px]">{r.sets_g}-{r.sets_p}</span>
-                  <span className="text-gray-400 text-[11px] w-8 text-right">{r.dif_games > 0 ? '+' : ''}{r.dif_games ?? 0}</span>
-                  <span className="text-sp-green-dark font-black text-[14px] w-9 text-right">{r.puntos}</span>
+            {/* Dos tablas, cada una con SU numeración: las canchas no se mezclan, así que
+                tampoco el ranking. Una lista vacía no se pinta — un encabezado con nada
+                debajo se lee como "aquí no juega nadie". */}
+            {[['Hombres', ranking.hombres], ['Mujeres', ranking.mujeres]].map(([rotulo, filas]) =>
+              filas.length === 0 ? null : (
+                <div key={rotulo} className="mt-1">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mt-3 mb-1">{rotulo}</p>
+                  <div className="flex flex-col">
+                    {filas.slice(0, 10).map(r => (
+                      <div key={r.cliente_id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 last:border-0">
+                        <span className="w-7 text-center font-black text-[14px]">
+                          {r.pos === 1 ? '🥇' : r.pos === 2 ? '🥈' : r.pos === 3 ? '🥉' : r.pos}
+                        </span>
+                        <span className="flex-1 text-sp-gray text-[14px] font-semibold truncate">{r.nombre}</span>
+                        <span className="text-gray-400 text-[12px]">{r.sets_g}-{r.sets_p}</span>
+                        <span className="text-gray-400 text-[11px] w-8 text-right">{r.dif_games > 0 ? '+' : ''}{r.dif_games ?? 0}</span>
+                        <span className="text-sp-green-dark font-black text-[14px] w-9 text-right">{r.puntos}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
-            </div>
             <p className="text-gray-400 text-[11px] mt-2">2 pts por set ganado + 1 por venir a jugar. Tu récord decide tu cancha.</p>
           </div>
         )}
