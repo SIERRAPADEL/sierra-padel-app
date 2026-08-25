@@ -34,8 +34,13 @@ function NivelModal({ apiFetch, updateUser, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 px-4 pb-6">
-      <div className="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4 max-h-[85vh] overflow-y-auto">
+    // 🔴 85vh NO es 85% de lo que se ve en un celular: vh no descuenta la barra del
+    // navegador, así que la caja queda más alta que la pantalla y el último botón ("Lo hago
+    // después") se corta. Visto en pantalla el 24-ago-2026. dvh sí la descuenta.
+    <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 px-4"
+         style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}>
+      <div className="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4 overflow-y-auto overscroll-contain"
+           style={{ maxHeight: "min(85dvh, calc(100vh - 48px))" }}>
         <div className="text-center">
           <p className="text-xl font-black text-sp-gray">🎾 ¿Cual es tu nivel de juego?</p>
           <p className="text-sm text-gray-400 mt-1">Con esto te avisamos de retas y torneos de tu nivel</p>
