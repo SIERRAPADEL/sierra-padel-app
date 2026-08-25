@@ -578,7 +578,7 @@ export default function Pedir() {
         >
           <div
             className="w-full bg-white rounded-t-3xl px-4 pt-5 pb-8"
-            style={{ maxWidth: 448, margin: '0 auto', maxHeight: '80vh', overflowY: 'auto' }}
+            style={{ maxWidth: 448, margin: '0 auto', maxHeight: 'min(80dvh, 80vh)', overflowY: 'auto', overscrollBehavior: 'contain' }}
             onClick={e => e.stopPropagation()}
           >
             <p className="text-sp-gray font-black text-lg text-center mb-3">¿Confirmamos tu pedido?</p>

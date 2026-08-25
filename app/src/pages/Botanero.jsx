@@ -110,8 +110,13 @@ export default function Botanero() {
     <div className="pb-24">
       {avisoEspera && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4"
+             style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
              onClick={() => setAvisoEspera(null)}>
-          <div className="bg-white rounded-2xl p-5 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+          {/* Tope de altura + scroll: sin esto, en un teléfono chico el bloque de avisos
+              empuja el botón fuera de la pantalla y no se puede cerrar (24-ago-2026). */}
+          <div className="bg-white rounded-2xl p-5 w-full max-w-sm overflow-y-auto overscroll-contain"
+               style={{ maxHeight: "min(85dvh, calc(100vh - 32px))" }}
+               onClick={(e) => e.stopPropagation()}>
             <p className="text-3xl text-center">⏳</p>
             <p className="text-center font-black text-lg text-sp-gray mt-1">
               Estás en lista de espera

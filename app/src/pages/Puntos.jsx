@@ -475,11 +475,15 @@ export default function Puntos() {
       {/* Modal de confirmacion de canje */}
       {canjeModal && (
         <div
-          className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 px-4 pb-8"
+          className="fixed inset-0 bg-black/60 flex items-end justify-center z-50 px-4"
+          style={{ paddingBottom: "max(32px, env(safe-area-inset-bottom))" }}
           onClick={() => setCanjeModal(null)}
         >
+          {/* Tope de altura + scroll propio: un texto largo no debe empujar el botón fuera
+              de la pantalla, que es como una caja deja de ser funcional (24-ago-2026). */}
           <div
-            className="bg-white rounded-3xl p-6 w-full max-w-xs flex flex-col gap-4"
+            className="bg-white rounded-3xl p-6 w-full max-w-xs flex flex-col gap-4 overflow-y-auto overscroll-contain"
+            style={{ maxHeight: "min(85dvh, calc(100vh - 48px))" }}
             onClick={e => e.stopPropagation()}
           >
             <div className="text-center">

@@ -173,13 +173,32 @@ export default function PromoExpressBanner() {
     <>
       {/* ── LA HOJA: aquí sí va la explicación completa ─────────────────────── */}
       {abierta && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-6"
+        // 🔴 LA HOJA SE SALÍA DE LA PANTALLA (German, 24-ago-2026: «se abrió el cuadro de
+        // texto y se sale de pantalla, no se puede scrollear ni manipular, por lo tanto no
+        // es funcional»). Tenía `p-5` y nada más: sin tope de altura y sin scroll, una promo
+        // con descripción larga —o con el bloque de notificaciones dentro— empujaba el botón
+        // fuera de la vista y la persona quedaba atrapada, sin poder reclamar ni cerrar.
+        //
+        // Tres reglas para que no vuelva a pasar:
+        //  · `max-h` en dvh (no vh): en el celular la barra del navegador aparece y
+        //    desaparece, y con vh la hoja queda más alta que la pantalla real.
+        //  · El CUERPO rueda; la CABECERA y los BOTONES quedan fijos. Así el botón de
+        //    reclamar y el de cerrar SIEMPRE están a la mano, aunque el texto sea largo.
+        //  · Respeto del área segura de abajo, o el botón queda debajo de la barra del
+        //    iPhone y no se puede tocar.
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60"
+             style={{ padding: '16px', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
              onClick={() => { setAbierta(null); setUbicacion(''); }}>
-          <div className="bg-white rounded-3xl p-5 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-3xl w-full max-w-sm flex flex-col overflow-hidden"
+               style={{ maxHeight: 'min(85dvh, calc(100vh - 32px))' }}
+               onClick={e => e.stopPropagation()}>
+          <div className="overflow-y-auto overscroll-contain px-5 pt-5">
             <p className="text-xs font-bold uppercase tracking-wider text-sp-green mb-1">
               {abierta.origen === 'beneficio' ? 'Para ti' : 'Promo del día'}
             </p>
-            <p className="text-2xl font-black text-sp-gray leading-tight">{abierta.titulo}</p>
+            <p className="text-2xl font-black text-sp-gray leading-tight" style={{ textWrap: 'balance' }}>
+              {abierta.titulo}
+            </p>
             {abierta.descripcion && (
               <p className="text-[15px] text-gray-600 mt-2 leading-snug">{abierta.descripcion}</p>
             )}
@@ -204,37 +223,44 @@ export default function PromoExpressBanner() {
               <p className="text-sm text-gray-500 mt-4 font-semibold">
                 Ya cerró el plazo de esta promo. Prende las notificaciones y te avisamos la próxima.
               </p>
-            ) : (<>
+            ) : pideUbicacion(abierta) ? (<>
               {/* Sólo las promos de PEDIDO se entregan en una mesa. Preguntarle "¿dónde
                   estás?" a quien va a rentar cancha es fricción justo al convertir, y el
                   dato no se usa para nada. */}
-              {pideUbicacion(abierta) && (<>
-                <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mt-4 mb-2">¿Dónde estás?</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {UBICACIONES.map(u => (
-                    <button key={u} onClick={() => setUbicacion(u)}
-                      className={`py-2.5 px-2 rounded-xl text-sm font-bold transition-colors ${
-                        ubicacion === u ? 'bg-sp-green text-white' : 'bg-gray-100 text-gray-500'}`}>
-                      {u}
-                    </button>
-                  ))}
-                </div>
-              </>)}
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mt-4 mb-2">¿Dónde estás?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {UBICACIONES.map(u => (
+                  <button key={u} onClick={() => setUbicacion(u)}
+                    className={`py-2.5 px-2 rounded-xl text-sm font-bold transition-colors ${
+                      ubicacion === u ? 'bg-sp-green text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    {u}
+                  </button>
+                ))}
+              </div>
+            </>) : null}
+            {errorMsg && <p className="text-sm font-semibold text-center mt-3 text-red-500">{errorMsg}</p>}
+          </div>
+
+          {/* PIE FIJO. Los botones NO ruedan con el texto: si el cuerpo es largo quedarían
+              fuera de la vista y la persona no podría ni reclamar ni cerrar — que es
+              exactamente lo que pasaba. */}
+          <div className="px-5 pt-3 pb-5 border-t border-gray-100 flex flex-col gap-2 bg-white">
+            {!abierta.bloqueada && abierta.reclamable && (
               <button
                 onClick={() => reclamar(abierta)}
                 disabled={reclamando || (pideUbicacion(abierta) && !ubicacion)}
-                className={`w-full mt-4 py-3.5 rounded-xl font-black text-[15px] ${
+                className={`w-full py-3.5 rounded-xl font-black text-[15px] ${
                   (!pideUbicacion(abierta) || ubicacion) ? 'bg-sp-green text-white' : 'bg-gray-100 text-gray-300'}`}>
                 {reclamando ? 'Procesando…'
                   : (pideUbicacion(abierta) && !ubicacion) ? 'Selecciona ubicación'
                   : (abierta.cta || 'Reclamar')}
               </button>
-            </>)}
-            {errorMsg && <p className="text-sm font-semibold text-center mt-2 text-red-500">{errorMsg}</p>}
+            )}
             <button onClick={() => { setAbierta(null); setUbicacion(''); }}
-              className="w-full mt-2 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold text-sm">
+              className="w-full py-3 rounded-xl bg-gray-100 text-gray-500 font-bold text-sm">
               Cerrar
             </button>
+          </div>
           </div>
         </div>
       )}
