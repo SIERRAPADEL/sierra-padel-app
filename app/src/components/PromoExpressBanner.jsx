@@ -4,40 +4,44 @@ import { BACKEND, UBICACIONES } from '../lib/constants';
 import PrenderAvisos from './PrenderAvisos';
 
 /**
- * EL ESCAPARATE — las promociones del día, arriba en Home.
+ * EL ESCAPARATE — un banner rotativo con las promociones del día, arriba en Home.
  *
- * German (24-ago-2026), en tres pasos que cambiaron el diseño:
- *   1. «necesito que sí hagamos un banner con las promociones del día en la app, bien
- *      ubicada para que no estorbe pero la gente las vea; la parte superior abajo del
- *      nombre como está plantada la promo de la primera renta x $200 es un buen lugar»
+ * German (24-ago-2026), en cuatro pasos que fueron formando el diseño:
+ *   1. «un banner con las promociones del día, bien ubicada para que no estorbe pero la
+ *      gente las vea; abajo del nombre como está plantada la promo de la primera renta»
  *   2. «funciona para los que no tienen las notificaciones prendidas, y ese puede ser un
  *      gancho: reclámala siempre y cuando prendas las notificaciones»
- *   3. «y que TODO TIPO de promociones puedan ser anunciadas en ese espacio, no quiero que
+ *   3. «que TODO TIPO de promociones puedan ser anunciadas en ese espacio, no quiero que
  *      pongamos una promo express y no se pueda poner ahí por algún detalle»
+ *   4. «quiero que sea UN banner, que con el tiempo vaya cambiando la promo. Título en
+ *      grande, explicación al dar click. No quiero mucho texto en la tarjeta del banner,
+ *      la gente no lee; no es funcional»
  *
- * 🔴 LO QUE ESTABA MAL. Este componente mostraba UNA promo express y sólo mientras corría
- * su ventana de 90 minutos (`/activa`). El resto del día el banner no existía: quien no
- * recibió el push nunca se enteraba de que hubo promo — y ese es justo el público que
- * importa (70 de 131 clientes con cuenta tienen notificaciones). Y una cortesía cargada por
- * el motor de descuentos no cabía aquí "por un detalle": vivía en otra tabla.
+ * 🔑 POR ESO LA TARJETA CASI NO TIENE TEXTO: sólo el título en grande y, si corre el reloj,
+ * el tiempo. La descripción, los horarios y el botón viven en la hoja que se abre al tocar.
+ * Una tarjeta con tres renglones de explicación no la lee nadie y ocupa media pantalla.
  *
- * 🔑 AHORA pinta lo que le dé `/escaparate`, sin saber de dónde salió cada cosa. Fuente
- * nueva = se agrega en el backend y aparece sola.
- *
- * 🔔 EL GANCHO. Sin notificaciones las promos se VEN pero salen con candado, y debajo va el
- * botón para prenderlas. Esconderlas haría que nunca supiera que existen, y entonces no
- * incentivan nada — que es justo para lo que se pusieron.
+ * 🔴 LO QUE ESTABA MAL ANTES: se mostraba UNA promo express y sólo durante su ventana de 90
+ * minutos. El resto del día el banner no existía, así que quien no recibió el push nunca se
+ * enteraba — 61 de 131 clientes con cuenta no tienen notificaciones. Y una cortesía cargada
+ * por el motor de descuentos no cabía aquí "por un detalle": vive en otra tabla. Ahora pinta
+ * lo que le dé /escaparate, sin saber de dónde salió: fuente nueva = aparece sola.
  */
+
+// 3 segundos por promo, en el mismo lugar (German, 24-ago: «si hay 3 promos, que vayan
+// apareciendo 3 segs por promo en el mismo lugar»).
+const ROTA_MS = 3000;
+
 export default function PromoExpressBanner() {
   const navigate = useNavigate();
-  const [items, setItems]             = useState([]);
-  const [tienePush, setTienePush]     = useState(true);
-  const [ahora, setAhora]             = useState(Date.now());
-  const [reclamado, setReclamado]     = useState(null);
-  const [reclamando, setReclamando]   = useState('');
-  const [confirmando, setConfirmando] = useState(null);   // el item que se está confirmando
-  const [ubicacion, setUbicacion]     = useState('');
-  const [errorMsg, setErrorMsg]       = useState('');
+  const [items, setItems]           = useState([]);
+  const [i, setI]                   = useState(0);
+  const [ahora, setAhora]           = useState(Date.now());
+  const [abierta, setAbierta]       = useState(null);   // la promo que se está viendo
+  const [ubicacion, setUbicacion]   = useState('');
+  const [reclamando, setReclamando] = useState(false);
+  const [reclamado, setReclamado]   = useState(null);
+  const [errorMsg, setErrorMsg]     = useState('');
 
   const token = () => localStorage.getItem('sp_token');
 
@@ -48,8 +52,8 @@ export default function PromoExpressBanner() {
         headers: t ? { Authorization: `Bearer ${t}` } : {},
       });
       const d = await r.json();
-      if (d.ok) { setItems(d.data || []); setTienePush(d.tiene_push !== false); }
-    } catch { /* sin conexión: el banner simplemente no se pinta */ }
+      if (d.ok) setItems(d.data || []);
+    } catch { /* sin conexión: el banner no se pinta y ya */ }
   }, []);
 
   useEffect(() => {
@@ -58,21 +62,35 @@ export default function PromoExpressBanner() {
     return () => clearInterval(poll);
   }, [cargar]);
 
-  // Un solo reloj para todas las cuentas regresivas: un setInterval por tarjeta es lo que
+  // ROTACIÓN CONTINUA, pausada sólo mientras la hoja está abierta — si siguiera girando
+  // detrás, al cerrar aparecería otra promo y se sentiría que la app hace cosas sola.
+  // Un toque NO la detiene para siempre: la tarjeta captura la promo que se estaba viendo
+  // (setAbierta(it)), así que aunque cambie justo al tocar, la hoja abre la correcta.
+  useEffect(() => {
+    if (items.length < 2 || abierta) return;
+    const t = setInterval(() => setI(v => (v + 1) % items.length), ROTA_MS);
+    return () => clearInterval(t);
+  }, [items.length, abierta]);
+
+  // Un solo reloj para todas las cuentas regresivas. Un setInterval por tarjeta es lo que
   // calienta el teléfono de la gente sin que nadie sepa por qué.
   useEffect(() => {
-    if (!items.some(i => i.expira_at)) return;
+    if (!items.some(x => x.expira_at)) return;
     const t = setInterval(() => setAhora(Date.now()), 1000);
     return () => clearInterval(t);
   }, [items]);
 
-  const esDeCancha = it => it.origen === 'express' && String(it.tipo) === '2';
+  // Si la lista se encoge (una promo cerró su plazo), el índice puede quedar fuera.
+  useEffect(() => { if (i >= items.length) setI(0); }, [i, items.length]);
+
+  // Sólo las promos de PEDIDO (tipo 1) se entregan en una mesa. A una de CANCHA (tipo 2)
+  // preguntarle «¿dónde estás?» es fricción justo al convertir, y el dato no se usa para nada.
+  const pideUbicacion = it => it.origen === 'express' && String(it.tipo) === '1';
 
   async function reclamar(it) {
     if (reclamando) return;
-    setReclamando(it.id);
+    setReclamando(true);
     setErrorMsg('');
-    setConfirmando(null);
     try {
       const t = token();
       const url = it.origen === 'beneficio'
@@ -81,10 +99,11 @@ export default function PromoExpressBanner() {
       const r = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
-        body: JSON.stringify(esDeCancha(it) || it.origen === 'beneficio' ? {} : { ubicacion }),
+        body: JSON.stringify(pideUbicacion(it) ? { ubicacion } : {}),
       });
       const d = await r.json();
       if (d.ok) {
+        setAbierta(null);
         if (it.origen === 'beneficio') {
           setReclamado({ beneficio: true, titulo: it.titulo });
         } else {
@@ -100,9 +119,8 @@ export default function PromoExpressBanner() {
         }
         cargar();
       } else if (d.requiere_push) {
-        // No es un error del cliente: le falta un paso. Se recarga para que el candado
-        // aparezca con su botón en vez de dejarle un texto rojo que no le dice qué hacer.
-        setTienePush(false);
+        // No es un error del cliente: le falta un paso. Se recarga para que la promo salga
+        // con su candado y su botón, en vez de dejarle un texto rojo que no dice qué hacer.
         cargar();
       } else {
         setErrorMsg(d.error || 'No se pudo reclamar la promo');
@@ -110,156 +128,163 @@ export default function PromoExpressBanner() {
     } catch {
       setErrorMsg('Error de conexión. Intenta de nuevo.');
     }
-    setReclamando('');
+    setReclamando(false);
     setUbicacion('');
   }
 
-  // ── Post-reclamo (promo express con código) ─────────────────────────────────
-  if (reclamado && !reclamado.beneficio) {
-    const tipo = reclamado.tipo;
+  // ── Post-reclamo ────────────────────────────────────────────────────────────
+  if (reclamado) {
+    const esBen = reclamado.beneficio;
     return (
-      <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 16, padding: 16 }}>
+      <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 18, padding: 16 }}>
         <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#96C800' }}>Promo reclamada</p>
-        <div style={{ background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', borderRadius: 12, padding: 14, textAlign: 'center', marginBottom: 10 }}>
-          <p style={{ fontSize: 30, fontWeight: 900, letterSpacing: '0.15em', color: '#96C800' }}>{reclamado.codigo}</p>
+        {esBen ? (<>
+          <p style={{ color: 'white', fontWeight: 900, fontSize: 18 }}>{reclamado.titulo}</p>
           <p className="text-sm mt-1" style={{ color: '#c4c4d8' }}>
-            {tipo === '2' ? 'Usa este código al reservar tu cancha o clase' : 'Tu pedido ya llegó a caja'}
+            Se aplica sola en la caja cuando el cajero te identifique.
           </p>
-        </div>
-        <div style={{ background: 'rgba(255,255,255,.06)', borderRadius: 10, padding: '8px 12px' }}>
-          <p className="text-sm" style={{ color: '#c4c4d8' }}>
-            🎯 <strong style={{ color: 'white' }}>{reclamado.titulo}</strong>
-          </p>
-        </div>
-        {tipo !== '2' && (
-          <button
-            onClick={() => navigate('/pedir')}
-            style={{ width: '100%', marginTop: 10, padding: 11, background: 'rgba(150,200,0,.12)', border: '1px solid rgba(150,200,0,.35)', color: '#96C800', borderRadius: 10, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            Hacer otro pedido →
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  if (reclamado && reclamado.beneficio) {
-    return (
-      <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 16, padding: 16 }}>
-        <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#96C800' }}>Promo reclamada</p>
-        <p style={{ color: 'white', fontWeight: 900, fontSize: 16 }}>{reclamado.titulo}</p>
-        <p className="text-sm mt-1" style={{ color: '#c4c4d8' }}>
-          Se aplica sola en la caja cuando el cajero te identifique.
-        </p>
+        </>) : (<>
+          <div style={{ background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', borderRadius: 12, padding: 14, textAlign: 'center', marginBottom: 10 }}>
+            <p style={{ fontSize: 30, fontWeight: 900, letterSpacing: '0.15em', color: '#96C800' }}>{reclamado.codigo}</p>
+            <p className="text-sm mt-1" style={{ color: '#c4c4d8' }}>
+              {reclamado.tipo === '2' ? 'Úsalo al reservar tu cancha' : 'Tu pedido ya llegó a caja'}
+            </p>
+          </div>
+          {reclamado.tipo !== '2' && (
+            <button onClick={() => navigate('/pedir')}
+              style={{ width: '100%', padding: 11, background: 'rgba(150,200,0,.12)', border: '1px solid rgba(150,200,0,.35)', color: '#96C800', borderRadius: 10, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Hacer otro pedido →
+            </button>
+          )}
+        </>)}
       </div>
     );
   }
 
   if (!items.length) return null;
 
-  const hayBloqueadas = items.some(i => i.bloqueada);
+  const it   = items[Math.min(i, items.length - 1)];
+  const segs = it.expira_at ? Math.max(0, Math.floor((new Date(it.expira_at) - ahora) / 1000)) : null;
+  const mm   = segs !== null ? String(Math.floor(segs / 60)).padStart(2, '0') : null;
+  const ss   = segs !== null ? String(segs % 60).padStart(2, '0') : null;
+  const urge = segs !== null && segs < 120;
 
   return (
     <>
-      {/* Confirmación: sólo la piden las promos de PEDIDO (tipo 1), que se entregan en una
-          mesa. A quien va a rentar cancha preguntarle "¿mesa o barra?" es fricción justo en
-          el momento de convertir, y encima el dato no se usa para nada. */}
-      {confirmando && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-6" onClick={() => { setConfirmando(null); setUbicacion(''); }}>
-          <div className="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col" onClick={e => e.stopPropagation()}>
-            <p className="text-xs font-bold uppercase tracking-wider text-sp-green mb-1">Confirmar promo</p>
-            <p className="text-lg font-black text-sp-gray">{confirmando.titulo}</p>
-            <p className="text-sm text-gray-500 mb-4">{confirmando.descripcion}</p>
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2">¿Dónde estás?</p>
-            <div className="grid grid-cols-2 gap-2 mb-5">
-              {UBICACIONES.map(u => (
-                <button key={u} onClick={() => setUbicacion(u)}
-                  className={`py-2.5 px-2 rounded-xl text-sm font-bold transition-colors ${
-                    ubicacion === u ? 'bg-sp-green text-white' : 'bg-gray-100 text-gray-500'}`}>
-                  {u}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => { setConfirmando(null); setUbicacion(''); }}
-                className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold text-sm">
-                Cancelar
+      {/* ── LA HOJA: aquí sí va la explicación completa ─────────────────────── */}
+      {abierta && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 pb-6"
+             onClick={() => { setAbierta(null); setUbicacion(''); }}>
+          <div className="bg-white rounded-3xl p-5 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <p className="text-xs font-bold uppercase tracking-wider text-sp-green mb-1">
+              {abierta.origen === 'beneficio' ? 'Para ti' : 'Promo del día'}
+            </p>
+            <p className="text-2xl font-black text-sp-gray leading-tight">{abierta.titulo}</p>
+            {abierta.descripcion && (
+              <p className="text-[15px] text-gray-600 mt-2 leading-snug">{abierta.descripcion}</p>
+            )}
+            {/* La hora de JUGAR no es el plazo para RECLAMAR. Confundirlas es como se
+                pierde una reserva, así que se dicen por separado y con todas sus letras. */}
+            {abierta.hora_desde && (
+              <p className="text-sm text-gray-500 mt-2 font-semibold">
+                🎾 Para jugar de {String(abierta.hora_desde).slice(0, 5)} a {String(abierta.hora_hasta || '').slice(0, 5)}
+              </p>
+            )}
+            {abierta.precio_preferencial != null && (
+              <p className="text-sm text-sp-green mt-1 font-bold">
+                Precio de la promo: ${Math.round(Number(abierta.precio_preferencial))}
+              </p>
+            )}
+
+            {abierta.bloqueada ? (
+              <div className="mt-4">
+                <PrenderAvisos compacto motivo={`Préndelas y reclama: ${abierta.titulo}.`} />
+              </div>
+            ) : !abierta.reclamable ? (
+              <p className="text-sm text-gray-500 mt-4 font-semibold">
+                Ya cerró el plazo de esta promo. Prende las notificaciones y te avisamos la próxima.
+              </p>
+            ) : (<>
+              {/* Sólo las promos de PEDIDO se entregan en una mesa. Preguntarle "¿dónde
+                  estás?" a quien va a rentar cancha es fricción justo al convertir, y el
+                  dato no se usa para nada. */}
+              {pideUbicacion(abierta) && (<>
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mt-4 mb-2">¿Dónde estás?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {UBICACIONES.map(u => (
+                    <button key={u} onClick={() => setUbicacion(u)}
+                      className={`py-2.5 px-2 rounded-xl text-sm font-bold transition-colors ${
+                        ubicacion === u ? 'bg-sp-green text-white' : 'bg-gray-100 text-gray-500'}`}>
+                      {u}
+                    </button>
+                  ))}
+                </div>
+              </>)}
+              <button
+                onClick={() => reclamar(abierta)}
+                disabled={reclamando || (pideUbicacion(abierta) && !ubicacion)}
+                className={`w-full mt-4 py-3.5 rounded-xl font-black text-[15px] ${
+                  (!pideUbicacion(abierta) || ubicacion) ? 'bg-sp-green text-white' : 'bg-gray-100 text-gray-300'}`}>
+                {reclamando ? 'Procesando…'
+                  : (pideUbicacion(abierta) && !ubicacion) ? 'Selecciona ubicación'
+                  : (abierta.cta || 'Reclamar')}
               </button>
-              <button onClick={() => reclamar(confirmando)} disabled={!ubicacion}
-                className={`flex-[2] py-3 rounded-xl font-bold text-sm ${
-                  ubicacion ? 'bg-sp-green text-white' : 'bg-gray-100 text-gray-300'}`}>
-                {ubicacion ? 'Confirmar y reclamar ✓' : 'Selecciona ubicación'}
-              </button>
-            </div>
+            </>)}
+            {errorMsg && <p className="text-sm font-semibold text-center mt-2 text-red-500">{errorMsg}</p>}
+            <button onClick={() => { setAbierta(null); setUbicacion(''); }}
+              className="w-full mt-2 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold text-sm">
+              Cerrar
+            </button>
           </div>
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        {items.map(it => {
-          const segs = it.expira_at
-            ? Math.max(0, Math.floor((new Date(it.expira_at) - ahora) / 1000)) : null;
-          const mm = segs !== null ? String(Math.floor(segs / 60)).padStart(2, '0') : null;
-          const ss = segs !== null ? String(segs % 60).padStart(2, '0') : null;
-          const urge = segs !== null && segs < 120;
-          return (
-            <div key={`${it.origen}:${it.id}`}
-                 style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)',
-                          border: `1px solid rgba(150,200,0,${it.reclamable ? '.5' : '.22'})`,
-                          borderRadius: 16, padding: 16 }}>
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
-                  <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#96C800' }}>
-                    {it.origen === 'beneficio' ? '🎁 Para ti' : '⚡ Promo del día'}
-                  </p>
-                  <p className="font-black leading-snug" style={{ color: 'white', fontSize: 16 }}>{it.titulo}</p>
-                  {it.descripcion && <p className="text-sm mt-0.5" style={{ color: '#c4c4d8' }}>{it.descripcion}</p>}
-                  {/* La hora en que SE USA la cancha no es la misma que el plazo para
-                      reclamar el cupón. Confundirlas es como se pierde una reserva. */}
-                  {it.hora_desde && (
-                    <p className="text-xs mt-1 font-semibold" style={{ color: '#8a8aa0' }}>
-                      Para jugar de {String(it.hora_desde).slice(0, 5)} a {String(it.hora_hasta || '').slice(0, 5)}
-                    </p>
-                  )}
-                </div>
-                {segs !== null && (
-                  <div className="text-right ml-3 flex-shrink-0">
-                    <p style={{ fontSize: 26, fontWeight: 900, color: urge ? '#f97316' : '#96C800', fontVariantNumeric: 'tabular-nums' }}>{mm}:{ss}</p>
-                    <p className="text-xs font-bold" style={{ color: '#8a8aa0' }}>para reclamar</p>
-                  </div>
-                )}
-              </div>
+      {/* ── LA TARJETA: título grande y nada más ────────────────────────────── */}
+      <button
+        onClick={() => setAbierta(it)}
+        style={{
+          width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
+          background: 'linear-gradient(135deg,#1a2a00,#0e1a00)',
+          border: `1px solid rgba(150,200,0,${it.reclamable ? '.5' : '.22'})`,
+          borderRadius: 18, padding: '16px 18px',
+        }}
+        className="active:scale-[0.99] transition-transform"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#96C800' }}>
+            {it.origen === 'beneficio' ? '🎁 Para ti' : '⚡ Promo del día'}
+          </p>
+          {segs !== null && (
+            <p style={{ fontSize: 15, fontWeight: 900, color: urge ? '#f97316' : '#96C800', fontVariantNumeric: 'tabular-nums' }}>
+              {mm}:{ss}
+            </p>
+          )}
+        </div>
 
-              {it.bloqueada ? (
-                <div style={{ background: 'rgba(245,158,11,.12)', border: '1px solid rgba(245,158,11,.35)', borderRadius: 10, padding: '9px 12px' }}>
-                  <p className="text-sm font-bold" style={{ color: '#fbbf24' }}>🔔 {it.motivo_bloqueo}</p>
-                </div>
-              ) : it.reclamable ? (
-                <button
-                  onClick={() => (it.origen === 'express' && String(it.tipo) === '1'
-                    ? setConfirmando(it) : reclamar(it))}
-                  disabled={reclamando === it.id}
-                  style={{ width: '100%', padding: 12, background: '#96C800', color: '#0a1a00', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  {reclamando === it.id ? 'Procesando…' : (it.cta || 'Reclamar')}
-                </button>
-              ) : (
-                // Su plazo cerró. Se sigue mostrando para que se vea que el club mueve
-                // promos y vale la pena volver, pero sin un botón que iba a fallar.
-                <p className="text-sm font-semibold" style={{ color: '#8a8aa0' }}>
-                  Ya cerró el plazo de esta. Prende las notificaciones y te avisamos la próxima.
-                </p>
-              )}
-            </div>
-          );
-        })}
+        <p style={{ color: 'white', fontWeight: 900, fontSize: 23, lineHeight: 1.12, marginTop: 6, textWrap: 'balance' }}>
+          {it.titulo}
+        </p>
 
-        {/* Un solo botón de notificaciones para todo el escaparate: repetirlo por tarjeta
-            sería tres veces la misma petición y se lee como insistencia. */}
-        {(hayBloqueadas || (!tienePush && items.some(i => !i.reclamable))) && (
-          <PrenderAvisos compacto motivo="Préndelas y reclama las promos del día en cuanto salgan." />
+        {/* Una sola línea, y sólo cuando dice algo que el título no. */}
+        <p className="text-[13px] font-bold mt-2" style={{ color: it.bloqueada ? '#fbbf24' : '#96C800' }}>
+          {it.bloqueada ? '🔔 Prende tus notificaciones'
+            : it.reclamable ? 'Ver promo →'
+            : 'Ya cerró · ver detalle'}
+        </p>
+
+        {/* Puntos: sin esto nadie sabe que hay más de una promo esperando. */}
+        {items.length > 1 && (
+          <div className="flex gap-1.5 mt-3">
+            {items.map((_, n) => (
+              <span key={n} style={{
+                width: n === i ? 16 : 5, height: 5, borderRadius: 99,
+                background: n === i ? '#96C800' : 'rgba(255,255,255,.25)',
+                transition: 'width .3s',
+              }} />
+            ))}
+          </div>
         )}
-        {errorMsg && <p className="text-sm font-semibold text-center" style={{ color: '#ef4444' }}>{errorMsg}</p>}
-      </div>
+      </button>
     </>
   );
 }
