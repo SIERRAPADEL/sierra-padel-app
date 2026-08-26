@@ -211,7 +211,7 @@ function UnirseLealtad({ token }) {
 export default function Unirse() {
   const { token } = useParams();
   return (
-    <div className="min-h-screen bg-sp-green flex items-center justify-center px-5 py-8">
+    <div className="min-h-full bg-sp-green flex items-center justify-center px-5 py-8">
       <div className="bg-white rounded-3xl p-7 w-full max-w-xs flex flex-col items-center gap-5">
         <Isotipo size={52} />
         <div className="text-center">

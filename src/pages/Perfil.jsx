@@ -92,7 +92,7 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-full bg-gray-50">
       <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
         <BackBtn onBack={onBack} />
         <p className="text-white font-black text-lg">Mi informacion</p>
@@ -232,7 +232,7 @@ function CambiarPin({ apiFetch, onBack }) {
 
   if (success) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
+      <div className="flex flex-col min-h-full bg-gray-50">
         <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
           <p className="text-white font-black text-lg pt-8">Cambiar PIN</p>
         </div>
@@ -253,7 +253,7 @@ function CambiarPin({ apiFetch, onBack }) {
   const labels = ['PIN actual', 'PIN nuevo', 'Confirmar PIN nuevo'];
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-full bg-gray-50">
       <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
         <BackBtn onBack={onBack} />
         <p className="text-white font-black text-lg">Cambiar PIN</p>
@@ -375,7 +375,7 @@ function Notificaciones({ apiFetch, onBack }) {
   const isActive = permission === 'granted' && subscribed;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-full bg-gray-50">
       <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
         <BackBtn onBack={onBack} />
         <p className="text-white font-black text-lg">Notificaciones</p>

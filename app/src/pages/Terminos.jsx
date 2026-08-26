@@ -47,7 +47,7 @@ const SECCIONES = [
 export default function Terminos() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    <div className="min-h-full bg-gray-50 pb-10">
       <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-white/70 text-sm mb-2 -ml-1 pt-3">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

@@ -14,8 +14,20 @@
   box-sizing: border-box;
 }
 
+/* 🔴 EL DOCUMENTO NO SE MUEVE (German, 26-ago-2026: "la barra de navegación, la que debe
+   estar estática en la parte inferior, se está desplazando" — en la app INSTALADA, en
+   todas las pantallas, al hacer scroll).
+   Con la página entera scrolleando, la barra iba `position: fixed`. En una PWA de iOS eso
+   se ve mal a propósito del motor: el elemento fijo se repinta al TERMINAR el scroll, así
+   que durante el deslizamiento va a la deriva y "regresa" al soltar. Y el rebote del final
+   (rubber-band) arrastra lo fijo aunque `overscroll-behavior` diga que no.
+   La cura no es pelearse con el fijo: es que el documento no scrollee. Ahora scrollea un
+   contenedor interno (App.jsx) y la barra queda FUERA de él, ocupando su propio lugar en
+   el layout — ya no es "fija", es que no está en lo que se mueve. Así no puede desplazarse
+   ni en iOS, ni en Android, ni en el navegador. */
 html, body, #root {
   height: 100%;
+  overflow: hidden;
   overscroll-behavior: none;
 }
 
@@ -38,10 +50,15 @@ body {
   .card {
     @apply bg-white rounded-2xl p-4 border border-gray-100;
   }
+  /* `min-h-full`, no `min-h-screen`: la pantalla vive DENTRO del contenedor que scrollea,
+     que ya no mide lo mismo que la ventana (le falta el alto de la barra). Con 100vh toda
+     pantalla nacía un poco más alta que su hueco y siempre había scroll de sobra. */
   .page {
-    @apply flex flex-col min-h-screen bg-sp-gray-light;
+    @apply flex flex-col min-h-full bg-sp-gray-light;
   }
+  /* Ya no hay que librar 64px de barra encima: la barra ocupa su propio lugar. Queda sólo
+     el respiro de abajo. El notch lo pone la barra, que es quien toca el borde. */
   .safe-bottom {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+    padding-bottom: 16px;
   }
 }

@@ -61,7 +61,7 @@ export default function Registro() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 py-8" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="min-h-full bg-white flex flex-col items-center justify-center px-6 py-8" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="w-full max-w-xs flex flex-col items-center gap-6">
         <div className="flex flex-col items-center gap-3 mb-1">
           <Isotipo size={52} />

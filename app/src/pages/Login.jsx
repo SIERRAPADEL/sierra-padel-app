@@ -113,7 +113,7 @@ export default function Login() {
 
   // ── UI ────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-sp-green flex flex-col items-center justify-center px-6 gap-8">
+    <div className="min-h-full bg-sp-green flex flex-col items-center justify-center px-6 gap-8">
       <Isotipo className="w-16 h-16" />
 
       {/* ── STEP 1: Telefono ── */}

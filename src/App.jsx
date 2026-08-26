@@ -26,7 +26,7 @@ import Marcadores from './pages/Marcadores';
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-4 border-sp-green border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex items-center justify-center min-h-full"><div className="w-8 h-8 border-4 border-sp-green border-t-transparent rounded-full animate-spin" /></div>;
   // Guarda A DÓNDE iba para volver ahí tras entrar. Sin esto, una liga compartida
   // (la convocatoria de un torneo, una invitación de pareja) se perdía: el socio
   // entraba y aparecía en Inicio, sin la pantalla que le habían mandado.
@@ -77,8 +77,15 @@ function LayoutWrapper() {
   const showNav = user && !noNavRoutes.some(r => pathname.startsWith(r));
 
   return (
-    <div className="max-w-md mx-auto relative min-h-screen">
-      <AppRoutes />
+    // Columna de alto fijo: arriba lo que scrollea, abajo la barra. La barra queda FUERA
+    // del contenedor que se mueve, así que no puede desplazarse con el scroll — que es
+    // justo lo que pasaba en la app instalada. Ver el comentario de index.css.
+    // `min-h-0` es imprescindible: sin él un hijo flex no se deja encoger y el scroll se
+    // le escapa al documento otra vez.
+    <div className="max-w-md mx-auto relative h-full flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <AppRoutes />
+      </div>
       {showNav && <BottomNav />}
       <InstallGuide />
       <NotificationSetup />
