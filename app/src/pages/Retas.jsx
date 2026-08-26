@@ -26,12 +26,22 @@ export function RetaCard({ r, onJoin, joining }) {
           </div>
           <div>
             <p className="font-black text-sp-gray text-[15px] leading-tight">
-              Reta de {r.organizador || 'un jugador'} · Cancha {r.cancha}
+              {/* Una cancha que abre el CLUB no tiene organizador: "Reta de un jugador"
+                  se lee como si alguien la hubiera armado. */}
+              {r.es_club ? `Cancha ${r.cancha} abierta` : `Reta de ${r.organizador || 'un jugador'} · Cancha ${r.cancha}`}
             </p>
             <p className="text-[13px] text-gray-400 mt-0.5 capitalize">
               {fmtFecha(r.fecha)} · {r.hora_inicio}
               {r.nivel_objetivo ? ` · ${r.nivel_objetivo} (±1)` : ' · Abierta a todos'}
             </p>
+            {/* EL PRECIO. Sin esto la app anunciaba una cancha en promoción sin decir
+                cuánto cuesta — y en una promo el precio es el gancho entero. */}
+            {r.precio_jugador != null && (
+              <p className="text-[13px] font-black text-sp-green-dark mt-1">
+                ${r.precio_jugador} por jugador
+                <span className="text-gray-400 font-semibold"> · cancha ${r.precio} entre {r.cupo}</span>
+              </p>
+            )}
           </div>
         </div>
       </div>
