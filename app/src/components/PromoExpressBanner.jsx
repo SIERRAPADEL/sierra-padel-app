@@ -201,6 +201,7 @@ export default function PromoExpressBanner() {
             <p className="text-xs font-bold uppercase tracking-wider text-sp-green mb-1">
               {abierta.origen === 'beneficio' ? 'Para ti'
                 : abierta.origen === 'botanero' ? 'Liga del viernes'
+                : abierta.origen === 'reta_club' ? 'Canchas abiertas'
                 : 'Promo del día'}
             </p>
             <p className="text-2xl font-black text-sp-gray leading-tight" style={{ textWrap: 'balance' }}>
@@ -294,6 +295,7 @@ export default function PromoExpressBanner() {
           <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#96C800' }}>
             {it.origen === 'beneficio' ? '🎁 Para ti'
               : it.origen === 'botanero' ? '🍻 Liga del viernes'
+              : it.origen === 'reta_club' ? '🎾 Canchas abiertas'
               : '⚡ Promo del día'}
           </p>
           {segs !== null && (
