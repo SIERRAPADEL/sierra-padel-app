@@ -28,11 +28,14 @@ export function RetaCard({ r, onJoin, joining }) {
             <p className="font-black text-sp-gray text-[15px] leading-tight">
               {/* Una cancha que abre el CLUB no tiene organizador: "Reta de un jugador"
                   se lee como si alguien la hubiera armado. */}
-              {r.es_club ? `Cancha ${r.cancha} abierta` : `Reta de ${r.organizador || 'un jugador'} · Cancha ${r.cancha}`}
+              {r.convocatoria ? (r.titulo === 'RETA ABIERTA' ? 'Canchas abiertas' : r.titulo)
+                : r.es_club ? `Cancha ${r.cancha} abierta`
+                : `Reta de ${r.organizador || 'un jugador'} · Cancha ${r.cancha}`}
             </p>
             <p className="text-[13px] text-gray-400 mt-0.5 capitalize">
               {fmtFecha(r.fecha)} · {r.hora_inicio}
-              {r.nivel_objetivo ? ` · ${r.nivel_objetivo} (±1)` : ' · Abierta a todos'}
+              {r.convocatoria ? ' · te acomodamos con gente de tu nivel'
+                : r.nivel_objetivo ? ` · ${r.nivel_objetivo} (±1)` : ' · Abierta a todos'}
             </p>
             {/* EL PRECIO. Sin esto la app anunciaba una cancha en promoción sin decir
                 cuánto cuesta — y en una promo el precio es el gancho entero. */}
@@ -49,12 +52,19 @@ export function RetaCard({ r, onJoin, joining }) {
       <div className="flex items-center justify-between mt-3">
         {/* Cupos como puntos */}
         <div className="flex items-center gap-1.5">
-          {Array.from({ length: r.cupo }).map((_, i) => (
+          {r.convocatoria ? (
+            <span className="text-xs text-gray-500 font-bold">
+              {r.faltan} {r.faltan === 1 ? 'lugar' : 'lugares'}
+              {r.en_espera > 0 && ` · ${r.en_espera} en lista`}
+            </span>
+          ) : Array.from({ length: r.cupo }).map((_, i) => (
             <span key={i} style={{ width: 10, height: 10, borderRadius: 99, background: i < r.apuntados ? '#96C800' : '#e5e7eb' }} />
           ))}
-          <span className="text-xs text-gray-400 font-semibold ml-1">
-            {r.faltan === 0 ? 'Completa' : r.faltan === 1 ? 'falta 1' : `faltan ${r.faltan}`}
-          </span>
+          {!r.convocatoria && (
+            <span className="text-xs text-gray-400 font-semibold ml-1">
+              {r.faltan === 0 ? 'Completa' : r.faltan === 1 ? 'falta 1' : `faltan ${r.faltan}`}
+            </span>
+          )}
         </div>
 
         {r.es_mia ? (
@@ -64,10 +74,10 @@ export function RetaCard({ r, onJoin, joining }) {
         ) : r.faltan > 0 ? (
           <button
             onClick={() => onJoin(r)}
-            disabled={joining === r.token}
+            disabled={joining === (r.token || r.slug)}
             className="text-[13px] font-black px-4 py-2 rounded-full bg-sp-green text-white active:scale-95 transition-transform disabled:opacity-50"
           >
-            {joining === r.token ? 'Apuntando…' : '¡Me apunto!'}
+            {joining === (r.token || r.slug) ? 'Apuntando…' : '¡Me apunto!'}
           </button>
         ) : null}
       </div>
@@ -94,16 +104,23 @@ export default function Retas() {
   useEffect(() => { load(); }, [load]);
 
   async function join(r) {
-    setJoining(r.token);
+    setJoining(r.token || r.slug);
     setMsg(null);
-    const d = await apiFetch(`/reta/${r.token}/unirme-app`, { method: 'POST' });
+    const ruta = r.convocatoria
+      ? `/reta/grupo/${r.slug}/unirme-app`
+      : `/reta/${r.token}/unirme-app`;
+    const d = await apiFetch(ruta, { method: 'POST' });
     setJoining('');
-    if (d.ok) {
-      setMsg({ ok: true, text: '¡Estas dentro! Te esperamos en la cancha 🎾' });
-      load();
-    } else {
-      setMsg({ ok: false, text: d.error || 'No se pudo. Intenta de nuevo.' });
-    }
+    if (!d.ok) { setMsg({ ok: false, text: d.error || 'No se pudo. Intenta de nuevo.' }); return; }
+    // La cancha no siempre existe todavía: se aparta cuando ya hay gente suficiente.
+    // Decir "te esperamos en la cancha" cuando aún no la hay sería mentirle.
+    const x = d.data || {};
+    setMsg({ ok: true, text:
+      x.cancha ? `¡Estas dentro! Cancha ${x.cancha}. Te esperamos 🎾`
+      : x.sin_cancha ? (x.aviso || 'Quedaste en la lista, pero no hay cancha libre a esa hora.')
+      : x.faltan > 0 ? `Quedaste apuntado. Falta ${x.faltan} más para apartarte cancha; te avisamos.`
+      : 'Quedaste apuntado. Te avisamos en cuanto tengas cancha.' });
+    load();
   }
 
   const compatibles = (retas || []).filter(r => r.compatible);
