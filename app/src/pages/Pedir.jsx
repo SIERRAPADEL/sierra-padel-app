@@ -229,17 +229,62 @@ export default function Pedir() {
     return Object.values(carrito).reduce((s, n) => s + n, 0);
   }
 
+  // Quita un producto COMPLETO del carrito (no de uno en uno). Es lo que se necesita
+  // cuando te equivocaste de artículo — ver el carrito editable.
+  function quitarDelCarrito(itemId) {
+    setCarrito(prev => { const { [itemId]: _, ...rest } = prev; return rest; });
+  }
+  function vaciarCarrito() { setCarrito({}); }
+
+  // ── HORARIO POR ÁREA ────────────────────────────────────────────────────────────
+  // La cocina cierra a las 11 y la barra sigue abierta: apagar la app entera a esa hora
+  // era cerrarle la puerta a la barra y a la tienda, que es donde más se vende a esa hora.
+  // El área de cada producto viaja en el menú (`item.area`), así que se puede saber aquí
+  // mismo qué se puede pedir AHORA y qué no. El backend valida igual — el reloj del
+  // celular lo pone el cliente.
+  function areaCerrada(area) {
+    const a = horario?.areas?.[area];
+    return !!(a && !a.abierto);
+  }
+  function cierreDe(area) { return horario?.areas?.[area]?.cierra_txt || ''; }
+  // Productos YA en el carrito cuyo área cerró: hay que sacarlos antes de mandar.
+  function itemsCerrados() {
+    const idx = menuPorId();
+    return Object.keys(carrito)
+      .map(id => idx[id])
+      .filter(it => it && areaCerrada(it.area));
+  }
+
   // Búsqueda por nombre en todas las categorías (sin acentos, may/min da igual)
   const normTxt = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  // 🔎 DOS COSAS QUE LA ROMPÍAN (German, 26-ago-2026: «pones una palabra y no filtra
+  // correctamente»):
+  //   1. REPETIDOS. 12 de los 220 productos del menú viven en DOS grupos a la vez (los de
+  //      "⭐ Más pedidos" salen ahí Y en su categoría). El recorrido los sacaba dos veces:
+  //      buscar "corona" devolvía la misma cerveza duplicada, con la misma `key` de React.
+  //      Ahora se recuerda el id ya visto — gana el grupo real, no "Más pedidos".
+  //   2. UNA SOLA CADENA. Era `includes(q)` con el texto completo, así que "taco frijol" no
+  //      encontraba "TACO DE FRIJOLES CON CHORIZO" (le estorba el "DE" de en medio) y
+  //      "agua 1" no encontraba "AGUA 1 LT" si sobraba un espacio. Ahora se parte en
+  //      palabras y deben estar TODAS, en cualquier orden. También se busca en la
+  //      descripción: es donde vive "sin azúcar", "light", el sabor.
   function itemsBusqueda() {
-    const q = normTxt(busqueda.trim());
-    if (!q) return [];
-    const out = [];
+    const palabras = normTxt(busqueda).split(/\s+/).filter(Boolean);
+    if (!palabras.length) return [];
+    const out = [], vistos = new Set();
     for (const [grupo, items] of Object.entries(menu)) {
       for (const it of items) {
-        if (it.disponible && normTxt(it.nombre).includes(q)) out.push({ ...it, _grupo: grupo });
+        if (!it.disponible || vistos.has(it.id)) continue;
+        const heno = normTxt(it.nombre) + ' ' + normTxt(it.descripcion);
+        if (!palabras.every(p => heno.includes(p))) continue;
+        vistos.add(it.id);
+        out.push({ ...it, _grupo: grupo });
       }
     }
+    // Primero los que EMPIEZAN con lo tecleado: buscando "agua" lo primero es AGUA, no
+    // "REFRESCO DE AGUA MINERAL".
+    const q0 = palabras[0];
+    out.sort((a, b) => (normTxt(b.nombre).startsWith(q0) ? 1 : 0) - (normTxt(a.nombre).startsWith(q0) ? 1 : 0));
     return out.slice(0, 60);
   }
 
@@ -374,6 +419,7 @@ export default function Pedir() {
   const itemsMostrar = enBusqueda ? itemsBusqueda() : itemsActivos;
   const frecVivos = frecuentesVivos();
   const ultDisp   = ultimoDisponible();
+  const cerradosEnCarrito = itemsCerrados();
 
   return (
     <div className="page" style={{ paddingBottom: numItems() > 0 ? 190 : 80 }}>
@@ -382,10 +428,16 @@ export default function Pedir() {
       <div className="sticky top-0 z-10 bg-sp-green px-4 pt-[env(safe-area-inset-top)] pb-3">
         <div className="flex items-center justify-between pt-3 mb-3">
           <p className="text-white font-black text-lg">Pedir al bar</p>
+          {/* El contador era un adorno. Ahora ABRE EL CARRITO: es la única forma de ver lo
+              que llevas y corregirlo sin ir a buscar el producto por todo el menú. */}
           {numItems() > 0 && (
-            <div className="bg-black/20 rounded-full px-3.5 py-1.5 text-white text-[13px] font-black">
-              {numItems()} items · ${totalCarrito().toFixed(0)}
-            </div>
+            <button
+              onClick={() => setConfirmando(true)}
+              className="bg-black/25 rounded-full px-3.5 py-1.5 text-white text-[13px] font-black flex items-center gap-1.5 active:scale-95 transition-transform"
+            >
+              🛒 {numItems()} · ${totalCarrito().toFixed(0)}
+              <span className="text-[11px] font-bold opacity-80">Ver</span>
+            </button>
           )}
         </div>
 
@@ -511,11 +563,15 @@ export default function Pedir() {
           <div className="flex flex-col gap-2.5">
             {itemsMostrar.map(item => {
               const cant = carrito[item.id] || 0;
+              // Lo que ya cerró se sigue VIENDO (para que el cliente sepa que existe y a
+              // qué hora vuelve), pero apagado: no se puede agregar. Antes esto no existía
+              // y a las 11 se apagaba la app completa, barra incluida.
+              const cerrado = areaCerrada(item.area);
               return (
                 <div
                   key={item.id}
                   className="card flex items-center justify-between gap-3 py-3.5"
-                  style={cant > 0 ? { borderColor: '#96C800' } : undefined}
+                  style={cerrado ? { opacity: 0.55 } : (cant > 0 ? { borderColor: '#96C800' } : undefined)}
                 >
                   <div className="flex-1">
                     <p className="text-sp-gray font-bold text-base mb-0.5">{item.nombre}</p>
@@ -524,8 +580,15 @@ export default function Pedir() {
                       ${item.precio}
                       {enBusqueda && item._grupo && <span className="text-gray-300 text-[12px] font-semibold"> · {item._grupo}</span>}
                     </p>
+                    {cerrado && (
+                      <p className="text-[12px] font-bold mt-0.5" style={{ color: '#9a3412' }}>
+                        ⏰ {item.area === 'cocina' ? 'Cocina cerrada' : item.area === 'barra' ? 'Barra cerrada' : 'Tienda cerrada'} · vuelve a las {horario?.areas?.[item.area]?.abre_txt || ''}
+                      </p>
+                    )}
                   </div>
-                  {cant === 0 ? (
+                  {cerrado ? (
+                    <span className="text-[12px] font-bold text-gray-400 flex-shrink-0">Cerrado</span>
+                  ) : cant === 0 ? (
                     <button
                       onClick={() => cambiarCantidad(item.id, 1)}
                       className="w-10 h-10 rounded-full bg-sp-green-light text-sp-green-dark text-2xl font-black flex items-center justify-center flex-shrink-0"
@@ -581,14 +644,44 @@ export default function Pedir() {
             style={{ maxWidth: 448, margin: '0 auto', maxHeight: 'min(80dvh, 80vh)', overflowY: 'auto', overscrollBehavior: 'contain' }}
             onClick={e => e.stopPropagation()}
           >
-            <p className="text-sp-gray font-black text-lg text-center mb-3">¿Confirmamos tu pedido?</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sp-gray font-black text-lg">🛒 Tu pedido</p>
+              {numItems() > 0 && (
+                <button onClick={vaciarCarrito} className="text-[13px] font-bold text-gray-400">Vaciar</button>
+              )}
+            </div>
+            {/* EDITABLE. Antes esto era una lista de sólo lectura: si te equivocaste de
+                artículo no había forma de corregirlo aquí — había que salir, encontrar el
+                producto entre 220 del menú y bajarle la cantidad. Ahora cada renglón trae
+                sus −/+ y su 🗑, que es lo que se busca cuando ya te diste cuenta del error. */}
             <div className="rounded-xl bg-gray-50 px-3.5 py-2.5 mb-3">
-              {itemsCarrito().map((it, i) => (
-                <div key={i} className="flex justify-between py-1 text-[15px]">
-                  <span className="text-sp-gray"><b className="text-sp-green-dark">{it.cantidad}x</b> {it.nombre}</span>
-                  <span className="text-gray-500">${(it.precio * it.cantidad).toFixed(0)}</span>
-                </div>
-              ))}
+              {itemsCarrito().length === 0 && (
+                <p className="text-gray-400 text-[14px] text-center py-3">Tu carrito está vacío.</p>
+              )}
+              {itemsCarrito().map(it => {
+                const cerrado = areaCerrada(it.area);
+                return (
+                  <div key={it.item_id} className="py-1.5 border-b border-gray-200 last:border-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sp-gray text-[15px] flex-1">{it.nombre}</span>
+                      <span className="text-gray-500 text-[15px] font-bold">${(it.precio * it.cantidad).toFixed(0)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <button onClick={() => cambiarCantidad(it.item_id, -1)} className="w-8 h-8 rounded-full bg-white border border-gray-200 text-sp-gray text-lg font-black flex items-center justify-center">−</button>
+                      <span className="text-sp-gray text-[15px] font-black min-w-[18px] text-center">{it.cantidad}</span>
+                      <button onClick={() => cambiarCantidad(it.item_id, 1)} className="w-8 h-8 rounded-full bg-sp-green text-white text-lg font-black flex items-center justify-center">+</button>
+                      <button onClick={() => quitarDelCarrito(it.item_id)} className="ml-1 px-2.5 h-8 rounded-full bg-white border border-gray-200 text-[13px] font-bold text-gray-500">🗑 Quitar</button>
+                      <span className="flex-1" />
+                      <span className="text-gray-400 text-[12px]">${it.precio} c/u</span>
+                    </div>
+                    {cerrado && (
+                      <p className="text-[12px] font-bold mt-1" style={{ color: '#9a3412' }}>
+                        ⏰ {it.area === 'cocina' ? 'La cocina' : it.area === 'barra' ? 'La barra' : 'La tienda'} cerró a las {cierreDe(it.area)} — quítalo para poder mandar el pedido
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
               <div className="flex justify-between pt-2 mt-1 border-t border-gray-200 font-black text-sp-green-dark">
                 <span>Total</span><span>${totalCarrito().toFixed(0)}</span>
               </div>
@@ -614,23 +707,42 @@ export default function Pedir() {
             {/* Fuera de horario: se avisa y se apaga el botón. El reloj del celular NO
                 manda —el backend rechaza igual—, pero avisar aquí evita que el cliente
                 arme el carrito completo para que se lo rebote al final. */}
+            {/* Sólo se apaga el botón si TODO está cerrado, o si el carrito trae algo de un
+                área que ya cerró (y entonces se dice cuál y se ofrece quitarlo). Apagarlo
+                porque cerró la cocina era cerrarle la puerta a la barra, que a esa hora es
+                justo la que vende. */}
             {horario && !horario.abierto && (
               <div className="rounded-xl px-3.5 py-3 mb-3 border" style={{ background: '#fff7ed', borderColor: '#fed7aa' }}>
-                <p className="text-[14px] font-bold" style={{ color: '#9a3412' }}>🌙 Cocina y barra cerradas</p>
+                <p className="text-[14px] font-bold" style={{ color: '#9a3412' }}>🌙 Cerrado por ahora</p>
                 <p className="text-[13px] mt-0.5" style={{ color: '#9a3412' }}>
-                  Los pedidos por la app son de {horario.abre_txt} a {horario.cierra_txt}.
+                  Los pedidos por la app abren a las {horario.areas?.barra?.abre_txt || horario.abre_txt}.
                 </p>
+              </div>
+            )}
+            {horario && horario.abierto && cerradosEnCarrito.length > 0 && (
+              <div className="rounded-xl px-3.5 py-3 mb-3 border" style={{ background: '#fff7ed', borderColor: '#fed7aa' }}>
+                <p className="text-[14px] font-bold" style={{ color: '#9a3412' }}>⏰ Hay algo que ya no se puede pedir</p>
+                <p className="text-[13px] mt-0.5 mb-2" style={{ color: '#9a3412' }}>
+                  {cerradosEnCarrito.map(i => i.nombre).join(', ')}. Lo demás sí se puede.
+                </p>
+                <button
+                  onClick={() => cerradosEnCarrito.forEach(i => quitarDelCarrito(i.id))}
+                  className="w-full py-2.5 rounded-xl font-black text-[14px] bg-white border"
+                  style={{ borderColor: '#fed7aa', color: '#9a3412' }}
+                >Quitarlos y seguir</button>
               </div>
             )}
             <button
               onClick={enviarPedido}
-              disabled={enviando || !ubicacion || (horario && !horario.abierto)}
+              disabled={enviando || !ubicacion || numItems() === 0 || (horario && !horario.abierto) || cerradosEnCarrito.length > 0}
               className={`w-full py-3.5 rounded-xl font-black text-[15px] ${
-                (!ubicacion || (horario && !horario.abierto)) ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'
+                (!ubicacion || numItems() === 0 || (horario && !horario.abierto) || cerradosEnCarrito.length > 0) ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'
               }`}
             >
               {enviando ? 'Enviando...'
-                : (horario && !horario.abierto) ? `Abrimos a las ${horario.abre_txt}`
+                : numItems() === 0 ? 'Agrega algo al carrito'
+                : (horario && !horario.abierto) ? `Abrimos a las ${horario.areas?.barra?.abre_txt || horario.abre_txt}`
+                : cerradosEnCarrito.length > 0 ? 'Quita lo que ya cerró'
                 : !ubicacion ? 'Elige tu ubicación primero'
                 : '✅ Confirmar pedido'}
             </button>
