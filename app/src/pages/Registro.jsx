@@ -12,6 +12,9 @@ export default function Registro() {
   const [step, setStep] = useState(1);
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
+  // 🎂 OPCIONAL a propósito (German 27-ago-2026): un campo obligatorio más en el alta es un
+  // motivo más para abandonarla, y al que no la ponga aquí se la pedimos en su Perfil.
+  const [cumple, setCumple] = useState('');
   const [nivel, setNivel] = useState(null);
   const [pin, setPin] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
@@ -49,6 +52,7 @@ export default function Registro() {
         categoria: nivel,
         acepto_terminos: true,
         acepta_avisos: true,
+        fecha_nacimiento: cumple || null,
       });
       // Marca para que la app ofrezca activar notificaciones push de inmediato
       localStorage.setItem('recienRegistrado', '1');
@@ -94,6 +98,17 @@ export default function Registro() {
             <div>
               <label className="text-sm text-gray-500 font-medium mb-1 block">Telefono (WhatsApp)</label>
               <input className="input-field" type="tel" placeholder="866 123 4567" value={telefono} onChange={e => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))} />
+            </div>
+            <div>
+              <label className="text-sm text-gray-500 font-medium mb-1 block">Tu cumpleanos <span className="text-gray-400 font-normal">(opcional)</span></label>
+              <input
+                className="input-field"
+                type="date"
+                value={cumple}
+                max={new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10)}
+                onChange={e => setCumple(e.target.value)}
+              />
+              <p className="text-xs text-gray-400 mt-1">🎉 Para mandarte tu promo de cumpleanos y avisarte con tiempo.</p>
             </div>
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
             <button type="submit" className="btn-green">Continuar</button>

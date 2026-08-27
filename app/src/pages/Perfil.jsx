@@ -55,13 +55,19 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
   const [nombre, setNombre]   = useState(user?.nombre || '');
   const [nivel, setNivel]     = useState(user?.categoria || null);
   const [avisos, setAvisos]   = useState(user?.acepta_avisos !== false);
+  // 🎂 El cumpleaños llega del server como 'YYYY-MM-DD' y así se manda de vuelta: es
+  // exactamente lo que come <input type="date">. Nunca convertirlo a Date en el camino —
+  // el navegador lo lee en UTC y a Monclova (−6) le resta un día.
+  const [cumple, setCumple]   = useState((user?.fecha_nacimiento || '').slice(0, 10));
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [saved, setSaved]     = useState(false);
 
+  const cumpleOriginal = (user?.fecha_nacimiento || '').slice(0, 10);
   const changed =
     (nombre.trim() !== (user?.nombre || '').trim() && nombre.trim().length > 0) ||
     (nivel && nivel !== (user?.categoria || null)) ||
+    (cumple !== cumpleOriginal) ||
     (avisos !== (user?.acepta_avisos !== false));
 
   async function handleSave() {
@@ -72,6 +78,9 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
     try {
       const body = { nombre: nombre.trim() };
       if (nivel) body.categoria = nivel;
+      // Se manda sólo si cambió. Mandar '' cuando nunca lo tuvo lo guardaría como null una
+      // y otra vez sin razón; y si el usuario lo borra a propósito, '' sí viaja y lo limpia.
+      if (cumple !== cumpleOriginal) body.fecha_nacimiento = cumple || null;
       body.acepta_avisos = avisos;
       const d = await apiFetch('/auth/profile', {
         method: 'PATCH',
@@ -114,6 +123,23 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
             <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Telefono</p>
             <p className="text-sp-gray font-semibold px-1">{user?.telefono || '—'}</p>
             <p className="text-xs text-gray-400 px-1">El telefono no se puede cambiar</p>
+          </div>
+          {/* 🎂 El gancho va ANTES del campo: nadie da su fecha de nacimiento "porque sí",
+              la da si sabe qué gana. Y quien ya la tiene puesta no necesita el sermón. */}
+          <div>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Mi cumpleanos</p>
+            <input
+              type="date"
+              value={cumple}
+              max={new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10)}
+              onChange={e => { setCumple(e.target.value); setError(''); setSaved(false); }}
+              className="input-field"
+            />
+            {!cumpleOriginal && (
+              <p className="text-xs text-gray-400 px-1 mt-1">
+                🎉 Ponla y te llega tu promo de cumpleanos — te avisamos con tiempo para que lo festejes aqui.
+              </p>
+            )}
           </div>
         </div>
 
