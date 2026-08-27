@@ -246,7 +246,12 @@ export default function Pedir() {
     const a = horario?.areas?.[area];
     return !!(a && !a.abierto);
   }
-  function cierreDe(area) { return horario?.areas?.[area]?.cierra_txt || ''; }
+  // La barra NO cierra por reloj: cierra cuando cierra la caja, según el movimiento del día
+  // (los cortes reales van de las 23:13 a las 02:14). Así que el texto lo pone el servidor
+  // —"cerró a las 10:45 pm" o "ya cerró la caja"— y aquí sólo se muestra. Componerlo con una
+  // hora fija diría mentiras la mitad de las noches.
+  function motivoCierre(area) { return horario?.areas?.[area]?.motivo_cierre || 'ya cerró'; }
+  function vuelveTxt(area) { return horario?.areas?.[area]?.vuelve_txt || ''; }
   // Productos YA en el carrito cuyo área cerró: hay que sacarlos antes de mandar.
   function itemsCerrados() {
     const idx = menuPorId();
@@ -582,7 +587,7 @@ export default function Pedir() {
                     </p>
                     {cerrado && (
                       <p className="text-[12px] font-bold mt-0.5" style={{ color: '#9a3412' }}>
-                        ⏰ {item.area === 'cocina' ? 'Cocina cerrada' : item.area === 'barra' ? 'Barra cerrada' : 'Tienda cerrada'} · vuelve a las {horario?.areas?.[item.area]?.abre_txt || ''}
+                        ⏰ {item.area === 'cocina' ? 'Cocina cerrada' : item.area === 'barra' ? 'Barra cerrada' : 'Tienda cerrada'} · vuelve {vuelveTxt(item.area)}
                       </p>
                     )}
                   </div>
@@ -676,7 +681,7 @@ export default function Pedir() {
                     </div>
                     {cerrado && (
                       <p className="text-[12px] font-bold mt-1" style={{ color: '#9a3412' }}>
-                        ⏰ {it.area === 'cocina' ? 'La cocina' : it.area === 'barra' ? 'La barra' : 'La tienda'} cerró a las {cierreDe(it.area)} — quítalo para poder mandar el pedido
+                        ⏰ {it.area === 'cocina' ? 'La cocina' : it.area === 'barra' ? 'La barra' : 'La tienda'} {motivoCierre(it.area)} — quítalo para poder mandar el pedido
                       </p>
                     )}
                   </div>
@@ -715,7 +720,7 @@ export default function Pedir() {
               <div className="rounded-xl px-3.5 py-3 mb-3 border" style={{ background: '#fff7ed', borderColor: '#fed7aa' }}>
                 <p className="text-[14px] font-bold" style={{ color: '#9a3412' }}>🌙 Cerrado por ahora</p>
                 <p className="text-[13px] mt-0.5" style={{ color: '#9a3412' }}>
-                  Los pedidos por la app abren a las {horario.areas?.barra?.abre_txt || horario.abre_txt}.
+                  Vuelve a abrir cuando abra el club. Si ya estás aquí, pídelo en la barra.
                 </p>
               </div>
             )}
@@ -741,7 +746,7 @@ export default function Pedir() {
             >
               {enviando ? 'Enviando...'
                 : numItems() === 0 ? 'Agrega algo al carrito'
-                : (horario && !horario.abierto) ? `Abrimos a las ${horario.areas?.barra?.abre_txt || horario.abre_txt}`
+                : (horario && !horario.abierto) ? `Cerrado por ahora`
                 : cerradosEnCarrito.length > 0 ? 'Quita lo que ya cerró'
                 : !ubicacion ? 'Elige tu ubicación primero'
                 : '✅ Confirmar pedido'}
