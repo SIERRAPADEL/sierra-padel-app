@@ -199,7 +199,8 @@ export default function PromoExpressBanner() {
                onClick={e => e.stopPropagation()}>
           <div className="overflow-y-auto overscroll-contain px-5 pt-5">
             <p className="text-xs font-bold uppercase tracking-wider text-sp-green mb-1">
-              {abierta.origen === 'beneficio' ? 'Para ti'
+              {abierta.origen === 'club' ? 'Hoy en el club'
+                : abierta.origen === 'beneficio' ? 'Para ti'
                 : abierta.origen === 'botanero' ? 'Liga del viernes'
                 : abierta.origen === 'reta_club' ? 'Canchas abiertas'
                 : 'Promo del día'}
@@ -227,6 +228,19 @@ export default function PromoExpressBanner() {
               <div className="mt-4">
                 <PrenderAvisos compacto motivo={`Préndelas y reclama: ${abierta.titulo}.`} />
               </div>
+            ) : abierta.origen === 'club' ? (
+              // 🔑 «No reclamable» NO siempre quiere decir «ya cerró». Las promos diarias
+              // del club están VIVAS: no hay nada que reclamar porque el motor de descuentos
+              // las aplica solo al cobrar. Decirle "ya cerró" a alguien que todavía puede
+              // venir por su hamburguesa es correr al cliente con una mentira.
+              <p className="text-sm text-gray-600 mt-4 font-semibold">
+                {abierta.nota || 'Se aplica sola al pagar en el club'}
+                {(abierta.hora_desde || abierta.hora_hasta) && (
+                  <span className="block text-gray-400 font-medium mt-1">
+                    De {String(abierta.hora_desde || '').slice(0, 5)} a {String(abierta.hora_hasta || '').slice(0, 5)}
+                  </span>
+                )}
+              </p>
             ) : !abierta.reclamable ? (
               <p className="text-sm text-gray-500 mt-4 font-semibold">
                 Ya cerró el plazo de esta promo. Prende las notificaciones y te avisamos la próxima.
@@ -296,6 +310,7 @@ export default function PromoExpressBanner() {
             {it.origen === 'beneficio' ? '🎁 Para ti'
               : it.origen === 'botanero' ? '🍻 Liga del viernes'
               : it.origen === 'reta_club' ? '🎾 Canchas abiertas'
+              : it.origen === 'club' ? '🍔 Hoy en el club'
               : '⚡ Promo del día'}
           </p>
           {segs !== null && (
@@ -314,6 +329,7 @@ export default function PromoExpressBanner() {
           {esLink(it) ? (it.cta || 'Ver más →')
             : it.bloqueada ? '🔔 Prende tus notificaciones'
             : it.reclamable ? 'Ver promo →'
+            : it.origen === 'club' ? 'Ver detalle →'
             : 'Ya cerró · ver detalle'}
         </p>
 
