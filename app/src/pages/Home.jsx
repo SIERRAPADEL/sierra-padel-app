@@ -56,6 +56,83 @@ function NivelModal({ apiFetch, updateUser, onClose }) {
   );
 }
 
+/**
+ * 🎂 CUMPLEAÑOS + NOTIFICACIONES, en un solo momento.
+ *
+ * German (27-ago-2026): *"no quiero que sea por wapp, que sea al entrar al app y aprovechamos
+ * para meter lo de las notificaciones"*.
+ *
+ * 🔑 POR QUÉ LAS DOS JUNTAS Y NO POR SEPARADO. Pedirle algo a alguien tiene un costo: la
+ * primera vez lo da, a la tercera cierra la app. Aquí las dos peticiones se apoyan — se le
+ * pide la fecha para mandarle su promo, y el aviso de esa promo es justamente lo que
+ * necesita las notificaciones prendidas. Es la misma frase, no dos interrupciones.
+ *
+ * Se muestra UNA vez por sesión y sólo a quien le falta la fecha (mismo trato que el nivel).
+ * `PrenderAvisos` se pinta solo si aún no las tiene: quien ya las prendió ve nada más el
+ * campo de la fecha, sin que le vuelvan a insistir con algo que ya hizo.
+ */
+function CumpleModal({ apiFetch, updateUser, onClose }) {
+  const [fecha, setFecha]   = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState('');
+  // Tope: el navegador no deja elegir una fecha futura. −6h = el día del club, no el de UTC.
+  const maxHoy = new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10);
+
+  async function guardar() {
+    if (!fecha || saving) return;
+    setSaving(true);
+    setError('');
+    const d = await apiFetch('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ fecha_nacimiento: fecha }),
+    });
+    setSaving(false);
+    if (d.ok) {
+      updateUser({ fecha_nacimiento: d.data?.cliente?.fecha_nacimiento || fecha });
+      onClose();
+    } else {
+      setError(d.error || 'No se pudo guardar. Intenta de nuevo.');
+    }
+  }
+
+  return (
+    // dvh y no vh: en el celular vh no descuenta la barra del navegador y el último botón
+    // se corta (visto en pantalla el 24-ago-2026 con el modal del nivel).
+    <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-[60] px-4"
+         style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
+      <div className="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4 overflow-y-auto overscroll-contain"
+           style={{ maxHeight: 'min(85dvh, calc(100vh - 48px))' }}>
+        <div className="text-center">
+          <p className="text-xl font-black text-sp-gray">🎂 ¿Cuando es tu cumpleanos?</p>
+          {/* El gancho concreto, no "para conocerte mejor": la 2ª cancha gratis es la razón
+              por la que alguien teclea su fecha de nacimiento. */}
+          <p className="text-sm text-gray-400 mt-1">
+            Te regalamos la <b className="text-sp-gray">2a cancha gratis</b> en tu semana de cumpleanos
+          </p>
+        </div>
+
+        <input
+          type="date"
+          value={fecha}
+          max={maxHoy}
+          onChange={e => { setFecha(e.target.value); setError(''); }}
+          className="input-field"
+        />
+
+        {/* Y ya que está aquí, las notificaciones — es el aviso de ESTA promo el que las
+            necesita. Si ya las tiene, este bloque no pinta nada. */}
+        <PrenderAvisos compacto motivo="Asi te avisamos unos dias antes, con tiempo de juntar a tus amigos." />
+
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        <button onClick={guardar} disabled={!fecha || saving} className="btn-green disabled:opacity-50">
+          {saving ? 'Guardando…' : 'Guardar mi cumpleanos'}
+        </button>
+        <button onClick={onClose} className="text-gray-400 text-sm text-center">Lo hago despues</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Encabezado de sección con acción "Ver todas" ─────────────────────────────
 function SectionHeader({ title, actionLabel, onAction }) {
   return (
@@ -497,6 +574,10 @@ export default function Home() {
   const [pedirNivel, setPedirNivel] = useState(() =>
     !sessionStorage.getItem('nivelPromptVisto')
   );
+  // 🎂 Lo mismo con el cumpleaños (German, 27-ago: «que sea al entrar al app»).
+  const [pedirCumple, setPedirCumple] = useState(() =>
+    !sessionStorage.getItem('cumplePromptVisto')
+  );
   const [hora] = useState(() => {
     const h = new Date().getHours();
     if (h < 12) return 'Buenos dias';
@@ -504,8 +585,16 @@ export default function Home() {
     return 'Buenas noches';
   });
 
+  // El cumpleaños sale de /auth/me y NO del `user` guardado: ese `sp_user` vive en el
+  // teléfono desde el último login y no sabe nada de lo que se guardó después. Confiar en él
+  // sería pedirle la fecha a quien ya la dio.
+  const [cumpleVivo, setCumpleVivo] = useState(undefined);   // undefined = todavía no se sabe
   useEffect(() => {
-    apiFetch('/auth/me').then(d => { if (d.ok) setPuntos(d.data.total_puntos ?? d.data.puntos ?? null); });
+    apiFetch('/auth/me').then(d => {
+      if (!d.ok) return;
+      setPuntos(d.data.total_puntos ?? d.data.puntos ?? null);
+      setCumpleVivo(d.data.fecha_nacimiento || null);
+    });
   }, []);
 
   return (
@@ -518,6 +607,22 @@ export default function Home() {
           onClose={() => { sessionStorage.setItem('nivelPromptVisto', '1'); setPedirNivel(false); }}
         />
       )}
+      {/* Cumpleaños: sólo a quien no lo tiene, y NUNCA encima del de nivel — dos cajas
+          apiladas al abrir la app se sienten un interrogatorio y se cierran las dos sin
+          leer. El de nivel va primero (es requisito para las retas); éste sale a la
+          siguiente entrada. */}
+      {/* `cumpleVivo === null` = ya contestó /auth/me y NO tiene fecha. Mientras vale
+          `undefined` no se pinta nada: una caja que aparece medio segundo después de abrir
+          la app, encima de lo que la persona ya estaba leyendo, es peor que no pedirla. */}
+      {!pedirNivel || user?.categoria ? (
+        pedirCumple && user && cumpleVivo === null && (
+          <CumpleModal
+            apiFetch={apiFetch}
+            updateUser={updateUser}
+            onClose={() => { sessionStorage.setItem('cumplePromptVisto', '1'); setPedirCumple(false); }}
+          />
+        )
+      ) : null}
       {/* ── Header ── */}
       <AvisoMarcadores />
       <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-4">
