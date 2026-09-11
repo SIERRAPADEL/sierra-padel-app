@@ -149,7 +149,7 @@ export default function Registro() {
                   type="checkbox"
                   checked={aceptaTerminos}
                   onChange={e => { setAceptaTerminos(e.target.checked); setError(''); }}
-                  className="mt-0.5 w-4 h-4 accent-[#96C800]"
+                  className="mt-0.5 w-4 h-4 accent-sp-green"
                 />
                 <span className="text-[13px] text-gray-600 leading-snug">
                   Acepto los{' '}
@@ -162,7 +162,7 @@ export default function Registro() {
                   type="checkbox"
                   checked={aceptaAvisos}
                   onChange={e => { setAceptaAvisos(e.target.checked); setError(''); }}
-                  className="mt-0.5 w-4 h-4 accent-[#96C800]"
+                  className="mt-0.5 w-4 h-4 accent-sp-green"
                 />
                 <span className="text-[13px] text-gray-600 leading-snug">
                   Acepto recibir avisos del club: confirmaciones, retas de mi nivel y promociones (puedes desactivarlos despues en tu Perfil)

@@ -33,7 +33,7 @@ function ChevronRight() {
 
 function Icon({ d }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--sp-green)' }} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d={d} />
     </svg>
   );
@@ -161,7 +161,7 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
             aria-label="Avisos del club"
             style={{
               width: 44, height: 26, borderRadius: 13,
-              background: avisos ? '#96C800' : '#E5E7EB',
+              background: avisos ? 'var(--sp-green)' : '#E5E7EB',
               position: 'relative', transition: 'background 0.2s',
               display: 'flex', alignItems: 'center', padding: '0 3px', border: 'none', cursor: 'pointer',
             }}
@@ -264,7 +264,7 @@ function CambiarPin({ apiFetch, onBack }) {
         </div>
         <div className="flex flex-col items-center justify-center flex-1 gap-5 px-6">
           <div className="w-20 h-20 rounded-full bg-sp-green-light flex items-center justify-center">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--sp-green)' }} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 6L9 17l-5-5" />
             </svg>
           </div>
@@ -411,19 +411,19 @@ function Notificaciones({ apiFetch, onBack }) {
         <div className="card flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: isActive ? '#96C800' : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: isActive ? 'var(--sp-green)' : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
                 🔔
               </div>
               <div>
                 <p className="text-sp-gray font-bold text-sm">Notificaciones push</p>
-                <p className="text-xs mt-0.5" style={{ color: isActive ? '#96C800' : permission === 'denied' ? '#EF4444' : '#9CA3AF' }}>
+                <p className="text-xs mt-0.5" style={{ color: isActive ? 'var(--sp-green)' : permission === 'denied' ? '#EF4444' : '#9CA3AF' }}>
                   {isActive ? 'Activas' : permission === 'denied' ? 'Bloqueadas' : 'Inactivas'}
                 </p>
               </div>
             </div>
             <div style={{
               width: 44, height: 26, borderRadius: 13,
-              background: isActive ? '#96C800' : '#E5E7EB',
+              background: isActive ? 'var(--sp-green)' : '#E5E7EB',
               position: 'relative', transition: 'background 0.2s',
               display: 'flex', alignItems: 'center', padding: '0 3px',
             }}>
@@ -456,8 +456,8 @@ function Notificaciones({ apiFetch, onBack }) {
           </div>
         )}
         {success && (
-          <div className="rounded-2xl px-4 py-3" style={{ background: '#f0f9e8', border: '1px solid #c5e68c' }}>
-            <p className="text-sm font-medium" style={{ color: '#5a8a00' }}>✓ {success}</p>
+          <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--sp-green-light)', border: '1px solid var(--sp-green-soft)' }}>
+            <p className="text-sm font-medium" style={{ color: 'var(--sp-green-deep)' }}>✓ {success}</p>
           </div>
         )}
 
@@ -483,7 +483,7 @@ function Notificaciones({ apiFetch, onBack }) {
             onClick={handleActivate}
             disabled={loading}
             className="w-full py-3 rounded-2xl font-black text-base transition-all"
-            style={{ background: loading ? '#c8e87a' : '#96C800', color: '#111' }}
+            style={{ background: loading ? 'var(--sp-green-soft)' : 'var(--sp-green)', color: 'var(--sp-ink-on)' }}
           >
             {loading ? 'Activando…' : 'Activar notificaciones'}
           </button>
@@ -562,7 +562,7 @@ export default function Perfil() {
         <button
           onClick={() => navigate('/puntos')}
           className="w-full text-left active:scale-[0.98] transition-transform"
-          style={{ background: 'linear-gradient(135deg,#1f3309,#0f1a05)', border: '1px solid rgba(150,200,0,0.45)', borderRadius: 18, padding: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+          style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))', border: '1px solid rgb(var(--sp-on-dark-rgb) / 0.45)', borderRadius: 18, padding: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
         >
           <div className="flex items-center gap-3">
             <span style={{ fontSize: 32, flexShrink: 0 }}>🎁</span>
@@ -571,7 +571,7 @@ export default function Perfil() {
               <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, marginTop: 2 }}>Tus puntos, niveles y promociones</p>
             </div>
           </div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--sp-on-dark)' }} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
         </button>
 
         {/* Mis reservas + Novedades */}
@@ -632,7 +632,7 @@ export default function Perfil() {
             </div>
             <div className="flex items-center gap-2">
               {notifStatus === 'on' && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: '#f0f9e8', color: '#5a8a00' }}>Activas</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--sp-green-light)', color: 'var(--sp-green-deep)' }}>Activas</span>
               )}
               {notifStatus === 'off' && (
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-400">Bloqueadas</span>

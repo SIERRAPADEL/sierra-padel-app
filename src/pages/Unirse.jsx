@@ -105,7 +105,7 @@ function UnirseReta({ token }) {
       {exito ? (
         <div className="text-center flex flex-col gap-3">
           <div className="w-16 h-16 rounded-full bg-sp-green-light flex items-center justify-center mx-auto">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--sp-green)' }} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 6L9 17l-5-5" />
             </svg>
           </div>
@@ -184,7 +184,7 @@ function UnirseLealtad({ token }) {
     return (
       <div className="text-center">
         <div className="w-16 h-16 rounded-full bg-sp-green-light flex items-center justify-center mx-auto mb-3">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--sp-green)' }} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6L9 17l-5-5" />
           </svg>
         </div>

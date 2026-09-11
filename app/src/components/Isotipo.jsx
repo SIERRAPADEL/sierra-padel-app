@@ -3,7 +3,7 @@
 // background-color usando mask-image → se puede tintar de cualquier color (blanco
 // sobre verde, verde sobre blanco, o el color del nivel de lealtad) sin perder la
 // forma real. Antes era un SVG recreado a mano que no coincidía con el institucional.
-export default function Isotipo({ size = 48, color = '#96C800', className, style }) {
+export default function Isotipo({ size = 48, color = 'var(--sp-green)', className, style }) {
   const px = typeof size === 'number' ? `${size}px` : size;
   const mask = 'url(/icons/isotipo-mask.png)';
   return (

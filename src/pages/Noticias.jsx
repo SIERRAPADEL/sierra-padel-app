@@ -131,8 +131,8 @@ function PromoCard({ promo: p, activeVideo, setActiveVideo }) {
               {p.thumbnail_url
                 ? <img src={p.thumbnail_url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: .7 }} />
                 : null}
-              <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'rgba(150,200,0,.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="#0a1a00"><path d="M5 3l14 9-14 9V3z" /></svg>
+              <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'rgb(var(--sp-green-rgb) / .95)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" style={{ fill: 'var(--sp-ink-on)' }}><path d="M5 3l14 9-14 9V3z" /></svg>
               </div>
             </div>
           )}

@@ -141,23 +141,23 @@ export default function PromoExpressBanner() {
   if (reclamado) {
     const esBen = reclamado.beneficio;
     return (
-      <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 18, padding: 16 }}>
-        <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#96C800' }}>Promo reclamada</p>
+      <div style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))', border: '1px solid var(--sp-on-dark)', borderRadius: 18, padding: 16 }}>
+        <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--sp-on-dark)' }}>Promo reclamada</p>
         {esBen ? (<>
           <p style={{ color: 'white', fontWeight: 900, fontSize: 18 }}>{reclamado.titulo}</p>
           <p className="text-sm mt-1" style={{ color: '#c4c4d8' }}>
             Se aplica sola en la caja cuando el cajero te identifique.
           </p>
         </>) : (<>
-          <div style={{ background: 'rgba(150,200,0,.1)', border: '1px solid rgba(150,200,0,.3)', borderRadius: 12, padding: 14, textAlign: 'center', marginBottom: 10 }}>
-            <p style={{ fontSize: 30, fontWeight: 900, letterSpacing: '0.15em', color: '#96C800' }}>{reclamado.codigo}</p>
+          <div style={{ background: 'rgb(var(--sp-on-dark-rgb) / .1)', border: '1px solid rgb(var(--sp-on-dark-rgb) / .3)', borderRadius: 12, padding: 14, textAlign: 'center', marginBottom: 10 }}>
+            <p style={{ fontSize: 30, fontWeight: 900, letterSpacing: '0.15em', color: 'var(--sp-on-dark)' }}>{reclamado.codigo}</p>
             <p className="text-sm mt-1" style={{ color: '#c4c4d8' }}>
               {reclamado.tipo === '2' ? 'Úsalo al reservar tu cancha' : 'Tu pedido ya llegó a caja'}
             </p>
           </div>
           {reclamado.tipo !== '2' && (
             <button onClick={() => navigate('/pedir')}
-              style={{ width: '100%', padding: 11, background: 'rgba(150,200,0,.12)', border: '1px solid rgba(150,200,0,.35)', color: '#96C800', borderRadius: 10, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ width: '100%', padding: 11, background: 'rgb(var(--sp-on-dark-rgb) / .12)', border: '1px solid rgb(var(--sp-on-dark-rgb) / .35)', color: 'var(--sp-on-dark)', borderRadius: 10, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
               Hacer otro pedido →
             </button>
           )}
@@ -299,14 +299,14 @@ export default function PromoExpressBanner() {
         onClick={() => setAbierta(it)}
         style={{
           width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
-          background: 'linear-gradient(135deg,#1a2a00,#0e1a00)',
-          border: `1px solid rgba(150,200,0,${it.reclamable ? '.5' : '.22'})`,
+          background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))',
+          border: `1px solid rgb(var(--sp-on-dark-rgb) / ${it.reclamable ? '.5' : '.22'})`,
           borderRadius: 18, padding: '16px 18px',
         }}
         className="active:scale-[0.99] transition-transform"
       >
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#96C800' }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--sp-on-dark)' }}>
             {it.origen === 'beneficio' ? '🎁 Para ti'
               : it.origen === 'botanero' ? '🍻 Liga del viernes'
               : it.origen === 'reta_club' ? '🎾 Canchas abiertas'
@@ -314,7 +314,7 @@ export default function PromoExpressBanner() {
               : '⚡ Promo del día'}
           </p>
           {segs !== null && (
-            <p style={{ fontSize: 15, fontWeight: 900, color: urge ? '#f97316' : '#96C800', fontVariantNumeric: 'tabular-nums' }}>
+            <p style={{ fontSize: 15, fontWeight: 900, color: urge ? '#f97316' : 'var(--sp-on-dark)', fontVariantNumeric: 'tabular-nums' }}>
               {mm}:{ss}
             </p>
           )}
@@ -325,7 +325,7 @@ export default function PromoExpressBanner() {
         </p>
 
         {/* Una sola línea, y sólo cuando dice algo que el título no. */}
-        <p className="text-[13px] font-bold mt-2" style={{ color: it.bloqueada ? '#fbbf24' : '#96C800' }}>
+        <p className="text-[13px] font-bold mt-2" style={{ color: it.bloqueada ? '#fbbf24' : 'var(--sp-on-dark)' }}>
           {esLink(it) ? (it.cta || 'Ver más →')
             : it.bloqueada ? '🔔 Prende tus notificaciones'
             : it.reclamable ? 'Ver promo →'
@@ -339,7 +339,7 @@ export default function PromoExpressBanner() {
             {items.map((_, n) => (
               <span key={n} style={{
                 width: n === i ? 16 : 5, height: 5, borderRadius: 99,
-                background: n === i ? '#96C800' : 'rgba(255,255,255,.25)',
+                background: n === i ? 'var(--sp-on-dark)' : 'rgba(255,255,255,.25)',
                 transition: 'width .3s',
               }} />
             ))}

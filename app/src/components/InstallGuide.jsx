@@ -61,8 +61,8 @@ const styles = {
   btnGreen: {
     width: '100%',
     marginTop: 14,
-    background: '#96C800',
-    color: '#111',
+    background: 'var(--sp-green)',
+    color: 'var(--sp-ink-on)',
     border: 'none',
     borderRadius: 12,
     padding: '13px',
@@ -133,7 +133,7 @@ function WebViewBanner({ isAndroid }) {
         <button
           onClick={handleOpen}
           style={{
-            background: '#96C800', color: '#111', border: 'none',
+            background: 'var(--sp-green)', color: 'var(--sp-ink-on)', border: 'none',
             borderRadius: 8, padding: '7px 13px', fontWeight: 700,
             fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
           }}
@@ -162,7 +162,7 @@ function IOSChromCard({ onDismiss }) {
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12,
-            background: '#96C800', display: 'flex', alignItems: 'center',
+            background: 'var(--sp-green)', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: 22, flexShrink: 0,
           }}>🎾</div>
           <div>
@@ -195,7 +195,7 @@ function IOSSafariCard({ onDismiss }) {
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12,
-            background: '#96C800', display: 'flex', alignItems: 'center',
+            background: 'var(--sp-green)', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: 22, flexShrink: 0,
           }}>🎾</div>
           <div>
@@ -241,7 +241,7 @@ function AndroidInstallCard({ prompt, onDismiss, onInstalled }) {
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12,
-            background: '#96C800', display: 'flex', alignItems: 'center',
+            background: 'var(--sp-green)', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: 22, flexShrink: 0,
           }}>🎾</div>
           <div>
@@ -276,7 +276,7 @@ function AndroidOtherBrowserCard({ onDismiss }) {
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12,
-            background: '#96C800', display: 'flex', alignItems: 'center',
+            background: 'var(--sp-green)', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: 22, flexShrink: 0,
           }}>🎾</div>
           <div>
@@ -292,7 +292,7 @@ function AndroidOtherBrowserCard({ onDismiss }) {
       </div>
       <div style={styles.steps}>
         <div>1️⃣ Abre <strong>Google Chrome</strong> en tu telefono</div>
-        <div>2️⃣ Entra a <strong style={{ color: '#96C800' }}>sierra-padel-app.vercel.app</strong></div>
+        <div>2️⃣ Entra a <strong style={{ color: 'var(--sp-green)' }}>sierra-padel-app.vercel.app</strong></div>
         <div>3️⃣ Toca el menu <strong>⋮</strong> → <strong>"Instalar app"</strong></div>
       </div>
       <button onClick={onDismiss} style={styles.btnOutline}>Ahora no</button>

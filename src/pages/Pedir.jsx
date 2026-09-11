@@ -104,9 +104,9 @@ export default function Pedir() {
   // Presentación del estado del pedido para el cliente (amigable, texto grande).
   function vistaEstado(estado, motivo) {
     switch (estado) {
-      case 'preparando': return { icon: '👨‍🍳', tint: '#7aaa00', label: 'Pedido aceptado', titulo: '¡Tu pedido fue aceptado!', sub: 'Lo estan preparando.' };
-      case 'listo':      return { icon: '🛎️', tint: '#7aaa00', label: 'Pedido listo', titulo: '¡Tu pedido esta listo!', sub: 'En un momento te lo llevan.' };
-      case 'entregado':  return { icon: '✅', tint: '#7aaa00', label: 'Entregado', titulo: '¡Entregado!', sub: '¡Buen provecho!' };
+      case 'preparando': return { icon: '👨‍🍳', tint: 'var(--sp-green-dark)', label: 'Pedido aceptado', titulo: '¡Tu pedido fue aceptado!', sub: 'Lo estan preparando.' };
+      case 'listo':      return { icon: '🛎️', tint: 'var(--sp-green-dark)', label: 'Pedido listo', titulo: '¡Tu pedido esta listo!', sub: 'En un momento te lo llevan.' };
+      case 'entregado':  return { icon: '✅', tint: 'var(--sp-green-dark)', label: 'Entregado', titulo: '¡Entregado!', sub: '¡Buen provecho!' };
       case 'cancelado':  return { icon: '❌', tint: '#e5484d', label: 'Pedido rechazado', titulo: 'Tu pedido fue rechazado', sub: motivo || 'El encargado no pudo tomar tu pedido. Acercate al bar si tienes dudas.' };
       default:           return { icon: '⏳', tint: '#b58a00', label: 'Pedido enviado', titulo: 'Pedido enviado', sub: 'Esperando que el encargado lo confirme…' };
     }
@@ -364,7 +364,7 @@ export default function Pedir() {
           {/* El estimado viene del servidor, que lo calcula contra el área REAL de cada
               producto: es el dato bueno, no el que adivinó el carrito. */}
           {!rechazado && pedidoOk.listo_en_min && (
-            <p className="text-[15px] font-bold mb-6" style={{ color: '#7aaa00' }}>
+            <p className="text-[15px] font-bold mb-6" style={{ color: 'var(--sp-green-dark)' }}>
               ⏱️ {pedidoOk.ubicacion === PARA_LLEVAR ? 'Pasa por él en' : 'Listo en'} ~{pedidoOk.listo_en_min} min
             </p>
           )}
@@ -377,11 +377,11 @@ export default function Pedir() {
                 return (
                   <div key={p.k} style={{ display: 'flex', alignItems: 'center', flex: i < PASOS.length - 1 ? 1 : '0 0 auto' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                      <div style={{ width: 14, height: 14, borderRadius: 99, background: hecho ? '#96C800' : '#e5e7eb', flex: '0 0 auto' }} />
-                      <span style={{ fontSize: 11, fontWeight: 700, color: hecho ? '#7aaa00' : '#9ca3af', whiteSpace: 'nowrap' }}>{p.t}</span>
+                      <div style={{ width: 14, height: 14, borderRadius: 99, background: hecho ? 'var(--sp-green)' : '#e5e7eb', flex: '0 0 auto' }} />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: hecho ? 'var(--sp-green-dark)' : '#9ca3af', whiteSpace: 'nowrap' }}>{p.t}</span>
                     </div>
                     {i < PASOS.length - 1 && (
-                      <div style={{ flex: 1, height: 2, background: i < idxActual ? '#96C800' : '#e5e7eb', margin: '0 4px', marginBottom: 16 }} />
+                      <div style={{ flex: 1, height: 2, background: i < idxActual ? 'var(--sp-green)' : '#e5e7eb', margin: '0 4px', marginBottom: 16 }} />
                     )}
                   </div>
                 );
@@ -456,10 +456,10 @@ export default function Pedir() {
           <span>
             {esLlevar ? '🥡' : '📍'} {ubicacion || '¿Dónde estás?'}
             {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
-              <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}> · tu cuenta abierta</span>
+              <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}> · tu cuenta abierta</span>
             )}
           </span>
-          <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
+          <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
         </button>
 
         {/* Buscador por nombre (todo el menú) */}
@@ -576,7 +576,7 @@ export default function Pedir() {
                 <div
                   key={item.id}
                   className="card flex items-center justify-between gap-3 py-3.5"
-                  style={cerrado ? { opacity: 0.55 } : (cant > 0 ? { borderColor: '#96C800' } : undefined)}
+                  style={cerrado ? { opacity: 0.55 } : (cant > 0 ? { borderColor: 'var(--sp-green)' } : undefined)}
                 >
                   <div className="flex-1">
                     <p className="text-sp-gray font-bold text-base mb-0.5">{item.nombre}</p>
@@ -706,7 +706,7 @@ export default function Pedir() {
                   <span className="text-[12px] text-sp-green-dark"> · tu cuenta abierta</span>
                 )}
               </span>
-              <span className="text-[12px] font-bold" style={{ color: '#7aaa00' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
+              <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
             </button>
             {notas && <p className="text-gray-400 text-[13px] mb-3">📝 {notas}</p>}
             {/* Fuera de horario: se avisa y se apaga el botón. El reloj del celular NO

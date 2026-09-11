@@ -3,6 +3,11 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { BACKEND } from './lib/constants';
+import { vigilarTemporada } from './lib/temporada';
+
+// El tema de temporada se aplica ANTES de pintar: si se aplicara después, la app abriría en
+// verde lima y medio segundo más tarde cambiaría de color frente al cliente.
+vigilarTemporada();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

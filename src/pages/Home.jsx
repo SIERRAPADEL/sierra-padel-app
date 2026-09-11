@@ -7,6 +7,7 @@ import Isotipo from '../components/Isotipo';
 import PromoExpressBanner from '../components/PromoExpressBanner';
 import AvisosApagados from '../components/AvisosApagados';
 import NivelSelector from '../components/NivelSelector';
+import { TemporadaSaludo, TemporadaFranja } from '../components/Temporada';
 import { BACKEND } from '../lib/constants';
 import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/format';
 
@@ -150,7 +151,7 @@ function SectionHeader({ title, actionLabel, onAction }) {
 function CardSpinner() {
   return (
     <div className="card py-6 flex items-center justify-center">
-      <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #96C800', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--sp-green)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
     </div>
   );
 }
@@ -191,11 +192,11 @@ function MisReservas({ apiFetch, navigate }) {
         <div className="flex flex-col gap-2">
           {reservas.map((r, i) => (
             <div key={i} className="card flex items-center gap-3 py-3">
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#EDF7D6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <span style={{ fontSize: 15, fontWeight: 800, color: '#5a8a00', lineHeight: 1 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--sp-green-light)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--sp-green-deep)', lineHeight: 1 }}>
                   {parseLocalDate(r.fecha).toLocaleDateString('es-MX', { day: 'numeric' })}
                 </span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#7aaa00', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--sp-green-dark)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   {parseLocalDate(r.fecha).toLocaleDateString('es-MX', { month: 'short' })}
                 </span>
               </div>
@@ -243,7 +244,7 @@ function RetaActiva({ r, onAbrir }) {
     <button
       onClick={onAbrir}
       className="w-full text-left rounded-3xl overflow-hidden active:scale-[.99] transition-transform"
-      style={{ background: 'linear-gradient(135deg,#7aaa00 0%,#96C800 100%)' }}
+      style={{ background: 'linear-gradient(135deg,var(--sp-green-dark) 0%,var(--sp-green) 100%)' }}
     >
       <div className="px-5 py-4">
         <div className="flex items-center justify-between">
@@ -328,11 +329,11 @@ function RetasAbiertas({ apiFetch, navigate }) {
       <div className="flex flex-col gap-2">
         {top.map(r => (
           <div key={r.token} className="card flex items-center gap-3 py-3">
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#EDF7D6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 12, fontWeight: 900, color: '#5a8a00', textTransform: 'capitalize' }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--sp-green-light)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--sp-green-deep)', textTransform: 'capitalize' }}>
                 {formatFecha(r.fecha).split(' ')[0]}
               </span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#7aaa00' }}>{r.hora_inicio}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--sp-green-dark)' }}>{r.hora_inicio}</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sp-gray font-bold text-[15px] truncate">
@@ -490,7 +491,7 @@ function Novedades({ navigate }) {
             {p.media_url && (p.tipo === 'imagen' || p.tipo === 'gif') ? (
               <img src={p.media_url} alt="" loading="lazy" style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
             ) : (
-              <div style={{ width: 52, height: 52, borderRadius: 10, background: '#EDF7D6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>
+              <div style={{ width: 52, height: 52, borderRadius: 10, background: 'var(--sp-green-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>
                 {p.tipo === 'video' ? '🎬' : '📣'}
               </div>
             )}
@@ -517,8 +518,8 @@ function PromoBienvenida({ apiFetch, navigate }) {
   if (!promo) return null;
   return (
     <button onClick={() => navigate('/reservar')} className="text-left active:scale-[0.98] transition-transform">
-      <div className="card flex items-center gap-3 py-3" style={{ border: '1.5px solid #96C800' }}>
-        <div style={{ width: 44, height: 44, borderRadius: 10, background: '#1a2a00', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
+      <div className="card flex items-center gap-3 py-3" style={{ border: '1.5px solid var(--sp-green)' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--sp-dark-a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
           🎉
         </div>
         <div className="flex-1 min-w-0">
@@ -558,9 +559,9 @@ function AvisoMarcadores() {
   return (
     <button type="button" onClick={() => navigate('/marcadores')}
       className="w-full text-left px-5 py-3 flex items-center justify-between gap-3 active:opacity-80"
-      style={{ background: '#EDF7D6' }}>
-      <span className="text-sm font-black" style={{ color: '#4F7A2E' }}>🎾 {texto}</span>
-      <span className="text-xs font-bold" style={{ color: '#7aaa00' }}>Abrir ›</span>
+      style={{ background: 'var(--sp-green-light)' }}>
+      <span className="text-sm font-black" style={{ color: 'var(--sp-green-deep)' }}>🎾 {texto}</span>
+      <span className="text-xs font-bold" style={{ color: 'var(--sp-green-dark)' }}>Abrir ›</span>
     </button>
   );
 }
@@ -633,9 +634,11 @@ export default function Home() {
           </div>
           <Isotipo size={32} color="white" />
         </div>
+        {/* Los puntos y, en temporada, su saludo al lado (🇲🇽 septiembre · 🎃 octubre). */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           onClick={() => navigate('/puntos')}
-          className="mt-3 inline-flex items-center gap-2 bg-black/20 rounded-full px-3.5 py-1.5 active:scale-95 transition-transform"
+          className="inline-flex items-center gap-2 bg-black/20 rounded-full px-3.5 py-1.5 active:scale-95 transition-transform"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none">
             <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -647,7 +650,11 @@ export default function Home() {
             <path d="M9 18l6-6-6-6" />
           </svg>
         </button>
+        <TemporadaSaludo />
+        </div>
       </div>
+      {/* Franja de temporada: tricolor en septiembre, calabazas en octubre, nada el resto. */}
+      <TemporadaFranja />
 
       {/* ── Contenido ── */}
       <PrenderAvisos motivo="Te avisamos tu cancha, tus retas y cuando se libere un lugar." />
@@ -679,15 +686,15 @@ export default function Home() {
             onClick={() => navigate('/pedir')}
             className="active:scale-[0.98] transition-transform text-left"
             style={{
-              background: 'linear-gradient(135deg, #96C800 0%, #7BA600 100%)',
+              background: 'linear-gradient(135deg, var(--sp-pedir-a) 0%, var(--sp-pedir-b) 100%)',
               borderRadius: 18,
               padding: '16px 14px',
-              boxShadow: '0 3px 14px rgba(150,200,0,0.3)',
+              boxShadow: '0 3px 14px var(--sp-pedir-shadow)',
             }}
           >
             <span style={{ fontSize: 30, lineHeight: 1, display: 'block' }}>🍺</span>
-            <p style={{ color: '#0a1a00', fontWeight: 900, fontSize: 17, lineHeight: 1.15, marginTop: 10 }}>Pedir al bar</p>
-            <p style={{ color: 'rgba(10,26,0,0.65)', fontSize: 13, marginTop: 3, fontWeight: 600 }}>Directo a tu cancha</p>
+            <p style={{ color: 'var(--sp-ink-on)', fontWeight: 900, fontSize: 17, lineHeight: 1.15, marginTop: 10 }}>Pedir al bar</p>
+            <p style={{ color: 'var(--sp-ink-on-sub)', fontSize: 13, marginTop: 3, fontWeight: 600 }}>Directo a tu cancha</p>
           </button>
         </div>
 

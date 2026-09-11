@@ -66,7 +66,7 @@ export default function AvisosApagados() {
 
   if (listo) {
     return (
-      <div className="card flex items-center gap-3 py-3" style={{ borderColor: '#96C800' }}>
+      <div className="card flex items-center gap-3 py-3" style={{ borderColor: 'var(--sp-green)' }}>
         <span style={{ fontSize: 22 }}>✅</span>
         <p className="text-sp-gray font-bold text-[15px]">
           Listo, ya te vamos a avisar de tus retas.
@@ -98,7 +98,7 @@ export default function AvisosApagados() {
   }[estado];
 
   return (
-    <div className="card py-3" style={{ borderColor: '#96C800', background: '#F8FCEF' }}>
+    <div className="card py-3" style={{ borderColor: 'var(--sp-green)', background: 'var(--sp-green-wash)' }}>
       <div className="flex items-start gap-3">
         <span style={{ fontSize: 24, lineHeight: 1 }}>{textos.icono}</span>
         <div className="flex-1 min-w-0">

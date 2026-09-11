@@ -66,7 +66,7 @@ function Capturar({ reta, onListo, onCancelar }) {
         {reta.jugadores.map(j => {
           const e = equipo[j.cliente_id];
           const base = 'px-3 py-2 rounded-xl text-sm font-bold border transition-colors';
-          const estilo = e === 'a' ? { background: '#96C800', borderColor: '#96C800', color: '#fff' }
+          const estilo = e === 'a' ? { background: 'var(--sp-green)', borderColor: 'var(--sp-green)', color: '#fff' }
                        : e === 'b' ? { background: '#2F6BFF', borderColor: '#2F6BFF', color: '#fff' }
                        : { background: '#fff', borderColor: '#E5E7EB', color: '#6B7280' };
           return (
@@ -80,7 +80,7 @@ function Capturar({ reta, onListo, onCancelar }) {
       {parejasOk && (
         <div className="mt-4">
           <p className="text-xs font-bold text-gray-500 mb-2">
-            <span style={{ color: '#7aaa00' }}>{enA.map(j => nombreCorto(j.nombre)).join(' y ')}</span>
+            <span style={{ color: 'var(--sp-green-dark)' }}>{enA.map(j => nombreCorto(j.nombre)).join(' y ')}</span>
             {' '}vs{' '}
             <span style={{ color: '#2F6BFF' }}>{enB.map(j => nombreCorto(j.nombre)).join(' y ')}</span>
           </p>
@@ -101,7 +101,7 @@ function Capturar({ reta, onListo, onCancelar }) {
             </div>
           ))}
           {sets.length < 5 && (
-            <button type="button" className="text-xs font-bold" style={{ color: '#7aaa00' }}
+            <button type="button" className="text-xs font-bold" style={{ color: 'var(--sp-green-dark)' }}
               onClick={() => setSets(v => [...v, { a: '', b: '' }])}>+ Agregar set</button>
           )}
         </div>
@@ -113,7 +113,7 @@ function Capturar({ reta, onListo, onCancelar }) {
         <button type="button" onClick={onCancelar} className="flex-1 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-500 text-sm">Ahora no</button>
         <button type="button" onClick={guardar} disabled={!puede}
           className="flex-[1.4] py-2.5 rounded-xl font-black text-sm disabled:opacity-40"
-          style={{ background: '#96C800', color: '#fff' }}>
+          style={{ background: 'var(--sp-green)', color: '#fff' }}>
           {guardando ? 'Guardando…' : 'Guardar marcador'}
         </button>
       </div>
@@ -229,7 +229,7 @@ export default function Marcadores() {
 
       {msg && (
         <div className="mx-4 mt-3 p-3 rounded-xl text-sm font-bold"
-          style={{ background: msg.ok ? '#EDF7D6' : '#FEE2E2', color: msg.ok ? '#4F7A2E' : '#B91C1C' }}>
+          style={{ background: msg.ok ? 'var(--sp-green-light)' : '#FEE2E2', color: msg.ok ? 'var(--sp-green-deep)' : '#B91C1C' }}>
           {msg.t}
         </div>
       )}
@@ -272,7 +272,7 @@ export default function Marcadores() {
                 </button>
                 <button type="button" onClick={() => resolver(j.id, true)} disabled={objetando === j.id}
                   className="flex-[1.4] py-2.5 rounded-xl font-black text-sm disabled:opacity-40"
-                  style={{ background: '#96C800', color: '#fff' }}>
+                  style={{ background: 'var(--sp-green)', color: '#fff' }}>
                   {objetando === j.id ? '…' : 'Tiene razón'}
                 </button>
               </div>
@@ -308,7 +308,7 @@ export default function Marcadores() {
                   </div>
                   <button type="button" onClick={() => setAbierta(r.reservacion_id)}
                     className="px-3.5 py-2 rounded-xl font-black text-xs whitespace-nowrap"
-                    style={{ background: '#96C800', color: '#fff' }}>Poner marcador</button>
+                    style={{ background: 'var(--sp-green)', color: '#fff' }}>Poner marcador</button>
                 </div>
               )
           ))}

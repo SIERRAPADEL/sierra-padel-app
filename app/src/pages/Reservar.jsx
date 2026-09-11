@@ -539,7 +539,7 @@ export default function Reservar() {
     return (
       <div className="page safe-bottom flex flex-col items-center justify-center px-6 gap-5">
         <div className="w-20 h-20 rounded-full bg-sp-green-light flex items-center justify-center">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--sp-green)' }} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6L9 17l-5-5" />
           </svg>
         </div>
@@ -554,17 +554,17 @@ export default function Reservar() {
           </p>
         </div>
         {done.promo && (
-          <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Promo Express aplicada</p>
-            <p style={{ fontSize: 22, fontWeight: 900, letterSpacing: '0.12em', color: '#96C800' }}>{done.promo.codigo}</p>
+          <div style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))', border: '1px solid var(--sp-on-dark)', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--sp-on-dark)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Promo Express aplicada</p>
+            <p style={{ fontSize: 22, fontWeight: 900, letterSpacing: '0.12em', color: 'var(--sp-on-dark)' }}>{done.promo.codigo}</p>
             {done.promo.precio && <p style={{ fontSize: 13, color: '#9090a8', marginTop: 4 }}>Precio preferencial: <strong style={{ color: '#eeeef5' }}>${done.promo.precio}</strong></p>}
             <p style={{ fontSize: 11, color: '#5e5e78', marginTop: 4 }}>El encargado vera este codigo al revisar la reserva</p>
           </div>
         )}
         {done.primera && (
-          <div style={{ background: 'linear-gradient(135deg,#1a2a00,#0e1a00)', border: '1px solid #96C800', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#96C800', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>🎉 Promo de bienvenida aplicada</p>
-            <p style={{ fontSize: 22, fontWeight: 900, color: '#96C800' }}>Renta a ${done.primera.precio}</p>
+          <div style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))', border: '1px solid var(--sp-on-dark)', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--sp-on-dark)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>🎉 Promo de bienvenida aplicada</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: 'var(--sp-on-dark)' }}>Renta a ${done.primera.precio}</p>
             <p style={{ fontSize: 12, color: '#9090a8', marginTop: 4 }}>
               Comprando 1 <strong style={{ color: '#eeeef5' }}>bote de pelotas Sierra Padel{done.primera.bote?.precio ? ` ($${done.primera.bote.precio})` : ''}</strong> al llegar al club.
               {done.primera.bote?.precio ? ` Total a pagar: $${done.primera.precio + done.primera.bote.precio}.` : ''} Cancha completa · 90 min. Sin el bote, la promo no aplica.

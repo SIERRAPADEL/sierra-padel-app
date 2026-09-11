@@ -16,11 +16,11 @@ export function RetaCard({ r, onJoin, joining }) {
     <div className={`card ${r.compatible && !r.es_mia && !r.ya_apuntado ? 'border-sp-green/40' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div style={{ width: 44, height: 44, borderRadius: 10, background: esHoy ? '#96C800' : '#EDF7D6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 13, fontWeight: 900, color: esHoy ? '#fff' : '#5a8a00', lineHeight: 1.1, textTransform: 'capitalize' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 10, background: esHoy ? 'var(--sp-green)' : 'var(--sp-green-light)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 900, color: esHoy ? '#fff' : 'var(--sp-green-deep)', lineHeight: 1.1, textTransform: 'capitalize' }}>
               {esHoy ? 'HOY' : fmtFecha(r.fecha).split(' ')[0]}
             </span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: esHoy ? 'rgba(255,255,255,.85)' : '#7aaa00' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: esHoy ? 'rgba(255,255,255,.85)' : 'var(--sp-green-dark)' }}>
               {r.hora_inicio}
             </span>
           </div>
@@ -58,7 +58,7 @@ export function RetaCard({ r, onJoin, joining }) {
               {r.en_espera > 0 && ` · ${r.en_espera} en lista`}
             </span>
           ) : Array.from({ length: r.cupo }).map((_, i) => (
-            <span key={i} style={{ width: 10, height: 10, borderRadius: 99, background: i < r.apuntados ? '#96C800' : '#e5e7eb' }} />
+            <span key={i} style={{ width: 10, height: 10, borderRadius: 99, background: i < r.apuntados ? 'var(--sp-green)' : '#e5e7eb' }} />
           ))}
           {!r.convocatoria && (
             <span className="text-xs text-gray-400 font-semibold ml-1">

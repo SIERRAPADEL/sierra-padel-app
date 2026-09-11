@@ -129,7 +129,7 @@ function PermissionCard({ onAllow, onDismiss, loading, error }) {
             width: 46,
             height: 46,
             borderRadius: 13,
-            background: '#96C800',
+            background: 'var(--sp-green)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -196,8 +196,8 @@ function PermissionCard({ onAllow, onDismiss, loading, error }) {
         disabled={loading}
         style={{
           width: '100%',
-          background: loading ? '#c8e87a' : '#96C800',
-          color: '#111',
+          background: loading ? 'var(--sp-green-soft)' : 'var(--sp-green)',
+          color: 'var(--sp-ink-on)',
           border: 'none',
           borderRadius: 12,
           padding: '13px',

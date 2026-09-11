@@ -520,7 +520,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
     return (
       <div className="flex flex-col items-center justify-center gap-5 px-6 py-10 text-center">
         <div className="w-20 h-20 rounded-full bg-sp-green-light flex items-center justify-center">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#96C800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--sp-green)' }} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6L9 17l-5-5" />
           </svg>
         </div>

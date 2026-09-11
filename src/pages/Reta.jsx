@@ -65,7 +65,7 @@ export function Ganador({ d }) {
       className="w-full flex flex-col justify-center"
       style={{
         minHeight: '100svh',
-        background: 'linear-gradient(160deg,#1b2b00 0%,#3f6300 55%,#96C800 100%)',
+        background: 'linear-gradient(160deg,var(--sp-dark-a) 0%,var(--sp-green-dark) 55%,var(--sp-green) 100%)',
       }}
     >
       <div className="px-6 py-8 text-center">
@@ -438,7 +438,7 @@ export default function Reta() {
                     onClick={() => cambiarPareja(0)}
                     className="w-full flex items-start gap-2 mb-3 text-left active:scale-[.99] transition-transform"
                   >
-                    <span className="text-[14px] font-black flex-1 min-w-0 leading-tight" style={{ color: '#96C800' }}>
+                    <span className="text-[14px] font-black flex-1 min-w-0 leading-tight" style={{ color: 'var(--sp-green)' }}>
                       {nombresDe(juegos[0].a)}
                     </span>
                     <span className="text-gray-300 font-bold text-[13px] shrink-0">vs</span>
@@ -457,7 +457,7 @@ export default function Reta() {
                         onClick={() => cambiarPareja(i)}
                         className="w-full flex items-start gap-2 mb-1 text-left"
                       >
-                        <span className="text-[12px] font-black flex-1 min-w-0 leading-tight" style={{ color: '#96C800' }}>
+                        <span className="text-[12px] font-black flex-1 min-w-0 leading-tight" style={{ color: 'var(--sp-green)' }}>
                           {nombresDe(j.a)}
                         </span>
                         <span className="text-gray-300 font-bold text-[11px] shrink-0">vs</span>
@@ -471,7 +471,7 @@ export default function Reta() {
                       <span className="text-[13px] font-bold text-gray-400 w-10 shrink-0">
                         {rotar ? `#${i + 1}` : `Set ${i + 1}`}
                       </span>
-                      {[{ c: '#96C800', g: 'ga' }, { c: '#3B6FD4', g: 'gb' }].map(({ c, g }) => (
+                      {[{ c: 'var(--sp-green)', g: 'ga' }, { c: '#3B6FD4', g: 'gb' }].map(({ c, g }) => (
                         // min-w-0 + w-full: un <input> no se encoge bajo su ancho propio
                         <input
                           key={g}
