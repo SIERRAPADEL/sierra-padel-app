@@ -16,7 +16,8 @@ export function useTemporada() {
 
 const SALUDO = {
   patria: '🇲🇽 ¡Viva México!',
-  halloween: '🎃 ¡Feliz Halloween!',
+  // German (10-sep): «Spooky szn», en lugar de «¡Feliz Halloween!».
+  halloween: '🎃 Spooky szn',
 };
 
 export function TemporadaSaludo() {
