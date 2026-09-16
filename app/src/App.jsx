@@ -21,6 +21,7 @@ import Reta from './pages/Reta';
 import Botanero from './pages/Botanero';
 import Ligas from './pages/Ligas';
 import LigaEscalera from './pages/LigaEscalera';
+import LigaJornada from './pages/LigaJornada';
 import Marcadores from './pages/Marcadores';
 
 function ProtectedRoute({ children }) {
@@ -59,6 +60,12 @@ function AppRoutes() {
       <Route path="/marcadores" element={<ProtectedRoute><Marcadores /></ProtectedRoute>} />
       <Route path="/ligas" element={<ProtectedRoute><Ligas /></ProtectedRoute>} />
       <Route path="/liga/:id" element={<ProtectedRoute><LigaEscalera /></ProtectedRoute>} />
+      {/* Lo que pasó en una jornada. Cada una con su dirección, para poder volver
+          (German, 16-sep: "¿dónde vive? quiero que se pueda revisitar"). La más
+          específica va primero: Express toma la primera que empate. */}
+      <Route path="/liga/:id/j/:num/b/:blq" element={<ProtectedRoute><LigaJornada /></ProtectedRoute>} />
+      <Route path="/liga/:id/j/:num/escalera" element={<ProtectedRoute><LigaJornada vista="escalera" /></ProtectedRoute>} />
+      <Route path="/liga/:id/j/:num" element={<ProtectedRoute><LigaJornada /></ProtectedRoute>} />
       <Route path="/botanero" element={<ProtectedRoute><Botanero /></ProtectedRoute>} />
       <Route path="/torneos" element={<ProtectedRoute><Torneos /></ProtectedRoute>} />
       <Route path="/puntos" element={<ProtectedRoute><Puntos /></ProtectedRoute>} />

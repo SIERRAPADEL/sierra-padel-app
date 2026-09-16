@@ -32,6 +32,7 @@ export default function LigaEscalera() {
   const [liga, setLiga] = useState(null);
   const [mi, setMi] = useState(null);
   const [tabla, setTabla] = useState([]);
+  const [jornadas, setJornadas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [apuntando, setApuntando] = useState(false);
   const [aviso, setAviso] = useState(null);
@@ -39,15 +40,18 @@ export default function LigaEscalera() {
   const [preguntaRama, setPreguntaRama] = useState(false);
 
   const cargar = useCallback(async () => {
-    const [abiertas, mia, rank] = await Promise.all([
+    const [abiertas, mia, rank, jor] = await Promise.all([
       apiFetch('/escalera/abiertas'),
       apiFetch(`/escalera/${id}/mi-inscripcion`),
       apiFetch(`/escalera/${id}/ranking`),
+      // Best-effort: si las jornadas no cargan, la pantalla se dibuja igual sin esa sección.
+      apiFetch(`/escalera/${id}/jornadas`).catch(() => null),
     ]);
     if (abiertas?.ok) setLiga((abiertas.data || []).find((l) => l.id === id) || null);
     if (mia?.ok) setMi(mia.data);
     // El ranking del motor viene como arreglo pelón, no envuelto en {ok, data}.
     setTabla(Array.isArray(rank) ? rank : (rank?.data || []));
+    setJornadas(Array.isArray(jor) ? jor : (jor?.data || []));
     setCargando(false);
   }, [apiFetch, id]);
 
@@ -101,6 +105,11 @@ export default function LigaEscalera() {
   const inscritos = liga?.inscritos ?? 0;
   const bolsa = com ? Number(com.premio_efectivo || 0) + Number(com.premio_especie_valor || 0) : 0;
   const minPremios = com?.premios_min_participantes;
+  // Sólo las jornadas que ya tienen bloques armados: una sin bloques no tiene qué enseñar.
+  // De la más reciente a la más vieja — a la que se entra es a la que se acaba de jugar.
+  const jornadasConJuego = [...jornadas]
+    .filter((j) => (j.bloques_jornada || []).length > 0)
+    .sort((a, b) => b.numero - a.numero);
 
   const fechaBonita = com?.fecha_inicio
     ? new Date(com.fecha_inicio + 'T12:00:00').toLocaleDateString('es-MX',
@@ -218,6 +227,47 @@ export default function LigaEscalera() {
                 proporción; si somos más, sube.
               </p>
             )}
+          </div>
+        )}
+
+        {/* ── LAS JORNADAS ────────────────────────────────────────────────────
+            German (16-sep): *"¿dónde vive? quiero que se pueda revisitar"*. Éste es el
+            tap que lleva a la tarjeta del ganador de cada cancha. Sólo salen las que ya
+            tienen bloques armados: una jornada sin bloques no tiene nada que enseñar. */}
+        {jornadasConJuego.length > 0 && (
+          <div className="card p-4">
+            <p className="font-black text-sp-gray text-[15px]">Jornadas</p>
+            <div className="mt-2 flex flex-col">
+              {jornadasConJuego.map((j) => {
+                const bloques = j.bloques_jornada || [];
+                const conResultado = bloques.filter((b) =>
+                  (b.jugadores_bloque || []).some((x) => x.posicion_final != null)).length;
+                return (
+                  <button key={j.id} onClick={() => navigate(`/liga/${id}/j/${j.numero}`)}
+                          className="flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0 text-left">
+                    <span className="w-7 h-7 rounded-lg grid place-items-center text-white font-black text-[12px] shrink-0"
+                          style={{ background: rama.fondo }}>
+                      {j.numero}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sp-gray text-[14px] font-bold truncate">
+                        Jornada {j.numero}
+                        {j.estado === 'finalizada' ? ' · cerrada' : ''}
+                      </p>
+                      <p className="text-gray-400 text-[12px]">
+                        {j.fecha ? new Date(j.fecha + 'T12:00').toLocaleDateString('es-MX',
+                          { day: 'numeric', month: 'short' }) : 'Sin fecha'}
+                        {' · '}
+                        {conResultado > 0
+                          ? `${conResultado} de ${bloques.length} con resultado`
+                          : `${bloques.length} bloque${bloques.length === 1 ? '' : 's'}`}
+                      </p>
+                    </div>
+                    <span className="text-gray-300 text-[18px] shrink-0">›</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
