@@ -250,7 +250,14 @@ export default function LigaJornada({ vista }) {
             {ranking.map((r, i) => {
               const pos = r.posicion_actual ?? i + 1;
               const bloque = r.bloque_actual ?? Math.ceil(pos / reglas.tam);
+              // 🔑 SE MUEVE EN BLOQUES, NO EN LUGARES (German, 16-sep): *"la regla es si ganas
+              // subes al bloque inmediatamente arriba de ti, si pierdes bajas al siguiente;
+              // pero por ningún motivo saltas 2 bloques después de un juego"*. La primera
+              // versión enseñaba cuántas POSICIONES se movió cada quien y se leía como si
+              // alguien hubiera brincado: pasar de la 8 a la 3 son cinco lugares pero UN solo
+              // bloque. La escalera se juega por bloques; la flecha tiene que hablar de eso.
               const prev = antesDe(r);
+              const bloquePrev = prev == null ? null : Math.ceil(prev / reglas.tam);
               const movio = prev == null ? null : prev - pos;      // + subió, − bajó
               const arriba = movio == null || movio >= 0;
               const tinta = movio == null ? '#fff' : arriba ? SUBE : BAJA;
@@ -275,7 +282,9 @@ export default function LigaJornada({ vista }) {
                     {movio != null && (
                       <span className="shrink-0 font-black text-[10px] tabular-nums rounded-full px-2 py-[3px]"
                             style={{ color: tinta, background: arriba ? SUBE_BG : BAJA_BG }}>
-                        {movio > 0 ? `↑ ${movio}` : movio < 0 ? `↓ ${-movio}` : '= 0'}
+                        {bloquePrev == null || bloquePrev === bloque
+                          ? `= B${bloque}`
+                          : `${bloquePrev > bloque ? '↑' : '↓'} B${bloquePrev} → B${bloque}`}
                       </span>
                     )}
                   </div>
