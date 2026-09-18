@@ -110,11 +110,34 @@ function pairName(insc) {
 // Resultado: el botón "Inscribirme" NUNCA aparecía y la lista de categorías salía vacía —
 // inscribirse a un torneo desde la app era imposible. Se acepta el valor REAL y se deja el
 // viejo por si algún día el backend lo normaliza.
-const ABIERTA = (e) => e === 'inscripciones_abiertas' || e === 'inscripciones';
+// 🔑 LA MISMA REGLA QUE EL BACKEND, QUE ES LA QUE MANDA.
+//
+// `inscripcion_core.js` (lo que usa el bot) dice desde siempre: *"abierta por DEFAULT; el bot
+// ofrece toda categoría no cerrada a mano ni con draw; la VENTANA decide el cuándo"*. O sea
+// que `borrador` con su ventana corriendo SÍ es inscribible.
+//
+// La app pedía `inscripciones_abiertas` a secas. Eran dos reglas para lo mismo, y la del bot
+// dejaba entrar donde la de la app no. German (18-sep-2026) creó el «Varonil 4ta Express»
+// desde la calculadora, le puso bien su ventana… y la app lo seguía enseñando como BORRADOR,
+// sin botón de inscribirse. El torneo estaba perfecto; la que estaba mal era esta línea.
+const INSCRIBIBLES = ['borrador', 'inscripciones_abiertas', 'inscripciones'];
+
+/** ¿La ventana de inscripción de esta categoría está corriendo AHORITA? */
+function ventanaCorriendo(c, torneo) {
+  const ms = (s) => (s ? new Date(s).getTime() : null);
+  // La categoría manda; si no trae ventana propia, vale la general del torneo.
+  const abre   = ms(c?.inscripcion_abre)   ?? ms(torneo?.inscripcion_abre);
+  const cierra = ms(c?.inscripcion_cierra) ?? ms(torneo?.inscripcion_cierra);
+  const ahora = Date.now();
+  if (abre !== null && abre !== undefined && abre > ahora) return false;
+  if (cierra !== null && cierra !== undefined && cierra < ahora) return false;
+  return true;   // sin ventana = siempre abierta, igual que en el backend
+}
+const ABIERTA = (c, torneo) => INSCRIBIBLES.includes(c?.estado) && ventanaCorriendo(c, torneo);
 
 function torneoEstado(t) {
   const est = (t?.torneo_categorias || []).map(c => c.estado);
-  if (est.some(ABIERTA)) return 'inscripciones';
+  if ((t?.torneo_categorias || []).some(c => ABIERTA(c, t))) return 'inscripciones';
   if (est.some(e => ['draw_generado', 'calendario_publicado', 'en_curso', 'finalizado'].includes(e))) return 'calendario_publicado';
   return t?.estado_global || 'borrador';
 }
@@ -419,8 +442,9 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
 // InscripcionFlow
 // ──────────────────────────────────────────────────────────
 function InscripcionFlow({ torneo, onDone, apiFetch }) {
-  // Mismo arreglo que en torneoEstado(): el estado real en base es 'inscripciones_abiertas'.
-  const cats = (torneo.torneo_categorias || []).filter(c => ABIERTA(c.estado));
+  // La MISMA regla que pinta la tarjeta: estado inscribible + ventana corriendo. Si aquí
+  // fuera distinta, el botón diría "Inscribirme" y la lista de categorías saldría vacía.
+  const cats = (torneo.torneo_categorias || []).filter(c => ABIERTA(c, torneo));
 
   const [step, setStep]     = useState(1);
   const [catSel, setCatSel] = useState(null);
