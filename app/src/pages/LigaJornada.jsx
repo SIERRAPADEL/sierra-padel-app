@@ -41,6 +41,37 @@ const RAMA = {
 const SUBE = '#c9f56a', SUBE_BG = 'rgba(150,200,0,.20)';
 const BAJA = '#ff9c8a', BAJA_BG = 'rgba(255,92,60,.20)';
 
+/**
+ * 📣 LA MARCA QUE VIAJA CON LA FOTO.
+ *
+ * German (18-sep-2026): *"necesitamos que nos veamos beneficiados con esa info, que traiga un
+ * enlace o algo que nos identifique de mejor manera"* · *"quiero que enlace instagram y fb"*.
+ *
+ * Esta tarjeta acaba en el grupo de WhatsApp y en las historias de los jugadores. Hasta hoy
+ * sólo decía "Sierra Padel" arriba: quien la veía sin conocernos no tenía a dónde ir. El pie
+ * lleva la dirección de la app —que es donde se reserva, se ve la liga y viven los puntos— y
+ * las dos redes. Va DENTRO de la imagen a propósito: la captura de pantalla se reenvía sola y
+ * el texto del mensaje no la acompaña.
+ *
+ * 🔑 Un solo lugar: lo usan la tarjeta de pantalla y la imagen que se comparte. Si cambia una
+ * cuenta, se cambia aquí y cambia en las dos.
+ */
+const MARCA = {
+  app: 'sierra-padel-app.vercel.app',
+  // Cuentas confirmadas por German el 18-sep-2026. Ojo: el usuario de Instagram lleva PUNTO
+  // (`sierra.padel`), y la página de Facebook se llama «Sierra Padel Mva» y no tiene nombre
+  // corto — sólo número. En la imagen va el nombre BUSCABLE, no el número: un id de 17
+  // dígitos impreso en una foto no le sirve a nadie.
+  instagram: '@sierra.padel',
+  facebook: 'Sierra Padel Mva',
+  // Y esto es lo que viaja como TEXTO junto a la imagen: ahí sí son enlaces vivos, y en
+  // WhatsApp se tocan. Van SIN los parámetros de rastreo (`stkn`, `mibextid`) de los links
+  // que se copian desde la app de cada quien: ésos identifican a quien compartió.
+  urlApp: 'https://sierra-padel-app.vercel.app',
+  urlIg: 'https://www.instagram.com/sierra.padel',
+  urlFb: 'https://www.facebook.com/61554401167516',
+};
+
 const MAY = (n) => String(n || '').toUpperCase();
 const pila = (n) => String(n || '').trim().split(/\s+/)[0];
 const capitaliza = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
@@ -80,6 +111,7 @@ export default function LigaJornada({ vista }) {
   const [jornadas, setJornadas] = useState([]);
   const [ranking, setRanking] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [compartiendo, setCompartiendo] = useState(false);
 
   const cargar = useCallback(async () => {
     const [l, js, rk] = await Promise.all([
@@ -202,7 +234,50 @@ export default function LigaJornada({ vista }) {
             })}
           </div>
 
-          <div className="mt-7 flex items-center justify-center gap-5">
+          {/* 📤 El botón que pidió German: comparte la IMAGEN, no un texto. En el celular
+              abre el menú del sistema y de ahí va al grupo o a la historia; en la compu no
+              existe `share` con archivos, así que se descarga el PNG y se sube a mano. */}
+          <button
+            disabled={compartiendo}
+            onClick={async () => {
+              setCompartiendo(true);
+              try {
+                const blob = await imagenDelBloque({
+                  liga, jornada, bloque: b, orden, reglas, extremos, col, hayResultado,
+                });
+                if (!blob) throw new Error('no se pudo generar la imagen');
+                const archivo = new File(
+                  [blob], `sierra-${liga.nombre}-j${num}-bloque${b.numero_bloque}.png`.replace(/\s+/g, '-').toLowerCase(),
+                  { type: 'image/png' },
+                );
+                // El texto viaja junto a la imagen: el enlace impreso identifica, pero uno
+                // clicable en WhatsApp es el que de verdad trae gente a la app.
+                const encabezado = campeon
+                  ? `🏆 ${MAY(campeon.jugadores?.nombre)} se llevó la cancha ${b.cancha ?? ''} · ${liga.nombre} J${jornada.numero}`
+                  : `${liga.nombre} · Jornada ${jornada.numero}`;
+                const texto = `${encabezado}\n\n🎾 ${MARCA.urlApp}\n📸 ${MARCA.urlIg}\n👍 ${MARCA.urlFb}`;
+                if (navigator.canShare?.({ files: [archivo] })) {
+                  await navigator.share({ files: [archivo], text: texto });
+                } else {
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = archivo.name;
+                  a.click();
+                  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+                }
+              } catch (e) {
+                // Cancelar el menú de compartir no es un error: no se le grita al usuario.
+                if (e?.name !== 'AbortError') alert('No se pudo armar la imagen. Toma captura de pantalla y compártela.');
+              } finally { setCompartiendo(false); }
+            }}
+            className="mt-6 w-full rounded-2xl bg-white/95 text-black font-black text-[15px] py-3.5 active:scale-[.99] transition-transform disabled:opacity-60"
+          >
+            {compartiendo ? 'Armando la imagen…' : '📤 Compartir'}
+          </button>
+
+          <PieDeMarca />
+
+          <div className="mt-5 flex items-center justify-center gap-5">
             <button onClick={() => navigate(`/liga/${id}/j/${num}`)}
                     className="text-white/70 text-[13px] font-bold">← Jornada {num}</button>
             <button onClick={() => navigate(`/liga/${id}/j/${num}/escalera`)}
@@ -350,6 +425,144 @@ export default function LigaJornada({ vista }) {
           </p>
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ═══ LA IMAGEN QUE SE COMPARTE ═══════════════════════════════════════════════
+ * Se DIBUJA en un canvas, no se captura la pantalla. Es el mismo camino que ya usa la
+ * premiación de torneos (`panel/premiacion.html`), y evita meter una librería de captura:
+ * sale siempre a 1080×1920 —la medida de una historia— aunque el celular sea chico, y no
+ * depende de que la pantalla esté enfocada ni de que el navegador permita capturar.
+ * El isotipo es del MISMO origen que la app: si viniera de fuera, el navegador ensucia el
+ * canvas y `toBlob` devuelve null. Si aun así falla, la imagen sale sin logo en vez de no salir.
+ */
+const CW = 1080, CH = 1920;
+
+function txt(ctx, s, x, y, { size = 40, weight = '700', color = '#fff', track = 0, max = 0 } = {}) {
+  const fuente = (px) => `${weight} ${px}px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+  let px = size;
+  ctx.font = fuente(px);
+  // Un nombre largo no se recorta ni se sale: se encoge hasta que cabe.
+  if (max) { while (px > 18 && ctx.measureText(String(s)).width + Math.max(0, track) * String(s).length > max) { px -= 2; ctx.font = fuente(px); } }
+  ctx.fillStyle = color;
+  if (!track) { ctx.textAlign = 'center'; ctx.fillText(String(s), x, y); return; }
+  // El espaciado entre letras no existe en canvas: se dibuja letra por letra.
+  const chars = [...String(s)];
+  ctx.textAlign = 'left';
+  const total = chars.reduce((w, c) => w + ctx.measureText(c).width + track, -track);
+  let cx = x - total / 2;
+  for (const c of chars) { ctx.fillText(c, cx, y); cx += ctx.measureText(c).width + track; }
+}
+
+async function imagenDelBloque({ liga, jornada, bloque, orden, reglas, extremos, col, hayResultado }) {
+  const cv = document.createElement('canvas');
+  cv.width = CW; cv.height = CH;
+  const ctx = cv.getContext('2d');
+
+  const g = ctx.createLinearGradient(0, 0, CW * .6, CH);
+  g.addColorStop(0, col.a); g.addColorStop(.55, col.b); g.addColorStop(1, col.c);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, CW, CH);
+
+  let y = 150;
+  try {
+    // El MISMO isotipo que ya usa el encabezado de la pantalla (`/icons/isotipo-mask.png`):
+    // es el que con seguridad está publicado, y al ser del mismo origen no ensucia el canvas.
+    const im = await new Promise((ok, no) => {
+      const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = '/icons/isotipo-mask.png';
+    });
+    const h = 120, w = im.width * (h / im.height);
+    ctx.drawImage(im, (CW - w) / 2, y, w, h);
+    y += h + 56;
+  } catch { y += 40; }
+
+  txt(ctx, 'SIERRA PADEL', CW / 2, y, { size: 58, weight: '900', track: 10 });
+  txt(ctx, `${liga.nombre} · Jornada ${jornada.numero}`, CW / 2, y + 66, { size: 28, weight: '800', color: col.tinte, track: 5, max: CW - 120 });
+  txt(ctx, `${fmtFecha(bloque.fecha || jornada.fecha)} · Cancha ${bloque.cancha ?? '—'}${bloque.hora ? ` · ${hhmm(bloque.hora)}` : ''}`,
+      CW / 2, y + 116, { size: 28, weight: '600', color: 'rgba(255,255,255,.72)' });
+
+  // Lo de en medio (copa, campeón y el cuadro) se CENTRA entre el encabezado y el pie: con
+  // 4 jugadores o con 2, la tarjeta se ve compuesta y no con un hueco abajo.
+  const pie = CH - 200;
+  const altoCuadro = Math.max(1, orden.length) * 132 + 34;
+  const altoMedio = 240 + 50 + 50 + altoCuadro;
+  y = Math.max(y + 250, y + 150 + Math.round(((pie - 60 - (y + 150)) - altoMedio) / 2));
+  ctx.textAlign = 'center';
+  if (hayResultado && orden[0]) {
+    ctx.font = '150px system-ui'; ctx.fillStyle = '#fff'; ctx.fillText('🏆', CW / 2, y);
+    txt(ctx, MAY(orden[0].jugadores?.nombre), CW / 2, y + 110, { size: 62, weight: '900', max: CW - 110 });
+    txt(ctx, liga.categoria === 'Femenil' ? 'CAMPEONA' : 'CAMPEÓN', CW / 2, y + 168,
+        { size: 24, weight: '800', color: 'rgba(255,255,255,.62)', track: 9 });
+  } else {
+    ctx.font = '140px system-ui'; ctx.fillStyle = '#fff'; ctx.fillText('🎾', CW / 2, y);
+    txt(ctx, 'AÚN SIN RESULTADOS', CW / 2, y + 110, { size: 46, weight: '900' });
+  }
+
+  y += 240;
+  txt(ctx, `BLOQUE ${bloque.numero_bloque} · SUBEN ${reglas.sube} · BAJAN ${reglas.baja}`,
+      CW / 2, y, { size: 22, weight: '800', color: 'rgba(255,255,255,.58)', track: 5 });
+
+  // El cuadro de resultados, con los mismos verdes y rojos de la pantalla.
+  y += 50;
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  // `roundRect` no existe en Safari viejo; sin esto la imagen no sale en esos iPhone.
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(70, y, CW - 140, altoCuadro, 46);
+  else ctx.rect(70, y, CW - 140, altoCuadro);
+  ctx.fill();
+
+  let ry = y + 100;
+  for (let i = 0; i < orden.length; i++) {
+    const j = orden[i];
+    const lugar = j.posicion_final ?? i + 1;
+    const d = hayResultado ? destinoDeLugar(lugar, { ...reglas, ...extremos }) : null;
+    const arriba = d === 'sube' || d === 'queda';
+    const tinta = !d ? '#fff' : arriba ? SUBE : BAJA;
+    if (i) { ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(110, ry - 82); ctx.lineTo(CW - 110, ry - 82); ctx.stroke(); }
+    ctx.textAlign = 'left';
+    ctx.font = '900 42px ui-sans-serif, system-ui, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.4)';
+    ctx.fillText(String(lugar), 120, ry);
+    ctx.font = '800 50px ui-sans-serif, system-ui, sans-serif'; ctx.fillStyle = tinta;
+    ctx.fillText(MAY(pila(j.jugadores?.nombre)), 190, ry);
+    if (hayResultado) {
+      ctx.textAlign = 'right';
+      ctx.font = '900 34px ui-sans-serif, system-ui, sans-serif'; ctx.fillStyle = tinta;
+      ctx.fillText(ETIQUETA[d], CW - 120, ry);
+      ctx.font = '900 50px ui-sans-serif, system-ui, sans-serif';
+      ctx.fillText(`${j.sets_ganados || 0}-${3 - (j.sets_ganados || 0)}`, CW - 320, ry);
+    }
+    ry += 132;
+  }
+
+  // ── El pie de marca: lo que hace que la foto trabaje para el club ──────────
+  ctx.textAlign = 'center';
+  ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(220, pie - 40); ctx.lineTo(CW - 220, pie - 40); ctx.stroke();
+  txt(ctx, MARCA.app, CW / 2, pie + 24, { size: 36, weight: '900', color: '#fff', track: 2 });
+  txt(ctx, `Instagram ${MARCA.instagram}   ·   Facebook ${MARCA.facebook}`,
+      CW / 2, pie + 82, { size: 27, weight: '700', color: 'rgba(255,255,255,.78)' });
+  txt(ctx, 'RESERVA, LIGAS Y PUNTOS EN LA APP', CW / 2, pie + 132,
+      { size: 20, weight: '700', color: 'rgba(255,255,255,.5)', track: 4 });
+
+  return new Promise((ok) => cv.toBlob(ok, 'image/png'));
+}
+
+/** El pie que se ve en pantalla — para que la captura de pantalla también nos traiga. */
+function PieDeMarca() {
+  return (
+    <div className="mt-6 pt-4 border-t border-white/20">
+      <p className="text-white font-black text-[13.5px] tracking-[.04em]">{MARCA.app}</p>
+      {/* En pantalla sí se pueden tocar: quien está viendo la tarjeta en su celular llega a
+          las redes de un toque. En la imagen van impresos, que es lo que sobrevive al reenvío. */}
+      <p className="text-white/75 text-[11.5px] font-bold mt-1">
+        <a href={MARCA.urlIg} target="_blank" rel="noreferrer" className="underline decoration-white/30">
+          Instagram {MARCA.instagram}
+        </a>
+        {' · '}
+        <a href={MARCA.urlFb} target="_blank" rel="noreferrer" className="underline decoration-white/30">
+          Facebook {MARCA.facebook}
+        </a>
+      </p>
     </div>
   );
 }
