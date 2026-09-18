@@ -112,6 +112,7 @@ export default function LigaJornada({ vista }) {
   const [ranking, setRanking] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [compartiendo, setCompartiendo] = useState(false);
+  const [copiado, setCopiado] = useState(false);
 
   const cargar = useCallback(async () => {
     const [l, js, rk] = await Promise.all([
@@ -240,6 +241,31 @@ export default function LigaJornada({ vista }) {
           <button
             disabled={compartiendo}
             onClick={async () => {
+              const encabezado = campeon
+                ? `🏆 ${MAY(campeon.jugadores?.nombre)} se llevó la cancha ${b.cancha ?? ''} · ${liga.nombre} J${jornada.numero}`
+                : `${liga.nombre} · Jornada ${jornada.numero}`;
+
+              // 📋 EL PIE DE FOTO SE COPIA SOLO, Y VA ANTES QUE LA IMAGEN.
+              //
+              // Instagram TIRA el texto que manda `navigator.share`: de todo esto sólo le
+              // llega la foto, y la descripción queda vacía. Y ninguna red deja que una app
+              // de fuera escriba una etiqueta en la publicación de otra persona — no hay
+              // manera de que la mención sea automática, en ninguna plataforma.
+              //
+              // 🔑 Y la etiqueta es justo lo que le sirve al club: el botón de «añadir a tu
+              // historia» —con el que reposteamos— sólo aparece cuando alguien nos MENCIONA.
+              // El @ impreso en la imagen identifica, pero no da ese botón.
+              //
+              // Así que se deja el pie ya escrito en el portapapeles: en Instagram es pegar
+              // y listo, y al pegar "@sierra.padel" la app lo convierte en mención de verdad.
+              // Va PRIMERO porque en iPhone el portapapeles sólo se deja escribir dentro del
+              // toque: si se hace después de dibujar la imagen, Safari ya cortó el permiso.
+              let copiado = false;
+              const pieDeFoto = `${encabezado}\n\nJugando en ${MARCA.instagram} 🎾\n`
+                + `Reserva en ${MARCA.app}\n\n#SierraPadel #Monclova #Padel`;
+              try { await navigator.clipboard.writeText(pieDeFoto); copiado = true; } catch { /* sin portapapeles se comparte igual */ }
+              setCopiado(copiado);
+
               setCompartiendo(true);
               try {
                 const blob = await imagenDelBloque({
@@ -250,11 +276,7 @@ export default function LigaJornada({ vista }) {
                   [blob], `sierra-${liga.nombre}-j${num}-bloque${b.numero_bloque}.png`.replace(/\s+/g, '-').toLowerCase(),
                   { type: 'image/png' },
                 );
-                // El texto viaja junto a la imagen: el enlace impreso identifica, pero uno
-                // clicable en WhatsApp es el que de verdad trae gente a la app.
-                const encabezado = campeon
-                  ? `🏆 ${MAY(campeon.jugadores?.nombre)} se llevó la cancha ${b.cancha ?? ''} · ${liga.nombre} J${jornada.numero}`
-                  : `${liga.nombre} · Jornada ${jornada.numero}`;
+                // A WhatsApp (que sí respeta el texto) van los enlaces completos: ahí se tocan.
                 const texto = `${encabezado}\n\n🎾 ${MARCA.urlApp}\n📸 ${MARCA.urlIg}\n👍 ${MARCA.urlFb}`;
                 if (navigator.canShare?.({ files: [archivo] })) {
                   await navigator.share({ files: [archivo], text: texto });
@@ -274,6 +296,16 @@ export default function LigaJornada({ vista }) {
           >
             {compartiendo ? 'Armando la imagen…' : '📤 Compartir'}
           </button>
+
+          {/* La instrucción sólo aparece DESPUÉS de compartir, que es cuando sirve: el
+              jugador ya está con la foto en la mano y a punto de escribir el pie. */}
+          {copiado && (
+            <p className="mt-2.5 text-white/85 text-[12px] font-bold leading-snug px-2">
+              📋 Ya te copiamos el texto. Pégalo y deja la etiqueta{' '}
+              <span className="text-white font-black">{MARCA.instagram}</span> —
+              así nos llega y te reposteamos en nuestras historias.
+            </p>
+          )}
 
           <PieDeMarca />
 
