@@ -59,15 +59,19 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
   // exactamente lo que come <input type="date">. Nunca convertirlo a Date en el camino —
   // el navegador lo lee en UTC y a Monclova (−6) le resta un día.
   const [cumple, setCumple]   = useState((user?.fecha_nacimiento || '').slice(0, 10));
+  // 📸 Su Instagram. Se guarda SIN arroba; el servidor también limpia lo que llegue.
+  const [insta, setInsta]     = useState(user?.instagram || '');
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [saved, setSaved]     = useState(false);
 
   const cumpleOriginal = (user?.fecha_nacimiento || '').slice(0, 10);
+  const instaOriginal  = user?.instagram || '';
   const changed =
     (nombre.trim() !== (user?.nombre || '').trim() && nombre.trim().length > 0) ||
     (nivel && nivel !== (user?.categoria || null)) ||
     (cumple !== cumpleOriginal) ||
+    (insta.trim() !== instaOriginal) ||
     (avisos !== (user?.acepta_avisos !== false));
 
   async function handleSave() {
@@ -81,6 +85,8 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
       // Se manda sólo si cambió. Mandar '' cuando nunca lo tuvo lo guardaría como null una
       // y otra vez sin razón; y si el usuario lo borra a propósito, '' sí viaja y lo limpia.
       if (cumple !== cumpleOriginal) body.fecha_nacimiento = cumple || null;
+      // Igual que el cumpleaños: sólo viaja si cambió, y '' sí viaja para poder borrarlo.
+      if (insta.trim() !== instaOriginal) body.instagram = insta.trim();
       body.acepta_avisos = avisos;
       const d = await apiFetch('/auth/profile', {
         method: 'PATCH',
@@ -138,6 +144,32 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
             {!cumpleOriginal && (
               <p className="text-xs text-gray-400 px-1 mt-1">
                 🎉 Ponla y te llega tu promo de cumpleanos — te avisamos con tiempo para que lo festejes aqui.
+              </p>
+            )}
+          </div>
+          {/* 📸 Mismo criterio que el cumpleaños: el gancho ANTES del campo. Nadie da su
+              Instagram "porque sí"; lo da si sabe qué gana — que lo etiquetemos cuando
+              suba su tarjeta de campeón. Sin el usuario no hay a quién etiquetar. */}
+          <div>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Mi Instagram</p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-gray-400 font-bold text-[15px] pl-1">@</span>
+              <input
+                type="text"
+                inputMode="text"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+                value={insta}
+                onChange={e => { setInsta(e.target.value); setError(''); setSaved(false); }}
+                className="input-field flex-1"
+                placeholder="tu.usuario"
+              />
+            </div>
+            {!instaOriginal && (
+              <p className="text-xs text-gray-400 px-1 mt-1">
+                🏆 Ponlo y te etiquetamos cuando subamos tu foto de campeon — asi la puedes
+                compartir en tu historia de un toque.
               </p>
             )}
           </div>
