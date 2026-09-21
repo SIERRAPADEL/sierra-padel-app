@@ -38,7 +38,15 @@ export function AuthProvider({ children }) {
       body: JSON.stringify({ nombre, telefono, pin, ...extra }),
     });
     const data = await res.json();
-    if (!data.ok) throw new Error(data.error);
+    if (!data.ok) {
+      // 🔑 El backend no sólo dice que NO: dice de qué tipo de "no" se trata. Antes eso se
+      // perdía aquí —`new Error(data.error)` deja sólo el texto— y la pantalla no podía
+      // hacer más que imprimirlo. Con las banderas puede LLEVAR a la persona a donde va.
+      const err = new Error(data.error);
+      err.yaEsCliente = !!data.ya_es_cliente;       // ya tiene ficha en el club
+      err.necesitaCodigo = !!data.necesita_codigo;  // ...y nunca creó su acceso a la app
+      throw err;
+    }
     localStorage.setItem('sp_token', data.data.token);
     localStorage.setItem('sp_user', JSON.stringify(data.data.cliente));
     setUser(data.data.cliente);

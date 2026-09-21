@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { destinoTrasEntrar } from '../lib/destino';
 import { useAuth } from '../context/AuthContext';
 import Isotipo from '../components/Isotipo';
@@ -17,8 +17,16 @@ const WA_BOT_NUMBER = '528662081434'; // WhatsApp del bot Sierra Padel
 // step 4 → forgot: ingresar OTP + nuevo PIN
 
 export default function Login() {
-  const [step, setStep]         = useState(1);
-  const [telefono, setTelefono] = useState('');
+  // Registro nos puede mandar a alguien ya identificado: con su teléfono y con el paso al
+  // que va. 'codigo' = tiene ficha y nunca creó acceso · 'pin' = ya tiene PIN.
+  const location = useLocation();
+  const entrada = location.state || {};
+  const [step, setStep]         = useState(entrada.paso === 'codigo' ? 3 : entrada.paso === 'pin' ? 2 : 1);
+  const [telefono, setTelefono] = useState(entrada.telefono || '');
+  // Lo que traía escrito el backend al rechazarlo en el registro. Se le repite aquí para
+  // que entienda por qué cambió de pantalla; no es un error suyo.
+  const [aviso, setAviso]       = useState(entrada.aviso || '');
+  const [sinCuenta, setSinCuenta] = useState(false);
   const [pin, setPin]           = useState('');
   const [otp, setOtp]           = useState('');
   const [nuevoPin, setNuevoPin] = useState('');
@@ -33,6 +41,9 @@ export default function Login() {
     const digits = telefono.replace(/[^0-9]/g, '');
     if (digits.length < 10) return setError('Ingresa tu numero de 10 digitos');
     setError('');
+    // Lo que sabíamos del número ANTERIOR no vale para éste.
+    setSinCuenta(false);
+    setAviso('');
     setTelefono(digits);
     setStep(2);
   }
@@ -70,7 +81,14 @@ export default function Login() {
         body: JSON.stringify({ telefono }),
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'No se pudo enviar el codigo. Intenta de nuevo.');
+      if (!data.ok) {
+        // El callejón #1: este número no es cliente. No hay código que mandar — lo que le
+        // toca es registrarse, y ahí él elige su PIN. Se le abre la puerta, no se le deja
+        // leyendo un texto que suena a falla del sistema.
+        setSinCuenta(!!data.sin_cuenta);
+        throw new Error(data.error || 'No se pudo enviar el codigo. Intenta de nuevo.');
+      }
+      setSinCuenta(false);
       setStep(4);
     } catch (err) {
       setError(err.message);
@@ -155,6 +173,9 @@ export default function Login() {
             <p className="text-white font-black text-xl">Ingresa tu PIN</p>
             <p className="text-white/60 text-sm mt-1">{telefono}</p>
           </div>
+          {aviso && !error && (
+            <p className="text-white/80 text-sm text-center bg-white/10 rounded-2xl px-4 py-3">{aviso}</p>
+          )}
           <form onSubmit={handlePin} className="flex flex-col gap-4">
             <PinInput value={pin} onChange={setPin} onComplete={v => handlePin(null, v)} />
             {error && <p className="text-yellow-300 text-sm text-center font-medium">{error}</p>}
@@ -168,13 +189,13 @@ export default function Login() {
           </form>
           <div className="flex flex-col items-center gap-2">
             <button
-              onClick={() => { setStep(3); setError(''); }}
+              onClick={() => { setStep(3); setError(''); setSinCuenta(false); }}
               className="text-white/60 text-sm underline"
             >
               Olvide mi PIN
             </button>
             <button
-              onClick={() => { setStep(1); setPin(''); setError(''); }}
+              onClick={() => { setStep(1); setPin(''); setError(''); setSinCuenta(false); setAviso(''); }}
               className="text-white/40 text-xs"
             >
               Cambiar numero
@@ -193,15 +214,27 @@ export default function Login() {
             </p>
           </div>
 
+          {aviso && !error && (
+            <p className="text-white/80 text-sm text-center bg-white/10 rounded-2xl px-4 py-3">{aviso}</p>
+          )}
           {error && <p className="text-yellow-300 text-sm text-center font-medium">{error}</p>}
 
-          <button
-            onClick={handleSolicitarOTP}
-            className="w-full py-3 rounded-2xl bg-white text-sp-green font-black text-base"
-            disabled={loading}
-          >
-            {loading ? 'Enviando codigo…' : 'Enviarme el codigo'}
-          </button>
+          {sinCuenta ? (
+            <button
+              onClick={() => navigate(`/registro${window.location.search}`, { state: { telefono } })}
+              className="w-full py-3 rounded-2xl bg-white text-sp-green font-black text-base"
+            >
+              Crear mi cuenta
+            </button>
+          ) : (
+            <button
+              onClick={handleSolicitarOTP}
+              className="w-full py-3 rounded-2xl bg-white text-sp-green font-black text-base"
+              disabled={loading}
+            >
+              {loading ? 'Enviando codigo…' : 'Enviarme el codigo'}
+            </button>
+          )}
 
           <p className="text-white/40 text-xs text-center">
             ¿Problemas para recibirlo?{' '}

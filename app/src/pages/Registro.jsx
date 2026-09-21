@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { destinoTrasEntrar } from '../lib/destino';
 import { useAuth } from '../context/AuthContext';
 import Isotipo from '../components/Isotipo';
@@ -10,8 +10,11 @@ import NivelSelector from '../components/NivelSelector';
 // Las DOS casillas (términos y avisos) son obligatorias para crear la cuenta.
 export default function Registro() {
   const [step, setStep] = useState(1);
+  const location = useLocation();
   const [nombre, setNombre] = useState('');
-  const [telefono, setTelefono] = useState('');
+  // Viene lleno cuando llega desde Login (tecleó un número que no tiene cuenta): no se le
+  // vuelve a pedir lo que acaba de escribir.
+  const [telefono, setTelefono] = useState(location.state?.telefono || '');
   // 🎂 OPCIONAL a propósito (German 27-ago-2026): un campo obligatorio más en el alta es un
   // motivo más para abandonarla, y al que no la ponga aquí se la pedimos en su Perfil.
   const [cumple, setCumple] = useState('');
@@ -58,6 +61,24 @@ export default function Registro() {
       localStorage.setItem('recienRegistrado', '1');
       navigate(destinoTrasEntrar(window.location.search));
     } catch (err) {
+      // 🔑 EL CALLEJÓN #2 (21-sep-2026). La mayoría de los clientes los dio de alta el
+      // mostrador: existen en el club y NUNCA tuvieron PIN (al 21-sep eran 102 de 324).
+      // El backend los rechaza aquí con el consejo correcto —"toca Olvidé mi PIN"— pero
+      // ESTA PANTALLA NO TIENE ESE BOTÓN: había que salirse, buscar "¿Ya tienes cuenta?",
+      // teclear otra vez el teléfono y encontrar un enlace chico. Ahí se perdían.
+      // El backend ya mandaba `necesita_codigo` desde el 4-sep y nadie lo leía.
+      if (err.yaEsCliente) {
+        navigate(`/login${window.location.search}`, {
+          state: {
+            telefono,
+            // necesita_codigo = tiene ficha pero nunca creó su acceso → directo al código.
+            // Si ya tiene PIN, lo que le falta es recordarlo, no un código.
+            paso: err.necesitaCodigo ? 'codigo' : 'pin',
+            aviso: err.message,
+          },
+        });
+        return;
+      }
       setError(err.message);
     } finally {
       setLoading(false);
