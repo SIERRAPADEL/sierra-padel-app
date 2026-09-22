@@ -598,6 +598,34 @@ export default function Home() {
     });
   }, []);
 
+  // 🔴 LOS PRECIOS DEL BOTANERO SE LEEN, NO SE ESCRIBEN A MANO.
+  // Hasta el 21-sep-2026 esta tarjeta decía «6:30 $100 · 8:00 $50» como TEXTO LITERAL. Ese
+  // día German invirtió los turnos (6:30 pasó a $50 y 8:00 a $100) y la app se quedó
+  // anunciando lo contrario de lo que el sistema cobra — al jugador le habríamos prometido
+  // un precio y cobrado otro. Ahora sale de /botanero/estado, que es la misma fuente que
+  // usa la pantalla del Botanero y la que de verdad cobra.
+  // 🔑 Mientras no se sepa, NO se inventa un número: la tarjeta dice «dos turnos» y ya.
+  const [turnosBota, setTurnosBota] = useState(null);
+  useEffect(() => {
+    apiFetch('/botanero/estado')
+      .then(d => {
+        const t = d?.ok ? (d.data?.turnos || []) : [];
+        if (t.length) setTurnosBota(t.map(x => ({ hora: x.hora, precio: Number(x.precio) })));
+      })
+      .catch(() => {});   // sin red, la tarjeta se queda con su texto genérico
+  }, []);
+  // El sistema habla en 24 h (18:30); la tarjeta siempre le habló al cliente en 12 h (6:30).
+  const doce = (hhmm) => {
+    const [h, m] = String(hhmm || '').split(':');
+    const hn = Number(h);
+    if (!Number.isFinite(hn)) return hhmm;
+    const h12 = hn % 12 === 0 ? 12 : hn % 12;
+    return h12 + ':' + (m || '00');
+  };
+  const textoBota = turnosBota
+    ? 'Liga individual · ' + turnosBota.map(t => doce(t.hora) + ' $' + t.precio).join(' · ')
+    : 'Liga individual · dos turnos cada viernes';
+
   return (
     <div className="page safe-bottom">
       {/* Completa tu perfil: nivel de juego (cuentas previas al requisito) */}
@@ -725,7 +753,7 @@ export default function Home() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sp-gray font-bold text-[15px]">Viernes Botanero</p>
-              <p className="text-gray-400 text-[13px]">Liga individual · 6:30 $100 · 8:00 $50</p>
+              <p className="text-gray-400 text-[13px]">{textoBota}</p>
             </div>
             <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Ver →</span>
           </div>
