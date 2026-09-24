@@ -128,7 +128,8 @@ export default function PromoExpressBanner() {
           if (String(d.tipo || it.tipo) === '2') {
             navigate(`/reservar?${new URLSearchParams({
               promo: d.data.codigo, titulo: it.titulo,
-              precio: d.precio_preferencial || it.precio_preferencial || '',
+              // Sólo se MUESTRA (el servidor pone el precio). En un paquete, el total anunciado.
+              precio: it.precio_anunciado || d.precio_preferencial || it.precio_preferencial || '',
             })}`);
           }
         }
@@ -225,12 +226,15 @@ export default function PromoExpressBanner() {
                 pierde una reserva, así que se dicen por separado y con todas sus letras. */}
             {abierta.hora_desde && (
               <p className="text-sm text-gray-500 mt-2 font-semibold">
-                🎾 Para jugar de {String(abierta.hora_desde).slice(0, 5)} a {String(abierta.hora_hasta || '').slice(0, 5)}
+                🎾 {abierta.hora_hasta
+                  ? `Para jugar de ${String(abierta.hora_desde).slice(0, 5)} a ${String(abierta.hora_hasta).slice(0, 5)}`
+                  : `Para jugar desde las ${String(abierta.hora_desde).slice(0, 5)}`}
               </p>
             )}
             {abierta.precio_preferencial != null && (
               <p className="text-sm text-sp-green mt-1 font-bold">
-                Precio de la promo: ${Math.round(Number(abierta.precio_preferencial))}
+                {/* Paquete: el total anunciado (cancha + bote), no sólo la cancha. */}
+                Precio de la promo: ${Math.round(Number(abierta.precio_anunciado ?? abierta.precio_preferencial))}
               </p>
             )}
 
