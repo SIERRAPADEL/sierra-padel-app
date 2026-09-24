@@ -92,8 +92,8 @@ export default function PromoExpressBanner() {
   // que sólo lleve a una pantalla funcione sin volver a tocar esto.
   const esLink = it => !!(it && it.url);
 
-  async function reclamar(it) {
-    if (reclamando) return;
+  async function reclamar(it, extra) {
+    if (reclamando && !extra) return;
     setReclamando(true);
     setErrorMsg('');
     try {
@@ -104,9 +104,19 @@ export default function PromoExpressBanner() {
       const r = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
-        body: JSON.stringify(pideUbicacion(it) ? { ubicacion } : {}),
+        body: JSON.stringify({ ...(pideUbicacion(it) ? { ubicacion } : {}), ...(extra || {}) }),
       });
       const d = await r.json();
+      // Promo de una sola rama (German, 24-sep: «promo mujeres»): si su nivel no dice si es
+      // mujer u hombre, el servidor pregunta. Se contesta UNA vez y queda en su ficha.
+      if (!d.ok && d.pide_sexo && !extra) {
+        const quien = d.solo_sexo === 'H' ? 'hombres' : 'mujeres';
+        const es = window.confirm(`Esta promo es exclusiva para ${quien}.\n\n¿Eres ${d.solo_sexo === 'H' ? 'hombre' : 'mujer'}?`);
+        if (es) return reclamar(it, { sexo: d.solo_sexo });
+        setErrorMsg(d.error || `Esta promo es exclusiva para ${quien}.`);
+        setReclamando(false);
+        return;
+      }
       if (d.ok) {
         setAbierta(null);
         if (it.origen === 'beneficio') {
