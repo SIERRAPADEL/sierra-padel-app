@@ -432,6 +432,9 @@ export default function Reservar() {
 
   // Promo de bienvenida: primera renta $200 (el servidor decide si aplica)
   const [primera, setPrimera] = useState(null); // { elegible, precio }
+  // Ella escoge si la usa (German 25-sep): guardarla le deja la 1ª cancha a precio normal,
+  // que es lo que pide el 2x1 de cumpleaños.
+  const [usarPrimera, setUsarPrimera] = useState(true);
   useEffect(() => {
     apiFetch('/reservas/primera-renta')
       .then(d => { if (d?.ok) setPrimera(d); })
@@ -492,6 +495,8 @@ export default function Reservar() {
     const body = tipo === 'cancha'
       ? { fecha, hora, tipo: 'renta', cancha }
       : { fecha: fechaClase, hora: horaSel, tipo: 'clase', instructor: coachSel };
+
+    if (tipo === 'cancha' && !tienePromo && primera?.elegible && !usarPrimera) body.sin_primera = true;
 
     // Adjuntar código de promo express si viene de tipo 2
     if (tienePromo) {
@@ -727,12 +732,26 @@ export default function Reservar() {
                 {!tienePromo && primera?.elegible && (
                   <div className="mt-2 bg-white/70 rounded-xl px-3 py-2">
                     <p className="text-xs text-sp-green-dark font-bold">
-                      🎉 Tu primera renta a ${primera.precio || 200} comprando 1 bote de pelotas Sierra Padel{primera.bote?.precio ? ` ($${primera.bote.precio})` : ''}
+                      🎉 Tienes tu primera renta a ${primera.precio || 200} comprando 1 bote de pelotas Sierra Padel{primera.bote?.precio ? ` ($${primera.bote.precio})` : ''}
                     </p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
-                      Cancha completa · 90 min. El bote se paga al llegar al club
-                      {primera.bote?.precio ? ` — total: $${(primera.precio || 200) + primera.bote.precio} ($${primera.precio || 200} cancha + $${primera.bote.precio} bote)` : ''}.
-                      Válida una sola vez y solo para quien hace la reservación. Se aplica sola al confirmar.
+                    <div className="flex gap-2 mt-2" role="radiogroup" aria-label="¿Usar tu primera renta?">
+                      <button type="button" role="radio" aria-checked={usarPrimera}
+                        onClick={() => setUsarPrimera(true)}
+                        className={`flex-1 text-xs font-bold rounded-lg px-2 py-2 border ${usarPrimera ? 'bg-sp-green text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}>
+                        Usarla ahora (${primera.precio || 200})
+                      </button>
+                      <button type="button" role="radio" aria-checked={!usarPrimera}
+                        onClick={() => setUsarPrimera(false)}
+                        className={`flex-1 text-xs font-bold rounded-lg px-2 py-2 border ${!usarPrimera ? 'bg-sp-green text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}>
+                        Precio normal, la guardo
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-1.5">
+                      {usarPrimera
+                        ? <>Cancha completa · 90 min. El bote se paga al llegar al club
+                            {primera.bote?.precio ? ` — total: $${(primera.precio || 200) + primera.bote.precio} ($${primera.precio || 200} cancha + $${primera.bote.precio} bote)` : ''}.
+                            Válida una sola vez y solo para quien hace la reservación.</>
+                        : <>Esta cancha va a precio normal y tu primera renta a ${primera.precio || 200} se queda para otro día. Elige esto si vas a usar otra promo, como tu 2x1 de cumpleaños.</>}
                     </p>
                   </div>
                 )}
