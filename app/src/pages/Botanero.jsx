@@ -181,8 +181,19 @@ export default function Botanero() {
           <p className="text-gray-500 text-[13px] mt-1 leading-relaxed">
             Juegas <b>individual</b>: 3 sets rotando de pareja, y tu récord te va subiendo de cancha semana a semana.
             Michelob <b>2x1 de 8 a 10pm</b> solo para jugadores de la liga, y el futbol en las pantallas.
-            No es inscripción: cada semana te apuntas si quieres jugar. Cupo limitado.
+            No es inscripción: cada semana te apuntas si quieres jugar. Cupo limitado*.
           </p>
+          {/* Anotación de precios por cancha extra (German 25-sep). Escala de club_config.botanero:
+              canchas 1–4 al precio del turno; 5ª +$50, 6ª +$100, 7ª +$150; tope $200 por lugar. */}
+          {(data?.turnos || []).some(t => t.precio != null) && (
+            <p className="text-gray-400 text-[12px] mt-2 leading-relaxed">
+              * Precio por lugar, por orden de llegada. Después de la 4ª cancha el lugar sube:
+              {(data?.turnos || []).filter(t => t.precio != null).map(t => {
+                const p = Number(t.precio), x = (r) => Math.min(p + r, 200);
+                return <span key={t.turno} className="block"><b>{t.hora}</b>: canchas 1–4 ${p} · 5ª ${x(50)} · 6ª ${x(100)} · 7ª ${x(150)}</span>;
+              })}
+            </p>
+          )}
         </div>
 
         {/* ⚠️ Al partir el ranking en dos, `ranking` dejó de ser un arreglo: si esto siguiera
@@ -226,13 +237,6 @@ export default function Botanero() {
                 <div style={{ height: 8, borderRadius: 6, background: '#eef2e6', overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${Math.min(100, (t.apuntados / t.cupo) * 100)}%`, background: lleno ? '#e0a800' : '#84cc16', transition: 'width .3s' }} />
                 </div>
-                {/* Anotación de precios por cancha (German 25-sep). Escala de club_config.botanero:
-                    canchas 1–4 al precio del turno; 5ª +$50, 6ª +$100, 7ª +$150; tope $200 por lugar. */}
-                {t.precio != null && (
-                  <p className="text-[12px] mt-1.5 text-gray-500">
-                    * Canchas 1–4: ${Number(t.precio)} · 5ª: ${Math.min(Number(t.precio) + 50, 200)} · 6ª: ${Math.min(Number(t.precio) + 100, 200)} · 7ª: ${Math.min(Number(t.precio) + 150, 200)} por lugar, por orden de llegada.
-                  </p>
-                )}
               </div>
 
               {t.mixto ? (
