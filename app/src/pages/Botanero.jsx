@@ -131,7 +131,9 @@ export default function Botanero() {
             <p className="text-[14px] text-gray-600 mt-3 leading-snug">
               {avisoEspera.motivo_espera === 'cerrado'
                 ? <>La lista de este turno cerró a las <b>{avisoEspera.cierra}</b>, media hora antes de empezar.</>
-                : <>Este turno ya está lleno.</>}
+                : avisoEspera.motivo_espera === 'sin_canchas'
+                  ? <>Ya no hay canchas disponibles en este turno.</>
+                  : <>Este turno ya está lleno.</>}
               {' '}<b>Todavía no tienes lugar.</b> Si alguien no llega o se baja, entras
               automáticamente y te llega una notificación.
             </p>
@@ -201,7 +203,22 @@ export default function Botanero() {
         {loading ? (
           <div className="card py-8 text-center text-gray-400 text-sm">Cargando…</div>
         ) : (data?.turnos || []).map(t => {
-          const lleno = t.apuntados >= t.cupo;
+          // El cupo de verdad son las canchas que el club PUEDE dar a esa hora (German 25-sep:
+          // «cuando ya no haya espacio… avisar que ya no hay canchas, pero aceptar lista de espera»).
+          const cupoReal = t.canchas_posibles != null ? t.canchas_posibles * 4 : t.cupo;
+          const lleno = t.apuntados >= cupoReal || !!t.sin_canchas;
+          // Precio del lugar por cancha: de la 5ª en adelante sube (German 25-sep).
+          // Mientras el servidor no mande `precios_canchas`, se arma con la escala vigente del
+          // club (club_config.botanero al 25-sep: +$50/+$100/+$150, tope $200 por lugar).
+          const nNorm = t.canchas_normales || 4;
+          const pc = (t.precios_canchas && t.precios_canchas.length)
+            ? t.precios_canchas
+            : (Number(t.precio) >= 0 && t.precio != null
+                ? [...Array(nNorm).fill(Number(t.precio)), ...[50, 100, 150].map(r => Math.min(Number(t.precio) + r, 200))]
+                : []);
+          const tramoPrecios = pc.length > nNorm
+            ? [`canchas 1–${nNorm}: $${pc[0]}`, ...pc.slice(nNorm).map((p, i) => `${nNorm + i + 1}ª: $${p}`)].join(' · ')
+            : null;
           return (
             <div key={t.turno} className="card py-4">
               <div className="flex items-center justify-between">
@@ -220,12 +237,22 @@ export default function Botanero() {
 
               <div className="mt-3">
                 <div className="flex justify-between text-[12px] text-gray-400 mb-1">
-                  <span>{t.apuntados}/{t.cupo} lugares{t.en_espera > 0 ? ` · ${t.en_espera} en espera` : ''}</span>
-                  <span>{t.estado === 'cerrada' ? 'Lista cerrada' : (lleno ? 'Lleno' : 'Lista abierta')}</span>
+                  <span>{t.apuntados}/{cupoReal} lugares{t.en_espera > 0 ? ` · ${t.en_espera} en espera` : ''}</span>
+                  <span>{t.estado === 'cerrada' ? 'Lista cerrada' : (t.sin_canchas ? 'Sin canchas disponibles' : (lleno ? 'Lleno' : 'Lista abierta'))}</span>
                 </div>
                 <div style={{ height: 8, borderRadius: 6, background: '#eef2e6', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.min(100, (t.apuntados / t.cupo) * 100)}%`, background: lleno ? '#e0a800' : '#84cc16', transition: 'width .3s' }} />
+                  <div style={{ height: '100%', width: `${Math.min(100, (t.apuntados / (cupoReal || 1)) * 100)}%`, background: lleno ? '#e0a800' : '#84cc16', transition: 'width .3s' }} />
                 </div>
+                {t.sin_canchas && t.estado !== 'cerrada' && (
+                  <p className="text-[12px] mt-1.5 font-bold text-amber-700">
+                    Ya no hay canchas disponibles. Anótate en la lista de espera: si alguien se baja, entras y te avisamos.
+                  </p>
+                )}
+                {tramoPrecios && (
+                  <p className="text-[12px] mt-1.5 text-gray-500">
+                    💲 Precio del lugar: <b>{tramoPrecios}</b>. Los primeros {nNorm * 4} en anotarse pagan ${pc[0]}; después de la {nNorm}ª cancha el lugar sube.
+                  </p>
+                )}
               </div>
 
               {t.mixto ? (
@@ -425,7 +452,9 @@ export default function Botanero() {
         )}
 
         <p className="text-gray-400 text-[12px] text-center px-4 leading-relaxed">
-          La cuota se paga en el club al llegar. La lista de cada turno cierra <b>media hora
+          La cuota se paga en el club al llegar. El precio va por <b>orden de llegada</b>: los primeros
+          16 de cada turno pagan el precio base y, después de la 4ª cancha, el lugar sube (los costos
+          vienen en cada turno). La lista de cada turno cierra <b>media hora
           antes</b> de empezar; después te puedes anotar, pero quedas en lista de espera.
           Si se libera un lugar, entras y te avisamos con una notificación.
           Si no vas a poder, bájate con tiempo — tu lugar es oro para el que sigue.
