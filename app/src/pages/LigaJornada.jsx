@@ -144,7 +144,18 @@ export default function LigaJornada({ vista }) {
     total: bloques.length,
   }), [jornada, liga, bloques.length]);
 
-  const col = RAMA[liga?.categoria] || RAMA._;
+  // 🥩 El patrocinador de ESTA jornada (German 25-sep-2026: J3 Liga Miércoles · Carnes Luis).
+  // Sólo el de la jornada: si la jornada no tiene, no se pinta nada.
+  const [patro, setPatro] = useState(null);
+  useEffect(() => {
+    if (!jornada?.id) { setPatro(null); return; }
+    apiFetch(`/media/liga/jornada/${jornada.id}`)
+      .then((d) => setPatro(d?.data && (d.data.sponsor_url || d.data.sponsor_nombre) ? d.data : null))
+      .catch(() => setPatro(null));
+  }, [apiFetch, jornada?.id]);
+
+  // La jornada patrocinada se pinta con la paleta de la marca; las demás, con la de su rama.
+  const col = (patro && patro.colores && patro.colores.a) ? patro.colores : (RAMA[liga?.categoria] || RAMA._);
   const fondo = `linear-gradient(160deg,${col.a} 0%,${col.b} 55%,${col.c} 100%)`;
 
   if (cargando) {
@@ -179,6 +190,7 @@ export default function LigaJornada({ vista }) {
         <div className="px-6 py-8 text-center">
           <Encabezado liga={liga} jornada={jornada} tinte={col.tinte}
                       linea={`${fmtFecha(b.fecha || jornada.fecha)} · Cancha ${b.cancha ?? '—'}${b.hora ? ` · ${hhmm(b.hora)}` : ''}`} />
+          <Patrocinio m={patro} oscuro />
 
           {campeon ? (
             <>
@@ -352,6 +364,7 @@ export default function LigaJornada({ vista }) {
         <div className="px-5 py-8 text-center">
           <Encabezado liga={liga} jornada={jornada} tinte={col.tinte}
                       linea={`Así quedó la escalera · ${ranking.length} jugador${ranking.length === 1 ? '' : 'es'}`} />
+          <Patrocinio m={patro} oscuro />
 
           <div className="mt-6 rounded-3xl bg-black/25 px-4 py-1.5 text-left">
             {ranking.map((r, i) => {
@@ -422,6 +435,7 @@ export default function LigaJornada({ vista }) {
       </div>
 
       <div className="px-4 py-4 flex flex-col gap-2.5">
+        <Patrocinio m={patro} />
         {bloques.map((b) => {
           const orden = ordenDelBloque(b);
           const hay = jugado(b);
@@ -595,6 +609,29 @@ function PieDeMarca() {
           Facebook {MARCA.facebook}
         </a>
       </p>
+    </div>
+  );
+}
+
+/** El patrocinador de la jornada: leyenda, logo y mascota. `oscuro` = sobre el fondo de la tarjeta. */
+function Patrocinio({ m, oscuro }) {
+  if (!m) return null;
+  return (
+    <div className={`mt-4 rounded-2xl px-4 py-2.5 flex items-center gap-3 ${oscuro ? 'bg-black/25' : 'bg-white border border-gray-100 shadow-sm'}`}>
+      <div className="flex-1 min-w-0 text-left">
+        <p className={`text-[10px] font-black tracking-widest ${oscuro ? 'text-white/60' : 'text-gray-400'}`}>
+          {m.leyenda || 'PATROCINA'}
+        </p>
+        {m.sponsor_url
+          ? <img src={m.sponsor_url} alt={m.sponsor_nombre || 'Patrocinador'} loading="lazy"
+                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                 className="h-12 max-w-full object-contain mt-1" />
+          : <p className={`font-black text-[16px] ${oscuro ? 'text-white' : 'text-sp-gray'}`}>{m.sponsor_nombre}</p>}
+      </div>
+      {m.mascota_url && (
+        <img src={m.mascota_url} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }}
+             className="h-20 w-auto object-contain shrink-0" />
+      )}
     </div>
   );
 }

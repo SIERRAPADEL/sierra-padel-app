@@ -83,7 +83,14 @@ export default function Ligas() {
           // lleve el rechazo hasta el final del formulario.
           // El verde es el de la marca; el rosa se eligió con el mismo peso visual para que
           // la femenil no se lea como una versión secundaria de la varonil.
-          const rama = RAMA[l.categoria] || RAMA._;
+          const ramaBase = RAMA[l.categoria] || RAMA._;
+          // 🥩 Mientras su próxima jornada está patrocinada, ESTA liga (y sólo ella) se pinta con
+          // los colores de la marca (German 25-sep-2026: «la app no cambia de temática, sólo la
+          // liga en cuestión se pinta de los colores del patrocinador»).
+          const pc = l.patrocinio && l.patrocinio.colores;
+          const rama = pc && pc.a
+            ? { ...ramaBase, fondo: `linear-gradient(135deg, ${pc.a}, ${pc.b || pc.a})`, sub: pc.tinte || ramaBase.sub, acento: pc.b || ramaBase.acento }
+            : ramaBase;
           return (
             <button key={l.id} onClick={() => navigate(`/liga/${l.id}`)}
                     className="text-left active:scale-[0.98] transition-transform">
@@ -118,6 +125,26 @@ export default function Ligas() {
                       ? 'Sé el primero en apuntarte'
                       : `${l.inscritos} ${l.inscritos === 1 ? 'inscrito' : 'inscritos'}`}
                   </p>
+                  {/* 🥩 Patrocinador de la PRÓXIMA jornada (German 25-sep-2026): sólo mientras es la siguiente. */}
+                  {l.patrocinio && (
+                    <div className="mt-2 rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black tracking-widest text-gray-400">
+                          {l.patrocinio.leyenda || `PATROCINA LA JORNADA ${l.patrocinio.jornada}`}
+                        </p>
+                        {l.patrocinio.sponsor_url
+                          ? <img src={l.patrocinio.sponsor_url} alt={l.patrocinio.sponsor_nombre || 'Patrocinador'} loading="lazy"
+                                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                 className="h-10 max-w-full object-contain mt-0.5" />
+                          : <p className="font-black text-sp-gray text-[14px]">{l.patrocinio.sponsor_nombre}</p>}
+                      </div>
+                      {l.patrocinio.mascota_url && (
+                        <img src={l.patrocinio.mascota_url} alt="" loading="lazy"
+                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                             className="h-16 w-auto object-contain shrink-0" />
+                      )}
+                    </div>
+                  )}
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-[13px] text-gray-400">
                       Te acomodan por nivel · subes jugando
