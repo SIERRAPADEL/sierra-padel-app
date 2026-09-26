@@ -93,6 +93,14 @@ export default function PromoExpressBanner() {
   const esLink = it => !!(it && it.url);
 
   async function reclamar(it, extra) {
+    // 🎂 2x1 de cumpleaños (German 25-sep): el cupón ya es suyo; se va directo a apartar
+    // LAS DOS canchas de una vez, sin el viaje de ida y vuelta de antes.
+    if (it.dos_canchas) {
+      setAbierta(null);
+      navigate(`/reservar?${new URLSearchParams({ cumple: it.dos_canchas.codigo, titulo: it.titulo,
+        desde: it.dos_canchas.desde || '', hasta: it.dos_canchas.hasta || '' })}`);
+      return;
+    }
     if (reclamando && !extra) return;
     setReclamando(true);
     setErrorMsg('');

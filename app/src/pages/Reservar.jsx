@@ -402,6 +402,11 @@ export default function Reservar() {
   const promoTitulo    = urlParams.get('titulo') || null;
   const promoPrecio    = urlParams.get('precio') ? parseFloat(urlParams.get('precio')) : null;
   const tienePromo     = !!promoCodigo;
+  // 🎂 2x1 de cumpleaños (German 25-sep): se reservan LAS DOS canchas en una sola jugada.
+  const cumpleCodigo   = urlParams.get('cumple') || null;
+  const cumpleDesde    = urlParams.get('desde') || '';
+  const cumpleHasta    = urlParams.get('hasta') || '';
+  const esCumple       = !!cumpleCodigo;
 
   // Puede venir a "Mis reservas" desde Mi cuenta (state) o desde un push (?tab=mis)
   const [mainTab, setMainTab] = useState(
@@ -410,7 +415,8 @@ export default function Reservar() {
   const [tipo, setTipo] = useState('cancha'); // 'cancha' | 'clase'
 
   // --- Cancha ---
-  const [fecha, setFecha]             = useState(hoyISO());
+  const [fecha, setFecha]             = useState(esCumple && cumpleDesde > hoyISO() ? cumpleDesde : hoyISO());
+  const [canchas2, setCanchas2]       = useState([]);     // 2x1: las dos canchas elegidas
   const [hora, setHora]               = useState(null);
   const [horasDisp, setHorasDisp]     = useState(null);   // [{hora, libres}] del backend
   const [canchasDisp, setCanchasDisp] = useState(null);
@@ -457,6 +463,7 @@ export default function Reservar() {
     if (!fecha || !hora) { setCanchasDisp(null); return; }
     setLoadingCanchas(true);
     setCancha(null);
+    setCanchas2([]);
     apiFetch(`/reservas/canchas-disponibles?fecha=${fecha}&hora=${hora}`)
       .then(d => setCanchasDisp(d.ok ? d.canchas : []))
       .catch(() => setCanchasDisp([]))
@@ -489,9 +496,30 @@ export default function Reservar() {
 
   function switchTipo(t) { setTipo(t); setError(''); setDone(null); }
 
+  function elegirCancha(c) {
+    if (!esCumple) { setCancha(c); return; }
+    setCanchas2(prev => {
+      const sig = prev.includes(c) ? prev.filter(x => x !== c) : (prev.length >= 2 ? [prev[1], c] : [...prev, c]);
+      setCancha(sig[0] || null);   // la tarifa que se muestra es la de la cancha que se paga
+      return sig;
+    });
+  }
+
   async function handleConfirmar() {
     setLoading(true);
     setError('');
+    if (esCumple && tipo === 'cancha') {
+      const d = await apiFetch('/reservas/solicitar-2x1', {
+        method: 'POST',
+        body: JSON.stringify({ fecha, hora, canchas: canchas2, promo_codigo: cumpleCodigo }),
+      });
+      setLoading(false);
+      if (d.ok) {
+        setDone({ fecha, hora, detalle: `Canchas ${canchas2[0]} y ${canchas2[1]} · la cancha ${canchas2[1]} va por la casa 🎂`,
+          promo: null, primera: null });
+      } else setError(d.error || 'No se pudo enviar la solicitud');
+      return;
+    }
     const body = tipo === 'cancha'
       ? { fecha, hora, tipo: 'renta', cancha }
       : { fecha: fechaClase, hora: horaSel, tipo: 'clase', instructor: coachSel };
@@ -531,7 +559,7 @@ export default function Reservar() {
     setTarifa(null);
   }
 
-  const puedeConfirmarCancha = cancha && hora && fecha;
+  const puedeConfirmarCancha = hora && fecha && (esCumple ? canchas2.length === 2 : cancha);
   const puedeConfirmarClase  = coachSel && horaSel && fechaClase;
 
   // Grid de horas: usa la disponibilidad del backend; si no cargó, el grid fijo de siempre.
@@ -638,13 +666,24 @@ export default function Reservar() {
         {/* ── CANCHA ── */}
         {tipo === 'cancha' && (
           <>
+            {esCumple && (
+              <div className="card border-0" style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))' }}>
+                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--sp-on-dark)' }}>🎂 Tu promo de cumpleaños</p>
+                <p style={{ color: 'white', fontWeight: 900, fontSize: 18, marginTop: 4 }}>Reserva 2 canchas: la 2ª va por la casa</p>
+                <p className="text-sm mt-1" style={{ color: '#c4c4d8' }}>
+                  Elige el día{cumpleDesde && cumpleHasta ? ` (del ${formatDate(cumpleDesde)} al ${formatDate(cumpleHasta)})` : ''}, la hora y marca <b style={{ color: 'white' }}>dos canchas</b>.
+                  Pagas una a precio normal y la otra es gratis. Caben 8.
+                </p>
+              </div>
+            )}
             <div className="card">
               <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">Fecha</p>
               <input
                 type="date"
                 className="input-field"
                 value={fecha}
-                min={hoyISO()}
+                min={esCumple && cumpleDesde > hoyISO() ? cumpleDesde : hoyISO()}
+                max={esCumple && cumpleHasta ? cumpleHasta : undefined}
                 onChange={e => { setFecha(e.target.value); setHora(null); }}
               />
             </div>
@@ -681,7 +720,7 @@ export default function Reservar() {
             {hora && (
               <div className="card">
                 <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">
-                  Canchas disponibles
+                  {esCumple ? `Canchas disponibles · marca 2 (${canchas2.length}/2)` : 'Canchas disponibles'}
                 </p>
                 {loadingCanchas ? (
                   <div className="flex justify-center py-6">
@@ -694,9 +733,10 @@ export default function Reservar() {
                     {(canchasDisp || []).map(c => (
                       <button
                         key={c}
-                        onClick={() => setCancha(c)}
+                        onClick={() => elegirCancha(c)}
+                        aria-pressed={esCumple ? canchas2.includes(c) : cancha === c}
                         className={`py-3 rounded-xl text-sm font-bold border transition-all active:scale-95 ${
-                          cancha === c
+                          (esCumple ? canchas2.includes(c) : cancha === c)
                             ? 'bg-sp-green text-white border-sp-green'
                             : 'bg-white text-sp-gray border-gray-200'
                         }`}
@@ -716,7 +756,14 @@ export default function Reservar() {
                 <p className="text-xs text-sp-green-dark font-semibold uppercase tracking-wide mb-2">Resumen</p>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-black text-sp-gray text-base">Cancha {cancha}</p>
+                    <p className="font-black text-sp-gray text-base">
+                      {esCumple ? `Canchas ${canchas2[0]} y ${canchas2[1]}` : `Cancha ${cancha}`}
+                    </p>
+                    {esCumple && (
+                      <p className="text-xs text-sp-green-dark font-semibold mt-0.5">
+                        Cancha {canchas2[0]}: precio normal{tarifa?.precio != null ? ` $${tarifa.precio}` : ''} · Cancha {canchas2[1]}: $0 🎂
+                      </p>
+                    )}
                     <p className="text-sm text-gray-500 capitalize">{formatDate(fecha)} · {hora} · 90 min</p>
                   </div>
                   {tarifa?.precio != null && (
@@ -729,7 +776,7 @@ export default function Reservar() {
                 {tienePromo && promoPrecio && (
                   <p className="text-xs text-sp-green-dark mt-1 font-semibold">⚡ Con tu promo: ${promoPrecio}</p>
                 )}
-                {!tienePromo && primera?.elegible && (
+                {!tienePromo && !esCumple && primera?.elegible && (
                   <div className="mt-2 bg-white/70 rounded-xl px-3 py-2">
                     <p className="text-xs text-sp-green-dark font-bold">
                       🎉 Tienes tu primera renta a ${primera.precio || 200} comprando 1 bote de pelotas Sierra Padel{primera.bote?.precio ? ` ($${primera.bote.precio})` : ''}
