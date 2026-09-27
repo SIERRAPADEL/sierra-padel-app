@@ -743,7 +743,6 @@ function Patrocinio({ m, oscuro }) {
  * y diferencia de juegos, y la marca abajo — igual que la historia de Instagram.
  */
 function BloqueDiseno({ liga, jornada, b, orden, hayResultado, patro, col }) {
-  const VERDE = '#bde52f';
   return (
     <div className="text-white" style={{ fontFamily: KANIT }}>
       <p className="font-black text-[34px] leading-none">SIERRA PADEL</p>
@@ -762,28 +761,7 @@ function BloqueDiseno({ liga, jornada, b, orden, hayResultado, patro, col }) {
           </div>
           <p className="font-black text-[38px] leading-[1.02] uppercase px-1">{corto(orden[0]?.jugadores?.nombre)}</p>
 
-          <div className="mt-5 rounded-2xl px-4 pt-4 pb-3 text-left" style={{ background: 'rgba(52,2,6,.55)' }}>
-            <p className="text-center text-[15px] tracking-[.03em]">RESULTADO DEL BLOQUE</p>
-            <div className="grid grid-cols-[22px_1fr_58px_62px] gap-x-1.5 items-end mt-3 text-[10.5px] text-white/85 text-center">
-              <span /><span /><span>SETS G–P</span><span>DIF. JUEGOS</span>
-            </div>
-            {orden.map((j, i) => {
-              const lugar = j.posicion_final ?? i + 1;
-              const primero = i === 0;
-              const dif = (j.juegos_ganados || 0) - (j.juegos_perdidos || 0);
-              const sg = j.sets_ganados || 0;
-              return (
-                <div key={j.id} className="grid grid-cols-[22px_1fr_58px_62px] gap-x-1.5 items-center py-1.5">
-                  <span className="font-extrabold text-[19px]">{lugar}</span>
-                  <span className="text-[19px] truncate" style={{ color: primero ? col.tinte : '#fff' }}>{corto(j.jugadores?.nombre)}</span>
-                  <span className="text-[19px] text-center tabular-nums" style={{ color: primero ? col.tinte : '#fff' }}>{sg}–{3 - sg}</span>
-                  <span className="text-[19px] text-center font-black tabular-nums" style={{ color: dif > 0 ? VERDE : '#fff' }}>
-                    {dif > 0 ? `+${dif}` : dif}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <TablaBloque orden={orden} col={col} jugado />
           <PatrocinioArco m={patro} jornada={jornada.numero} className="mt-8" />
         </>
       ) : (
@@ -795,8 +773,40 @@ function BloqueDiseno({ liga, jornada, b, orden, hayResultado, patro, col }) {
             ? <img src={patro.mascota_url} alt="" loading="lazy" className="h-28 w-auto mx-auto mt-4 object-contain"
                    onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             : <IconoPala className="w-28 h-28 mx-auto mt-4 text-white" />}
+          {/* German (26-sep): aunque no haya resultado, que se vea quién integra el bloque, todo en 0. */}
+          <TablaBloque orden={orden} col={col} jugado={false} />
         </>
       )}
+    </div>
+  );
+}
+
+/** La tabla del bloque del diseño patrocinado. Sin resultado: los jugadores en su orden y todo en 0. */
+function TablaBloque({ orden, col, jugado }) {
+  const VERDE = '#bde52f';
+  return (
+    <div className="mt-5 rounded-2xl px-4 pt-4 pb-3 text-left" style={{ background: 'rgba(52,2,6,.55)' }}>
+      <p className="text-center text-[15px] tracking-[.03em]">RESULTADO DEL BLOQUE</p>
+      <div className="grid grid-cols-[22px_1fr_58px_62px] gap-x-1.5 items-end mt-3 text-[10.5px] text-white/85 text-center">
+        <span /><span /><span>SETS G–P</span><span>DIF. JUEGOS</span>
+      </div>
+      {orden.map((j, i) => {
+        const lugar = jugado ? (j.posicion_final ?? i + 1) : i + 1;
+        const primero = jugado && i === 0;
+        const dif = jugado ? (j.juegos_ganados || 0) - (j.juegos_perdidos || 0) : 0;
+        const sg = jugado ? (j.sets_ganados || 0) : 0;
+        const sp = jugado ? 3 - sg : 0;
+        return (
+          <div key={j.id} className="grid grid-cols-[22px_1fr_58px_62px] gap-x-1.5 items-center py-1.5">
+            <span className="font-extrabold text-[19px]">{lugar}</span>
+            <span className="text-[19px] truncate" style={{ color: primero ? col.tinte : '#fff' }}>{corto(j.jugadores?.nombre)}</span>
+            <span className="text-[19px] text-center tabular-nums" style={{ color: primero ? col.tinte : '#fff' }}>{sg}–{sp}</span>
+            <span className="text-[19px] text-center font-black tabular-nums" style={{ color: dif > 0 ? VERDE : '#fff' }}>
+              {dif > 0 ? `+${dif}` : dif}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
