@@ -138,3 +138,17 @@ body {
     padding-bottom: 16px;
   }
 }
+
+/* 🥩 TEMA DE PATROCINIO (German 26-sep-2026: «al hacer tap en la liga… pinta todas las páginas
+   relacionadas con el tema del patrocinador; así lo vamos a estar haciendo»). La página que lo
+   lleva pone `tema-patro` y las variables --patro-a/--patro-tinte; las tarjetas y textos de
+   siempre se vuelven translúcidos sobre el rojo sin reescribir cada pantalla. */
+.tema-patro { color: #fff; font-family: 'Kanit', 'Inter', system-ui, sans-serif; }
+.tema-patro .card { background: rgba(255, 255, 255, .16); border-color: rgba(255, 255, 255, .14); color: #fff; }
+.tema-patro .text-sp-gray, .tema-patro .text-gray-600, .tema-patro .text-gray-700 { color: #fff; }
+.tema-patro .text-gray-400, .tema-patro .text-gray-500 { color: rgba(255, 255, 255, .78); }
+.tema-patro .text-gray-300 { color: rgba(255, 255, 255, .55); }
+.tema-patro .border-gray-100 { border-color: rgba(255, 255, 255, .18); }
+.tema-patro .text-amber-600, .tema-patro .text-amber-700,
+.tema-patro .text-sp-green-dark, .tema-patro .text-green-700 { color: var(--patro-tinte, #ffc81e); }
+.tema-patro .bg-sp-green { background: var(--patro-tinte, #ffc81e); color: var(--patro-a, #650a0c); }

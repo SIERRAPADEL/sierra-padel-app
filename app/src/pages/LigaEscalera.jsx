@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
+import { fondoPatro, PatrocinioArco } from '../components/PatrocinioJornada';
 
 /**
  * Una LIGA ESCALERA vista por el jugador: de qué se trata, quién va, y el botón
@@ -136,11 +137,16 @@ export default function LigaEscalera() {
 
   // El mismo color con el que se vio en la lista: si la tarjeta era rosa, la liga abre rosa.
   // Cambiar de color al entrar haría dudar de si se abrió la liga correcta.
-  const rama = RAMA[liga.categoria] || RAMA._;
+  // 🥩 Si la próxima jornada está patrocinada, TODA la liga se pinta con la marca (German 26-sep):
+  // fondo, letra y tarjetas; el patrocinador va en arco bajo el encabezado.
+  const pc = liga.patrocinio && liga.patrocinio.colores && liga.patrocinio.colores.a ? liga.patrocinio.colores : null;
+  const ramaBase = RAMA[liga.categoria] || RAMA._;
+  const rama = pc ? { fondo: pc.a, sub: pc.tinte } : ramaBase;
 
   return (
-    <div className="page safe-bottom">
-      <div className="px-5 pt-[env(safe-area-inset-top)] pb-4" style={{ background: rama.fondo }}>
+    <div className={`page safe-bottom${pc ? ' tema-patro' : ''}`}
+         style={pc ? { background: fondoPatro(pc), '--patro-a': pc.a, '--patro-tinte': pc.tinte } : undefined}>
+      <div className="px-5 pt-[env(safe-area-inset-top)] pb-4" style={{ background: pc ? 'transparent' : rama.fondo }}>
         <button onClick={() => navigate('/ligas')} className="text-white/80 text-[13px] pt-3">← Ligas</button>
         <p className="text-white font-black text-xl mt-1">{liga.nombre}</p>
         <p className="text-[12px] font-bold mt-0.5" style={{ color: rama.sub }}>
@@ -152,6 +158,7 @@ export default function LigaEscalera() {
             Arranca el {fechaBonita} · {liga.n_jornadas} jornadas
           </p>
         )}
+        {pc && <PatrocinioArco m={liga.patrocinio} jornada={liga.patrocinio.jornada} ancho="56%" className="mt-3" />}
       </div>
 
       <div className="px-4 py-4 flex flex-col gap-3 overflow-y-auto">
@@ -164,7 +171,7 @@ export default function LigaEscalera() {
 
         {/* Mi situación — lo primero que quiere ver quien ya entró */}
         {mi?.inscrito && (
-          <div className="card p-4" style={{ background: '#F2F8E9' }}>
+          <div className="card p-4" style={pc ? undefined : { background: '#F2F8E9' }}>
             <p className="text-[12px] font-bold uppercase tracking-wide text-sp-green-dark">Ya estás dentro</p>
             <div className="flex items-baseline gap-3 mt-1">
               <p className="text-3xl font-black text-sp-green-dark">#{mi.posicion}</p>

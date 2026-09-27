@@ -123,13 +123,18 @@ export default function LigaJornada({ vista }) {
   const [cargando, setCargando] = useState(true);
   const [compartiendo, setCompartiendo] = useState(false);
   const [copiado, setCopiado] = useState(false);
+  const [patroLiga, setPatroLiga] = useState(null);
 
   const cargar = useCallback(async () => {
-    const [l, js, rk] = await Promise.all([
+    const [l, js, rk, ab] = await Promise.all([
       apiFetch(`/escalera/${id}`),
       apiFetch(`/escalera/${id}/jornadas`),
       apiFetch(`/escalera/${id}/ranking`),
+      // El patrocinio vigente de la LIGA (el de su próxima jornada): con él se pintan también
+      // las jornadas que no tienen patrocinador propio (German 26-sep: «todas las páginas»).
+      apiFetch('/escalera/abiertas').catch(() => null),
     ]);
+    setPatroLiga(((ab?.data) || []).find((x) => x.id === id)?.patrocinio || null);
     // Estas tres rutas contestan el objeto pelón, no envuelto en {ok, data}.
     setLiga(l?.data || l || null);
     setJornadas(Array.isArray(js) ? js : (js?.data || []));
@@ -156,13 +161,15 @@ export default function LigaJornada({ vista }) {
 
   // 🥩 El patrocinador de ESTA jornada (German 25-sep-2026: J3 Liga Miércoles · Carnes Luis).
   // Sólo el de la jornada: si la jornada no tiene, no se pinta nada.
-  const [patro, setPatro] = useState(null);
+  const [patroJornada, setPatroJornada] = useState(null);
   useEffect(() => {
-    if (!jornada?.id) { setPatro(null); return; }
+    if (!jornada?.id) { setPatroJornada(null); return; }
     apiFetch(`/media/liga/jornada/${jornada.id}`)
-      .then((d) => setPatro(d?.data && (d.data.sponsor_url || d.data.sponsor_nombre) ? d.data : null))
-      .catch(() => setPatro(null));
+      .then((d) => setPatroJornada(d?.data && (d.data.sponsor_url || d.data.sponsor_nombre) ? d.data : null))
+      .catch(() => setPatroJornada(null));
   }, [apiFetch, jornada?.id]);
+  // Manda el de la jornada; si no trae, el vigente de la liga (sólo si viene con su paleta).
+  const patro = patroJornada || (patroLiga && patroLiga.colores && patroLiga.colores.a ? patroLiga : null);
 
   // La jornada patrocinada se pinta con la paleta de la marca; las demás, con la de su rama.
   const col = (patro && patro.colores && patro.colores.a) ? patro.colores : (RAMA[liga?.categoria] || RAMA._);
