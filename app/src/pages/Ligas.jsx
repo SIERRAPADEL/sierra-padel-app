@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
+import { KANIT, fondoPatro, PatrocinioArco, IconoEscalera } from '../components/PatrocinioJornada';
 
 /**
  * Índice de LIGAS del club.
@@ -88,9 +89,40 @@ export default function Ligas() {
           // los colores de la marca (German 25-sep-2026: «la app no cambia de temática, sólo la
           // liga en cuestión se pinta de los colores del patrocinador»).
           const pc = l.patrocinio && l.patrocinio.colores;
-          const rama = pc && pc.a
-            ? { ...ramaBase, fondo: `linear-gradient(135deg, ${pc.a}, ${pc.b || pc.a})`, sub: pc.tinte || ramaBase.sub, acento: pc.b || ramaBase.acento }
-            : ramaBase;
+          // Con patrocinio, la tarjeta completa es la del diseño (German 26-sep): toda roja,
+          // escalera en línea, inscripción al centro y el patrocinador en arco.
+          if (pc && pc.a) {
+            return (
+              <button key={l.id} onClick={() => navigate(`/liga/${l.id}`)}
+                      className="text-left active:scale-[0.98] transition-transform">
+                <div className="rounded-3xl overflow-hidden shadow-md text-white" style={{ background: fondoPatro(pc), fontFamily: KANIT }}>
+                  <div className="px-5 pt-5 pb-4 flex items-start gap-3.5">
+                    <IconoEscalera className="w-11 h-12 shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-extrabold text-[21px] leading-tight">{l.nombre}</p>
+                      <p className="text-[14px] leading-snug mt-0.5" style={{ color: pc.tinte }}>
+                        {ramaBase.etiqueta}Escalera por nivel · {l.n_jornadas} jornadas · 3 sets por noche
+                      </p>
+                    </div>
+                    <span className="text-[13px] font-extrabold uppercase px-2.5 py-1 rounded-lg bg-white/25 shrink-0">Abierta</span>
+                  </div>
+                  <div className="mx-4 h-px bg-white/30" />
+                  {com?.precio_inscripcion > 0 && (
+                    <p className="text-center text-[22px] mt-4">
+                      Inscripción <b className="font-extrabold">${Number(com.precio_inscripcion).toLocaleString('es-MX')}</b>
+                    </p>
+                  )}
+                  <PatrocinioArco m={l.patrocinio} jornada={l.patrocinio.jornada} ancho="58%" className="mt-3 mb-4" />
+                  <div className="mx-4 h-px bg-white/30" />
+                  <div className="px-5 py-3.5 flex items-center justify-between gap-3">
+                    <span className="text-[14px] text-white/90">Te acomodan por nivel · subes jugando</span>
+                    <span className="text-[15px] font-extrabold shrink-0">Ver liga</span>
+                  </div>
+                </div>
+              </button>
+            );
+          }
+          const rama = ramaBase;
           return (
             <button key={l.id} onClick={() => navigate(`/liga/${l.id}`)}
                     className="text-left active:scale-[0.98] transition-transform">

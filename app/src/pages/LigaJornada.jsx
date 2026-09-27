@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
+import { KANIT, fondoPatro, Arco, PatrocinioArco, IconoPala } from '../components/PatrocinioJornada';
 
 /**
  * LO QUE PASÓ EN UNA JORNADA DE LIGA — y sobre todo, la tarjeta para presumirlo.
@@ -81,6 +82,15 @@ const fmtFecha = (iso) => {
   return capitaliza(d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }));
 };
 const hhmm = (h) => (h ? String(h).slice(0, 5) : '');
+// Las fechas cortas del diseño patrocinado: «Mié 30 sep» (bloque) y «Miércoles 30 Sep» (jornada).
+const _d = (iso) => new Date(String(iso).slice(0, 10) + 'T12:00');
+const fechaBloque = (iso) => (iso ? `${capitaliza(_d(iso).toLocaleDateString('es-MX', { weekday: 'short' }).replace('.', ''))} ${_d(iso).getDate()} ${_d(iso).toLocaleDateString('es-MX', { month: 'short' }).replace('.', '')}` : '');
+const fechaJornada = (iso) => (iso ? `${capitaliza(_d(iso).toLocaleDateString('es-MX', { weekday: 'long' }))} ${_d(iso).getDate()} ${capitaliza(_d(iso).toLocaleDateString('es-MX', { month: 'short' }).replace('.', ''))}` : '');
+// Nombre y primer apellido, como en el diseño («Iván Cortez»).
+// Con mayúscula inicial en cada palabra: hay nombres capturados todo en minúsculas («jorge salas»).
+const corto = (n) => String(n || '').trim().split(/\s+/).slice(0, 2)
+  .map((p) => ((p === p.toLowerCase() || (p === p.toUpperCase() && p.length > 1))
+    ? p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : p)).join(' ');
 
 /**
  * Qué le pasa a cada lugar de un bloque según la regla de ESTA jornada.
@@ -156,7 +166,7 @@ export default function LigaJornada({ vista }) {
 
   // La jornada patrocinada se pinta con la paleta de la marca; las demás, con la de su rama.
   const col = (patro && patro.colores && patro.colores.a) ? patro.colores : (RAMA[liga?.categoria] || RAMA._);
-  const fondo = `linear-gradient(160deg,${col.a} 0%,${col.b} 55%,${col.c} 100%)`;
+  const fondo = patro ? fondoPatro(col) : `linear-gradient(160deg,${col.a} 0%,${col.b} 55%,${col.c} 100%)`;
 
   if (cargando) {
     return <div className="min-h-screen grid place-items-center text-gray-400 text-[14px]">Cargando…</div>;
@@ -188,6 +198,9 @@ export default function LigaJornada({ vista }) {
     return (
       <div className="w-full flex flex-col justify-center" style={{ minHeight: '100svh', background: fondo }}>
         <div className="px-6 py-8 text-center">
+          {patro ? (
+            <BloqueDiseno liga={liga} jornada={jornada} b={b} orden={orden} hayResultado={hayResultado} patro={patro} col={col} />
+          ) : (<>
           <Encabezado liga={liga} jornada={jornada} tinte={col.tinte}
                       linea={`${fmtFecha(b.fecha || jornada.fecha)} · Cancha ${b.cancha ?? '—'}${b.hora ? ` · ${hhmm(b.hora)}` : ''}`} />
           <Patrocinio m={patro} oscuro />
@@ -246,6 +259,7 @@ export default function LigaJornada({ vista }) {
               );
             })}
           </div>
+          </>)}
 
           {/* 📤 El botón que pidió German: comparte la IMAGEN, no un texto. En el celular
               abre el menú del sistema y de ahí va al grupo o a la historia; en la compu no
@@ -359,6 +373,38 @@ export default function LigaJornada({ vista }) {
       const id = idPorNombre.get(r.jugadores?.nombre || r.nombre);
       return id ? posAntes[id] : undefined;
     };
+    // 🥩 Jornada patrocinada: la escalera del diseño — lista limpia y centrada, marca abajo.
+    if (patro) {
+      return (
+        <div className="w-full flex flex-col text-white" style={{ minHeight: '100svh', background: fondo, fontFamily: KANIT }}>
+          <div className="px-5 pt-9 pb-8 text-center">
+            <img src="/icons/isotipo-mask.png" alt="" width="64" height="64" className="mx-auto" />
+            <p className="font-black text-[27px] leading-none mt-4">SIERRA PADEL</p>
+            <p className="font-semibold text-[17px] mt-1.5" style={{ color: col.tinte }}>{liga.nombre}</p>
+            <p className="font-extrabold text-[31px] leading-tight mt-1" style={{ color: col.tinte }}>Jornada {jornada.numero}</p>
+            <p className="text-[15px] leading-snug mt-1">Así quedó la escalera</p>
+            <p className="text-[15px] leading-snug">{ranking.length} Jugadores</p>
+
+            {/* German (26-sep): «con margen y cargado al margen, que se vea uniforme la lista»:
+                el número en su columna (alineado a la derecha) y todos los nombres arrancan en
+                la misma línea. */}
+            <div className="mt-7 mx-auto w-full max-w-[330px] flex flex-col gap-2.5 text-left pl-2">
+              {ranking.map((r, i) => (
+                <p key={r.jugador_id || i} className="text-[21px] leading-tight flex items-baseline">
+                  <b className="font-extrabold tabular-nums w-9 shrink-0 text-right mr-4">{r.posicion_actual ?? i + 1}</b>
+                  <span className="font-light min-w-0 truncate">{corto(r.jugadores?.nombre || r.nombre || 'Jugador')}</span>
+                </p>
+              ))}
+            </div>
+
+            <PatrocinioArco m={patro} jornada={jornada.numero} className="mt-10" />
+
+            <button onClick={() => navigate(`/liga/${id}/j/${num}`)}
+                    className="mt-8 text-white/75 text-[14px] font-semibold">← Jornada {num}</button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="w-full flex flex-col" style={{ minHeight: '100svh', background: fondo }}>
         <div className="px-5 py-8 text-center">
@@ -421,6 +467,53 @@ export default function LigaJornada({ vista }) {
   }
 
   // ── LA JORNADA: sus bloques, cada uno con su campeón ────────────────────────
+  // 🥩 Patrocinada: toda la página es la tarjeta roja del diseño, con los bloques dentro.
+  if (patro) {
+    const fila = 'w-full rounded-2xl bg-white/30 px-4 py-3.5 flex items-center gap-4 text-left active:scale-[.99] transition-transform';
+    return (
+      <div className="min-h-screen text-white" style={{ background: fondo, fontFamily: KANIT }}>
+        <div className="px-5 pt-6 pb-10">
+          <button onClick={() => navigate(`/liga/${id}`)} className="text-white/75 text-[13px] font-semibold">
+            ← {liga.nombre}
+          </button>
+          <div className="text-center mt-3">
+            <p className="font-extrabold text-[27px] leading-tight text-white/80">{liga.nombre}</p>
+            <p className="font-black text-[46px] leading-none mt-1">Jornada {jornada.numero}</p>
+            <p className="font-semibold text-[20px] mt-2.5" style={{ color: col.tinte }}>{fechaJornada(jornada.fecha)}</p>
+          </div>
+          <PatrocinioArco m={patro} jornada={jornada.numero} className="mt-5" />
+
+          <div className="mt-7 flex flex-col gap-3">
+            {bloques.map((b) => {
+              const orden = ordenDelBloque(b);
+              const campeon = jugado(b) ? orden[0]?.jugadores?.nombre : null;
+              return (
+                <button key={b.id} onClick={() => navigate(`/liga/${id}/j/${num}/b/${b.numero_bloque}`)} className={fila}>
+                  <span className="w-12 h-12 rounded-xl grid place-items-center font-extrabold text-[21px] shrink-0"
+                        style={{ background: col.a }}>{b.numero_bloque}</span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-extrabold text-[18px] leading-tight truncate">
+                      {campeon ? `🏆 ${corto(campeon)}` : 'Sin resultados todavía'}
+                    </span>
+                    <span className="block text-white/80 text-[13px] mt-0.5">
+                      Cancha {b.cancha ?? '—'}{b.hora ? ` · ${hhmm(b.hora)}` : ''}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+            <button onClick={() => navigate(`/liga/${id}/j/${num}/escalera`)} className={fila}>
+              <span className="w-12 h-12 rounded-xl grid place-items-center text-[20px] shrink-0" style={{ background: col.a }}>📊</span>
+              <span className="flex-1 min-w-0">
+                <span className="block font-extrabold text-[18px] leading-tight">Cómo quedó la escalera</span>
+                <span className="block text-white/80 text-[13px] mt-0.5">Los {ranking.length} de la liga</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-sp-green-wash">
       <div className="px-5 pt-7 pb-4 text-white" style={{ background: fondo }}>
@@ -631,6 +724,71 @@ function Patrocinio({ m, oscuro }) {
       {m.mascota_url && (
         <img src={m.mascota_url} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }}
              className="h-20 w-auto object-contain shrink-0" />
+      )}
+    </div>
+  );
+}
+
+/**
+ * 🥩 La tarjeta del bloque en una jornada PATROCINADA — el diseño de la diseñadora (26-sep).
+ * Sin resultado: patrocinador al centro, «AÚN SIN RESULTADOS» y la pala.
+ * Con resultado: «GANADOR DEL BLOQUE» en arco, el nombre grande, la tabla del bloque con sets
+ * y diferencia de juegos, y la marca abajo — igual que la historia de Instagram.
+ */
+function BloqueDiseno({ liga, jornada, b, orden, hayResultado, patro, col }) {
+  const VERDE = '#bde52f';
+  return (
+    <div className="text-white" style={{ fontFamily: KANIT }}>
+      <p className="font-black text-[34px] leading-none">SIERRA PADEL</p>
+      <p className="font-extrabold text-[16px] mt-2.5 uppercase tracking-[.05em]" style={{ color: col.tinte }}>
+        {liga.nombre} Jornada {jornada.numero}
+      </p>
+      <p className="text-[16px] font-light mt-1.5 tracking-[.03em]">
+        {fechaBloque(b.fecha || jornada.fecha)}<span className="ml-3">Cancha {b.cancha ?? '—'}</span>
+        {b.hora && <span className="ml-3">{hhmm(b.hora)}</span>}
+      </p>
+
+      {hayResultado ? (
+        <>
+          <div className="mx-auto mt-7" style={{ width: '80%' }}>
+            <Arco texto="GANADOR DEL BLOQUE" color={col.tinte} size={19} />
+          </div>
+          <p className="font-black text-[38px] leading-[1.02] uppercase px-1">{corto(orden[0]?.jugadores?.nombre)}</p>
+
+          <div className="mt-5 rounded-2xl px-4 pt-4 pb-3 text-left" style={{ background: 'rgba(52,2,6,.55)' }}>
+            <p className="text-center text-[15px] tracking-[.03em]">RESULTADO DEL BLOQUE</p>
+            <div className="grid grid-cols-[22px_1fr_58px_62px] gap-x-1.5 items-end mt-3 text-[10.5px] text-white/85 text-center">
+              <span /><span /><span>SETS G–P</span><span>DIF. JUEGOS</span>
+            </div>
+            {orden.map((j, i) => {
+              const lugar = j.posicion_final ?? i + 1;
+              const primero = i === 0;
+              const dif = (j.juegos_ganados || 0) - (j.juegos_perdidos || 0);
+              const sg = j.sets_ganados || 0;
+              return (
+                <div key={j.id} className="grid grid-cols-[22px_1fr_58px_62px] gap-x-1.5 items-center py-1.5">
+                  <span className="font-extrabold text-[19px]">{lugar}</span>
+                  <span className="text-[19px] truncate" style={{ color: primero ? col.tinte : '#fff' }}>{corto(j.jugadores?.nombre)}</span>
+                  <span className="text-[19px] text-center tabular-nums" style={{ color: primero ? col.tinte : '#fff' }}>{sg}–{3 - sg}</span>
+                  <span className="text-[19px] text-center font-black tabular-nums" style={{ color: dif > 0 ? VERDE : '#fff' }}>
+                    {dif > 0 ? `+${dif}` : dif}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <PatrocinioArco m={patro} jornada={jornada.numero} className="mt-8" />
+        </>
+      ) : (
+        <>
+          <PatrocinioArco m={patro} jornada={jornada.numero} className="mt-7" />
+          <p className="font-black text-[26px] leading-tight mt-7">AÚN SIN RESULTADOS</p>
+          {/* German (26-sep): la mascota en lugar de la pala, mismo lugar y mismo tamaño. */}
+          {patro.mascota_url
+            ? <img src={patro.mascota_url} alt="" loading="lazy" className="h-28 w-auto mx-auto mt-4 object-contain"
+                   onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+            : <IconoPala className="w-28 h-28 mx-auto mt-4 text-white" />}
+        </>
       )}
     </div>
   );
