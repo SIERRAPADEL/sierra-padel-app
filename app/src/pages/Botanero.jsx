@@ -191,12 +191,12 @@ export default function Botanero({ liga = 'botanero' }) {
             Juegas <b>individual</b>: 3 sets rotando de pareja, y tu récord te va subiendo de cancha semana a semana.
             {L.dosPorUno
               ? <>Michelob <b>2x1 de 8 a 10pm</b> solo para jugadores de la liga, y el futbol en las pantallas.</>
-              : <>Canchas <b>sólo de mujeres</b>, 4 por turno. Y los jueves aplica la promo del club.</>}
+              : <>Canchas <b>sólo de mujeres</b>. Y los jueves aplica la promo del club.</>}
             No es inscripción: cada semana te apuntas si quieres jugar. Cupo limitado*.
           </p>
           {/* Anotación de precios por cancha extra (German 25-sep). Escala de club_config.botanero:
               canchas 1–4 al precio del turno; 5ª +$50, 6ª +$100, 7ª +$150; tope $200 por lugar. */}
-          {L.dosPorUno && (data?.turnos || []).some(t => t.precio != null) && (
+          {(data?.turnos || []).some(t => t.precio != null) && (
             <p className="text-gray-400 text-[12px] mt-2 leading-relaxed">
               * Precio por lugar, por orden de llegada. Después de la 4ª cancha el lugar sube:
               {(data?.turnos || []).filter(t => t.precio != null).map(t => {
@@ -230,7 +230,7 @@ export default function Botanero({ liga = 'botanero' }) {
                 <div>
                   <p className="text-sp-gray font-black text-lg">{t.hora}</p>
                   <p className="text-gray-400 text-[12px]">
-                    {!L.dosPorUno ? '4 canchas · sólo mujeres' : t.turno === '1830' ? 'Aprovechas TODO el 2x1' : 'Entras directo al 2x1'}
+                    {!L.dosPorUno ? 'sólo mujeres' : t.turno === '1830' ? 'Aprovechas TODO el 2x1' : 'Entras directo al 2x1'}
                   </p>
                 </div>
                 <div className="text-right">
