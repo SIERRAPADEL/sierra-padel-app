@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { BACKEND } from '../lib/constants';
 
 // Fallback local por si el catálogo no carga (mismo orden que el backend)
+// «Principiante» lleva rama desde el 29-sep-2026 (German: el nivel ES la clasificación).
 const NIVELES_FALLBACK = [
-  'Principiante',
-  'Varonil 6ta', 'Varonil 5ta', 'Varonil 4ta', 'Varonil 3ra', 'Varonil Libre',
-  'Femenil 6ta', 'Femenil 5ta', 'Femenil Libre',
+  'Varonil Principiante', 'Varonil 6ta', 'Varonil 5ta', 'Varonil 4ta', 'Varonil 3ra', 'Varonil Libre',
+  'Femenil Principiante', 'Femenil 6ta', 'Femenil 5ta', 'Femenil Libre',
 ];
 
 // Selector de nivel de juego (mismo catálogo que torneos). Se usa en el registro,

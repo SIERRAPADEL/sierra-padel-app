@@ -571,7 +571,9 @@ export default function Home() {
   const { apiFetch } = useApi();
   const navigate    = useNavigate();
   const [puntos, setPuntos] = useState(null);
-  // Pedir el nivel UNA vez por sesión a cuentas que aún no lo tienen
+  // Pedir el nivel UNA vez por sesión a cuentas que aún no lo tienen — o que tienen el
+  // «Principiante» viejo, que no dice rama (German 29-sep: el nivel ES la clasificación).
+  const sinRama = (cat) => !cat || cat === 'Principiante';
   const [pedirNivel, setPedirNivel] = useState(() =>
     !sessionStorage.getItem('nivelPromptVisto')
   );
@@ -629,7 +631,8 @@ export default function Home() {
   return (
     <div className="page safe-bottom">
       {/* Completa tu perfil: nivel de juego (cuentas previas al requisito) */}
-      {pedirNivel && user && !user.categoria && (
+      {/* El «Principiante» viejo no tiene rama: se le vuelve a pedir el nivel (Varonil o Femenil). */}
+      {pedirNivel && user && sinRama(user.categoria) && (
         <NivelModal
           apiFetch={apiFetch}
           updateUser={updateUser}
@@ -643,7 +646,7 @@ export default function Home() {
       {/* `cumpleVivo === null` = ya contestó /auth/me y NO tiene fecha. Mientras vale
           `undefined` no se pinta nada: una caja que aparece medio segundo después de abrir
           la app, encima de lo que la persona ya estaba leyendo, es peor que no pedirla. */}
-      {!pedirNivel || user?.categoria ? (
+      {!pedirNivel || !sinRama(user?.categoria) ? (
         pedirCumple && user && cumpleVivo === null && (
           <CumpleModal
             apiFetch={apiFetch}

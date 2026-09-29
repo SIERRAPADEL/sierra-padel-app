@@ -92,10 +92,12 @@ export default function Botanero({ liga = 'botanero' }) {
   // (mi_sexo_guardado) se apunta directo y nunca vuelve a ver esta pregunta.
   async function apuntarse(turno, sexo) {
     if (accion) return;
-    const yaLoSe = L.soloMujeres ? 'M' : (sexo || data?.mi_sexo_guardado);
-    if (!yaLoSe) { setPideSexo(turno); return; }
+    // Noche sólo de mujeres: no se pregunta ni se manda el sexo — el servidor lo toma del NIVEL
+    // de su ficha (rama Femenil) y rechaza a quien no lo tenga, diciéndole qué hacer.
+    const yaLoSe = L.soloMujeres ? null : (sexo || data?.mi_sexo_guardado);
+    if (!yaLoSe && !L.soloMujeres) { setPideSexo(turno); return; }
     setAccion(true); setError(''); setAvisoEspera(null); setPideSexo(null);
-    const d = await apiFetch(L.api + '/apuntarse', { method: 'POST', body: JSON.stringify({ turno, sexo: yaLoSe }) });
+    const d = await apiFetch(L.api + '/apuntarse', { method: 'POST', body: JSON.stringify(L.soloMujeres ? { turno } : { turno, sexo: yaLoSe }) });
     if (!d.ok) setError(d.error || 'No se pudo. Intenta de nuevo.');
     // Quedar en LISTA DE ESPERA no es lo mismo que tener lugar, y hay que decirlo aquí
     // (German, 21-ago). Antes la pantalla sólo recargaba y quien se anotó tarde se podía
