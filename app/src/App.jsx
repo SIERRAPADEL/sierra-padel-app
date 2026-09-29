@@ -67,6 +67,8 @@ function AppRoutes() {
       <Route path="/liga/:id/j/:num/escalera" element={<ProtectedRoute><LigaJornada vista="escalera" /></ProtectedRoute>} />
       <Route path="/liga/:id/j/:num" element={<ProtectedRoute><LigaJornada /></ProtectedRoute>} />
       <Route path="/botanero" element={<ProtectedRoute><Botanero /></ProtectedRoute>} />
+      {/* 👑 Ladies Night (jueves, sólo mujeres): la misma página con la noche de los jueves. */}
+      <Route path="/ladies" element={<ProtectedRoute><Botanero liga="ladies" /></ProtectedRoute>} />
       <Route path="/torneos" element={<ProtectedRoute><Torneos /></ProtectedRoute>} />
       <Route path="/puntos" element={<ProtectedRoute><Puntos /></ProtectedRoute>} />
       <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />

@@ -6,7 +6,16 @@ import PrenderAvisos from '../components/PrenderAvisos';
 
 // Liga Viernes Botanero — Fase 1: apuntarse a la lista semanal (cupo + lista de espera).
 // Liga individual perpetua: 3 sets rotando pareja; el récord te va acomodando de cancha.
-export default function Botanero() {
+// 👑 UNA PÁGINA, DOS NOCHES (German, 29-sep-2026): el Ladies Night de los jueves es el mismo
+// motor que el Botanero (backend: crearLigaNoche). Aquí cambian la API, los textos y que no se
+// pregunta hombre/mujer: la noche es sólo de mujeres.
+export const NOCHES_APP = {
+  botanero: { api: '/botanero', titulo: '🍻 Viernes Botanero', dia: 'viernes', lema: 'La liga de los viernes 🎾⚽', soloMujeres: false, dosPorUno: true },
+  ladies:   { api: '/ladies',   titulo: '👑 Ladies Night',     dia: 'jueves',  lema: 'La noche de los jueves, sólo para ellas 👑🎾', soloMujeres: true, dosPorUno: false },
+};
+
+export default function Botanero({ liga = 'botanero' }) {
+  const L = NOCHES_APP[liga] || NOCHES_APP.botanero;
   const navigate = useNavigate();
   const { apiFetch } = useApi();
   const [data, setData] = useState(null);
@@ -51,7 +60,7 @@ export default function Botanero() {
     // Se manda "los nuestros / los suyos", nunca lado A/B: quién es A y quién es B depende
     // de la posición en la cancha, y el servidor es el único que sabe la rotación. Mandar
     // a/b desde aquí es cómo se invierte un marcador sin que nadie lo note.
-    const d = await apiFetch('/botanero/mi-marcador', {
+    const d = await apiFetch(L.api + '/mi-marcador', {
       method: 'POST', body: JSON.stringify({ turno, sets: nums.map(([mios, suyos]) => ({ mios, suyos })) }),
     });
     if (d.ok) {
@@ -64,7 +73,7 @@ export default function Botanero() {
 
   const cargar = useCallback(async () => {
     const [d, r, j] = await Promise.all([
-      apiFetch('/botanero/estado'), apiFetch('/botanero/ranking'), apiFetch('/botanero/juegos'),
+      apiFetch(L.api + '/estado'), apiFetch(L.api + '/ranking'), apiFetch(L.api + '/juegos'),
     ]);
     if (d.ok) setData(d.data);
     // Dos rankings, no uno (German, 25-ago): las canchas no se mezclan, así que comparar
@@ -74,7 +83,7 @@ export default function Botanero() {
     if (r.ok) setRanking({ hombres: r.hombres || r.data || [], mujeres: r.mujeres || [] });
     if (j.ok) setJuegos(j.data);
     setLoading(false);
-  }, [apiFetch]);
+  }, [apiFetch, L.api]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -83,10 +92,10 @@ export default function Botanero() {
   // (mi_sexo_guardado) se apunta directo y nunca vuelve a ver esta pregunta.
   async function apuntarse(turno, sexo) {
     if (accion) return;
-    const yaLoSe = sexo || data?.mi_sexo_guardado;
+    const yaLoSe = L.soloMujeres ? 'M' : (sexo || data?.mi_sexo_guardado);
     if (!yaLoSe) { setPideSexo(turno); return; }
     setAccion(true); setError(''); setAvisoEspera(null); setPideSexo(null);
-    const d = await apiFetch('/botanero/apuntarse', { method: 'POST', body: JSON.stringify({ turno, sexo: yaLoSe }) });
+    const d = await apiFetch(L.api + '/apuntarse', { method: 'POST', body: JSON.stringify({ turno, sexo: yaLoSe }) });
     if (!d.ok) setError(d.error || 'No se pudo. Intenta de nuevo.');
     // Quedar en LISTA DE ESPERA no es lo mismo que tener lugar, y hay que decirlo aquí
     // (German, 21-ago). Antes la pantalla sólo recargaba y quien se anotó tarde se podía
@@ -98,9 +107,9 @@ export default function Botanero() {
 
   async function bajarse(turno) {
     if (accion) return;
-    if (!window.confirm('¿Seguro que te bajas de este viernes? Tu lugar se le da al primero de la lista de espera.')) return;
+    if (!window.confirm(`¿Seguro que te bajas de este ${L.dia}? Tu lugar se le da a la primera de la lista de espera.`)) return;
     setAccion(true); setError('');
-    const d = await apiFetch('/botanero/bajarse', { method: 'POST', body: JSON.stringify({ turno }) });
+    const d = await apiFetch(L.api + '/bajarse', { method: 'POST', body: JSON.stringify({ turno }) });
     if (!d.ok) setError(d.error || 'No se pudo. Intenta de nuevo.');
     await cargar();
     setAccion(false);
@@ -149,7 +158,7 @@ export default function Botanero() {
       )}
       <div className="bg-sp-green px-5 pt-5 pb-4">
         <button onClick={() => navigate('/ligas')} className="text-white/80 text-sm mb-1">‹ Ligas</button>
-        <h1 className="text-white font-black text-2xl">🍻 Viernes Botanero</h1>
+        <h1 className="text-white font-black text-2xl">{L.titulo}</h1>
         <p className="text-white/85 text-[13px] mt-1 capitalize">{fechaBonita}</p>
       </div>
 
@@ -177,15 +186,17 @@ export default function Botanero() {
 
       <div className="px-4 mt-4 flex flex-col gap-3">
         <div className="card py-4">
-          <p className="text-sp-gray font-bold text-[15px]">La liga de los viernes 🎾⚽</p>
+          <p className="text-sp-gray font-bold text-[15px]">{L.lema}</p>
           <p className="text-gray-500 text-[13px] mt-1 leading-relaxed">
             Juegas <b>individual</b>: 3 sets rotando de pareja, y tu récord te va subiendo de cancha semana a semana.
-            Michelob <b>2x1 de 8 a 10pm</b> solo para jugadores de la liga, y el futbol en las pantallas.
+            {L.dosPorUno
+              ? <>Michelob <b>2x1 de 8 a 10pm</b> solo para jugadores de la liga, y el futbol en las pantallas.</>
+              : <>Canchas <b>sólo de mujeres</b>, 4 por turno. Y los jueves aplica la promo del club.</>}
             No es inscripción: cada semana te apuntas si quieres jugar. Cupo limitado*.
           </p>
           {/* Anotación de precios por cancha extra (German 25-sep). Escala de club_config.botanero:
               canchas 1–4 al precio del turno; 5ª +$50, 6ª +$100, 7ª +$150; tope $200 por lugar. */}
-          {(data?.turnos || []).some(t => t.precio != null) && (
+          {L.dosPorUno && (data?.turnos || []).some(t => t.precio != null) && (
             <p className="text-gray-400 text-[12px] mt-2 leading-relaxed">
               * Precio por lugar, por orden de llegada. Después de la 4ª cancha el lugar sube:
               {(data?.turnos || []).filter(t => t.precio != null).map(t => {
@@ -219,7 +230,7 @@ export default function Botanero() {
                 <div>
                   <p className="text-sp-gray font-black text-lg">{t.hora}</p>
                   <p className="text-gray-400 text-[12px]">
-                    {t.turno === '1830' ? 'Aprovechas TODO el 2x1' : 'Entras directo al 2x1'}
+                    {!L.dosPorUno ? '4 canchas · sólo mujeres' : t.turno === '1830' ? 'Aprovechas TODO el 2x1' : 'Entras directo al 2x1'}
                   </p>
                 </div>
                 <div className="text-right">
@@ -261,7 +272,7 @@ export default function Botanero() {
                 {t.mi_estado === 'apuntado' && (
                   <div className="flex items-center gap-2">
                     <span className="flex-1 text-center text-[14px] font-bold text-green-600 bg-green-50 rounded-xl py-2.5">
-                      {t.mi_cancha ? `✓ ¡Vas! Te toca la Cancha ${t.mi_cancha}` : '✓ ¡Vas! Nos vemos el viernes'}
+                      {t.mi_cancha ? `✓ ¡Vas! Te toca la Cancha ${t.mi_cancha}` : `✓ ¡Vas! Nos vemos el ${L.dia}`}
                     </span>
                     <button onClick={() => bajarse(t.turno)} disabled={accion} className="text-[13px] text-gray-400 underline px-2">Bajarme</button>
                   </div>
