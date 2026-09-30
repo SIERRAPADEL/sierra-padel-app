@@ -70,6 +70,8 @@ function AppRoutes() {
       {/* 👑 Ladies Night (jueves, sólo mujeres): la misma página con la noche de los jueves. */}
       <Route path="/ladies" element={<ProtectedRoute><Botanero liga="ladies" /></ProtectedRoute>} />
       <Route path="/torneos" element={<ProtectedRoute><Torneos /></ProtectedRoute>} />
+      {/* Link directo de la invitación a UN torneo (30-sep-2026) */}
+      <Route path="/torneo/:id" element={<ProtectedRoute><Torneos /></ProtectedRoute>} />
       <Route path="/puntos" element={<ProtectedRoute><Puntos /></ProtectedRoute>} />
       <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
       <Route path="/noticias" element={<ProtectedRoute><Noticias /></ProtectedRoute>} />

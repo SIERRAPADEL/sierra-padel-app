@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, Fragment } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { isPushSupported, usePushSubscription } from '../components/NotificationSetup';
@@ -805,6 +806,12 @@ function InscripcionFlow({ torneo, onDone, apiFetch }) {
 export default function Torneos() {
   const { apiFetch } = useApi();
   const { user }     = useAuth();
+  // 🔗 /torneo/:id — el link DIRECTO de la invitación (German, 30-sep-2026: «mandar el link
+  // directo del evento para que al momento de dar click en wapp estés directo donde los
+  // queremos»). Antes sólo existía /torneos y la gente caía en la lista.
+  const { id: idLink } = useParams();
+  const navigate       = useNavigate();
+  const [linkNoHay, setLinkNoHay] = useState(false);
 
   const [mainTab, setMainTab]     = useState('proximos');
   const [torneos, setTorneos]     = useState(null);
@@ -836,7 +843,29 @@ export default function Torneos() {
 
   const miTelefono = user?.telefono || '';
 
-  function goBack() { setView(null); setTorneoSel(null); }
+  // Al llegar por el link se abre ESE torneo donde toca: la inscripción si está abierta,
+  // los partidos si ya hay draw. Si no se puede ninguna (todavía sin abrir), se queda en
+  // la lista en su pestaña. Si el torneo ya no existe, se dice en vez de enseñar la lista
+  // como si nada.
+  useEffect(() => {
+    if (!idLink || !torneos) return;
+    const t = torneos.find(x => String(x.id) === String(idLink));
+    if (!t) { setLinkNoHay(true); return; }
+    setMainTab(esPasado(t) ? 'pasados' : 'proximos');
+    const est = torneoEstado(t);
+    if (est === 'inscripciones') { setTorneoSel(t); setView('inscripcion'); }
+    else if (['draw_generado','calendario_publicado','en_curso','finalizado'].includes(est)) {
+      setTorneoSel(t); setView('detalle');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idLink, torneos]);
+
+  // Atrás desde un torneo abierto por link regresa a /torneos: si no, la dirección seguiría
+  // apuntando al torneo y recargar lo volvería a abrir.
+  function goBack() {
+    setView(null); setTorneoSel(null);
+    if (idLink) navigate('/torneos', { replace: true });
+  }
 
   const headerLabel = view === 'inscripcion'
     ? (torneoSel?.nombre || 'Inscripcion')
@@ -887,6 +916,12 @@ export default function Torneos() {
       {!view && (mainTab === 'proximos' || mainTab === 'pasados') && (
         <div className="px-4 py-4 flex flex-col gap-3 overflow-y-auto">
           {loading && <Spinner />}
+          {!loading && linkNoHay && (
+            <div className="card text-center py-4 border border-amber-200 bg-amber-50">
+              <p className="text-sm font-semibold text-amber-700">Ese torneo ya no está disponible.</p>
+              <p className="text-xs text-amber-600 mt-0.5">Aquí están los que siguen abiertos.</p>
+            </div>
+          )}
           {!loading && (mainTab === 'proximos' ? proximos : pasados).length === 0 && (
             <div className="card text-center py-12">
               <p className="text-3xl mb-3">🏆</p>
