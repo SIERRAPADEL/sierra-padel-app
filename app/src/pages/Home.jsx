@@ -7,9 +7,52 @@ import Isotipo from '../components/Isotipo';
 import PromoExpressBanner from '../components/PromoExpressBanner';
 import AvisosApagados from '../components/AvisosApagados';
 import NivelSelector from '../components/NivelSelector';
+import { soloLetras, errorNombre, nombreEsValido } from '../lib/nombre';
 import { TemporadaSaludo, TemporadaFranja } from '../components/Temporada';
 import { BACKEND } from '../lib/constants';
 import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/format';
+
+// ── Modal: ¿cómo te llamas? (nombre que no es un nombre) ──────────────────────────
+// German, 30-sep-2026: un usuario capturó su teléfono en el lugar del nombre y en el club
+// nadie sabía quién era. Se le pide al abrir la app y NO se puede brincar: sin nombre la
+// caja no lo encuentra, el check-in lo enseña como un número y su reserva no tiene dueño.
+function NombreModal({ apiFetch, updateUser }) {
+  const [nombre, setNombre] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState('');
+
+  async function guardar() {
+    const e = errorNombre(nombre);
+    if (e) return setError(e);
+    setSaving(true); setError('');
+    const d = await apiFetch('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ nombre: nombre.replace(/\s+/g, ' ').trim() }),
+    });
+    setSaving(false);
+    if (d.ok) updateUser({ nombre: d.data?.cliente?.nombre || nombre.trim() });
+    else setError(d.error || 'No se pudo guardar. Intenta de nuevo.');
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-end justify-center z-[70] px-4"
+         style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}>
+      <div className="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4">
+        <div className="text-center">
+          <p className="text-xl font-black text-sp-gray">👋 ¿Cómo te llamas?</p>
+          <p className="text-sm text-gray-400 mt-1">Tu nombre quedó mal guardado. Escríbelo para que en el club te encontremos.</p>
+        </div>
+        <input className="input-field" type="text" placeholder="Nombre y apellido" autoComplete="name"
+               autoCapitalize="words" value={nombre} autoFocus
+               onChange={e => { setNombre(soloLetras(e.target.value)); setError(''); }} />
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        <button className="btn-green py-3" disabled={saving || !nombre.trim()} onClick={guardar}>
+          {saving ? 'Guardando…' : 'Guardar'}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ── Modal: completa tu perfil (cuentas creadas antes de que el nivel fuera requisito) ──
 function NivelModal({ apiFetch, updateUser, onClose }) {
@@ -574,6 +617,7 @@ export default function Home() {
   // Pedir el nivel UNA vez por sesión a cuentas que aún no lo tienen — o que tienen el
   // «Principiante» viejo, que no dice rama (German 29-sep: el nivel ES la clasificación).
   const sinRama = (cat) => !cat || cat === 'Principiante';
+  const nombreMal = !!user && !nombreEsValido(user.nombre);
   const [pedirNivel, setPedirNivel] = useState(() =>
     !sessionStorage.getItem('nivelPromptVisto')
   );
@@ -630,9 +674,11 @@ export default function Home() {
 
   return (
     <div className="page safe-bottom">
+      {/* El nombre va PRIMERO y no se brinca: sin él nadie en el club sabe quién es. */}
+      {nombreMal && <NombreModal apiFetch={apiFetch} updateUser={updateUser} />}
       {/* Completa tu perfil: nivel de juego (cuentas previas al requisito) */}
       {/* El «Principiante» viejo no tiene rama: se le vuelve a pedir el nivel (Varonil o Femenil). */}
-      {pedirNivel && user && sinRama(user.categoria) && (
+      {!nombreMal && pedirNivel && user && sinRama(user.categoria) && (
         <NivelModal
           apiFetch={apiFetch}
           updateUser={updateUser}
@@ -646,7 +692,7 @@ export default function Home() {
       {/* `cumpleVivo === null` = ya contestó /auth/me y NO tiene fecha. Mientras vale
           `undefined` no se pinta nada: una caja que aparece medio segundo después de abrir
           la app, encima de lo que la persona ya estaba leyendo, es peor que no pedirla. */}
-      {!pedirNivel || !sinRama(user?.categoria) ? (
+      {!nombreMal && (!pedirNivel || !sinRama(user?.categoria)) ? (
         pedirCumple && user && cumpleVivo === null && (
           <CumpleModal
             apiFetch={apiFetch}

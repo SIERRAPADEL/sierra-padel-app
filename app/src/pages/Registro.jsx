@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import Isotipo from '../components/Isotipo';
 import PinInput from '../components/PinInput';
 import NivelSelector from '../components/NivelSelector';
+import { soloLetras, errorNombre } from '../lib/nombre';
 
 // Registro en 3 pasos: datos → nivel de juego (obligatorio) → PIN + casillas.
 // Las DOS casillas (términos y avisos) son obligatorias para crear la cuenta.
@@ -30,7 +31,8 @@ export default function Registro() {
 
   function handleDatos(e) {
     e.preventDefault();
-    if (!nombre.trim()) return setError('Ingresa tu nombre');
+    const eNom = errorNombre(nombre);
+    if (eNom) return setError(eNom);
     if (telefono.length < 10) return setError('Ingresa tu numero de 10 digitos');
     setError('');
     setStep(2);
@@ -114,7 +116,7 @@ export default function Registro() {
           <form onSubmit={handleDatos} className="w-full flex flex-col gap-4">
             <div>
               <label className="text-sm text-gray-500 font-medium mb-1 block">Nombre completo</label>
-              <input className="input-field" type="text" placeholder="Tu nombre" value={nombre} onChange={e => setNombre(e.target.value)} autoFocus />
+              <input className="input-field" type="text" placeholder="Nombre y apellido" autoComplete="name" autoCapitalize="words" value={nombre} onChange={e => setNombre(soloLetras(e.target.value))} autoFocus />
             </div>
             <div>
               <label className="text-sm text-gray-500 font-medium mb-1 block">Telefono (WhatsApp)</label>

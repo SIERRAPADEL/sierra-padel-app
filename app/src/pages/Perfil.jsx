@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import PinInput from '../components/PinInput';
 import NivelSelector from '../components/NivelSelector';
+import { soloLetras, errorNombre } from '../lib/nombre';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
@@ -76,7 +77,8 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
 
   async function handleSave() {
     if (!changed) return;
-    if (nombre.trim().length < 2) return setError('El nombre debe tener al menos 2 caracteres');
+    const eNom = errorNombre(nombre);
+    if (eNom) return setError(eNom);
     setLoading(true);
     setError('');
     try {
@@ -120,9 +122,11 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
             <input
               type="text"
               value={nombre}
-              onChange={e => { setNombre(e.target.value); setError(''); setSaved(false); }}
+              onChange={e => { setNombre(soloLetras(e.target.value)); setError(''); setSaved(false); }}
               className="input-field"
-              placeholder="Tu nombre"
+              placeholder="Nombre y apellido"
+              autoComplete="name"
+              autoCapitalize="words"
             />
           </div>
           <div>
