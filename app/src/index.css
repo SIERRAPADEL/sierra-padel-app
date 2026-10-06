@@ -165,3 +165,8 @@ body {
 .tema-patro.noche .text-pink-600 { color: #ffb3d6; }
 .tema-patro.noche .border-blue-200, .tema-patro.noche .border-pink-200 { border-color: rgba(255, 255, 255, .25); }
 .tema-patro.noche input { background: transparent; color: #fff; }
+/* Cajas blancas fuera de las tarjetas (prender avisos, aviso de lista de espera): con la letra en
+   blanco del tema se perdían; van en el color oscuro de la marca. */
+.tema-patro.noche [class~="bg-white"] { background: var(--patro-a); }
+.tema-patro.noche .bg-sp-green-light { background: rgba(255, 255, 255, .12); }
+.tema-patro.noche .text-amber-900 { color: #fff; }
