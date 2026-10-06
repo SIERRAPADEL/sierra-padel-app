@@ -784,8 +784,9 @@ function BloqueDiseno({ liga, jornada, b, orden, hayResultado, patro, col }) {
 /** La tabla del bloque del diseño patrocinado. Sin resultado: los jugadores en su orden y todo en 0. */
 function TablaBloque({ orden, col, jugado }) {
   const VERDE = '#bde52f';
+  // Negro translúcido: sirve con la paleta de cualquier patrocinador (el rojo fijo era de Carnes Luis y con Pietra salía café).
   return (
-    <div className="mt-5 rounded-2xl px-4 pt-4 pb-3 text-left" style={{ background: 'rgba(52,2,6,.55)' }}>
+    <div className="mt-5 rounded-2xl px-4 pt-4 pb-3 text-left" style={{ background: 'rgba(0,0,0,.42)' }}>
       <p className="text-center text-[15px] tracking-[.03em]">RESULTADO DEL BLOQUE</p>
       <div className="grid grid-cols-[22px_1fr_58px_62px] gap-x-1.5 items-end mt-3 text-[10.5px] text-white/85 text-center">
         <span /><span /><span>SETS G–P</span><span>DIF. JUEGOS</span>
