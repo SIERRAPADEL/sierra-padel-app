@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { isPushSupported } from '../components/NotificationSetup';
 import PrenderAvisos from '../components/PrenderAvisos';
+import { fondoPatro, PatrocinioArco, KANIT } from '../components/PatrocinioJornada';
 
 // Liga Viernes Botanero — Fase 1: apuntarse a la lista semanal (cupo + lista de espera).
 // Liga individual perpetua: 3 sets rotando pareja; el récord te va acomodando de cancha.
@@ -121,8 +122,17 @@ export default function Botanero({ liga = 'botanero' }) {
     ? new Date(data.fecha + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
     : '';
 
+  // 🍟 Noche patrocinada (German 6-oct-2026, Chip's en el Botanero): con la paleta de la marca la
+  // página entera se pinta como las ligas patrocinadas (tema-patro). La clase `noche` agrega lo
+  // que sólo esta página tiene (cajas grises, botón verde, captura del marcador) sin tocar las
+  // pantallas de la escalera.
+  const pc = data?.media?.colores?.a ? data.media.colores : null;
+  // «🍻 Viernes Botanero» → ['Viernes', 'Botanero']: sin el emoji, en dos renglones.
+  const nombreNoche = L.titulo.replace(/^[^A-Za-zÁÉÍÓÚÑáéíóúñ]+/, '').split(' ');
+
   return (
-    <div className="pb-24">
+    <div className={`pb-24${pc ? ' tema-patro noche min-h-screen' : ''}`}
+         style={pc ? { background: fondoPatro(pc), '--patro-a': pc.a, '--patro-tinte': pc.tinte } : undefined}>
       {avisoEspera && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-end sm:items-center justify-center p-4"
              style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
@@ -158,16 +168,36 @@ export default function Botanero({ liga = 'botanero' }) {
           </div>
         </div>
       )}
-      <div className="bg-sp-green px-5 pt-5 pb-4">
-        <button onClick={() => navigate('/ligas')} className="text-white/80 text-sm mb-1">‹ Ligas</button>
-        <h1 className="text-white font-black text-2xl">{L.titulo}</h1>
-        <p className="text-white/85 text-[13px] mt-1 capitalize">{fechaBonita}</p>
-      </div>
+      {pc ? (
+        <div className="px-5 pt-5" style={{ fontFamily: KANIT }}>
+          <button onClick={() => navigate('/ligas')} className="text-white/80 text-sm mb-1">‹ Ligas</button>
+          <div className="flex items-end gap-2">
+            <div className="flex-1 min-w-0 pb-4">
+              <h1 className="font-extrabold text-[34px] leading-[.95] uppercase">
+                {nombreNoche[0]}<br />
+                <span style={{ color: pc.tinte }}>{nombreNoche.slice(1).join(' ')}</span>
+              </h1>
+              <p className="text-white/85 text-[15px] mt-2 capitalize">{fechaBonita}</p>
+            </div>
+            {data.media.mascota_url && (
+              <img src={data.media.mascota_url} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                   className="w-[38%] max-w-[170px] object-contain -mr-1" />
+            )}
+          </div>
+          <PatrocinioArco m={data.media} ancho="56%" />
+        </div>
+      ) : (
+        <div className="bg-sp-green px-5 pt-5 pb-4">
+          <button onClick={() => navigate('/ligas')} className="text-white/80 text-sm mb-1">‹ Ligas</button>
+          <h1 className="text-white font-black text-2xl">{L.titulo}</h1>
+          <p className="text-white/85 text-[13px] mt-1 capitalize">{fechaBonita}</p>
+        </div>
+      )}
 
       {/* Patrocinador PUNTUAL que encabeza la página de la liga (German 17-ago-2026).
           Puede ser de la temporada completa o de esta jornada: el backend ya resuelve
           cuál manda (la jornada le gana a la liga). */}
-      {(data?.media?.sponsor_url || data?.media?.sponsor_nombre) && (
+      {!pc && (data?.media?.sponsor_url || data?.media?.sponsor_nombre) && (
         <div className="mx-4 mt-4 rounded-2xl border border-gray-100 bg-white px-4 py-3 flex items-center gap-3 shadow-sm">
           <span className="text-[10px] font-black tracking-widest text-gray-400 flex-shrink-0">PATROCINA</span>
           {data.media.sponsor_url ? (
@@ -247,8 +277,8 @@ export default function Botanero({ liga = 'botanero' }) {
                   <span>{t.apuntados}/{t.cupo} lugares{t.en_espera > 0 ? ` · ${t.en_espera} en espera` : ''}</span>
                   <span>{t.estado === 'cerrada' ? 'Lista cerrada' : (lleno ? 'Lleno' : 'Lista abierta')}</span>
                 </div>
-                <div style={{ height: 8, borderRadius: 6, background: '#eef2e6', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.min(100, (t.apuntados / t.cupo) * 100)}%`, background: lleno ? '#e0a800' : '#84cc16', transition: 'width .3s' }} />
+                <div style={{ height: 8, borderRadius: 6, background: pc ? 'rgba(255,255,255,.2)' : '#eef2e6', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.min(100, (t.apuntados / t.cupo) * 100)}%`, background: lleno ? '#e0a800' : (pc ? pc.tinte : '#84cc16'), transition: 'width .3s' }} />
                 </div>
               </div>
 

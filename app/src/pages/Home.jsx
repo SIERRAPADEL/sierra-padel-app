@@ -11,6 +11,7 @@ import { soloLetras, errorNombre, nombreEsValido } from '../lib/nombre';
 import { TemporadaSaludo, TemporadaFranja } from '../components/Temporada';
 import { BACKEND } from '../lib/constants';
 import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/format';
+import { fondoPatro, KANIT } from '../components/PatrocinioJornada';
 
 // ── Modal: ¿cómo te llamas? (nombre que no es un nombre) ──────────────────────────
 // German, 30-sep-2026: un usuario capturó su teléfono en el lugar del nombre y en el club
@@ -652,11 +653,14 @@ export default function Home() {
   // usa la pantalla del Botanero y la que de verdad cobra.
   // 🔑 Mientras no se sepa, NO se inventa un número: la tarjeta dice «dos turnos» y ya.
   const [turnosBota, setTurnosBota] = useState(null);
+  // 🍟 Viernes patrocinado (German 6-oct-2026, Chip's): la tarjeta se viste con la marca.
+  const [mediaBota, setMediaBota] = useState(null);
   useEffect(() => {
     apiFetch('/botanero/estado')
       .then(d => {
         const t = d?.ok ? (d.data?.turnos || []) : [];
         if (t.length) setTurnosBota(t.map(x => ({ hora: x.hora, precio: Number(x.precio) })));
+        if (d?.ok) setMediaBota(d.data?.media || null);
       })
       .catch(() => {});   // sin red, la tarjeta se queda con su texto genérico
   }, []);
@@ -796,16 +800,32 @@ export default function Home() {
           onClick={() => navigate('/botanero')}
           className="text-left active:scale-[0.98] transition-transform"
         >
-          <div className="card flex items-center gap-3 py-3">
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#2e1b06', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
-              🍻
+          {mediaBota?.colores?.a ? (
+            <div className="rounded-2xl flex items-center gap-3 py-3 px-4 shadow-md text-white"
+                 style={{ background: fondoPatro(mediaBota.colores), fontFamily: KANIT }}>
+              {mediaBota.sponsor_url
+                ? <img src={mediaBota.sponsor_url} alt={mediaBota.sponsor_nombre || 'Patrocinador'} className="w-11 h-11 object-contain flex-shrink-0" />
+                : <span style={{ fontSize: 20 }}>🍻</span>}
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-[15px]">Viernes Botanero</p>
+                <p className="text-[13px] truncate" style={{ color: mediaBota.colores.tinte }}>
+                  {mediaBota.sponsor_nombre ? 'Presenta ' + mediaBota.sponsor_nombre + ' · ' : ''}{textoBota.replace('Liga individual · ', '')}
+                </p>
+              </div>
+              <span className="text-[13px] font-bold flex-shrink-0" style={{ color: mediaBota.colores.tinte }}>Ver →</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sp-gray font-bold text-[15px]">Viernes Botanero</p>
-              <p className="text-gray-400 text-[13px]">{textoBota}</p>
+          ) : (
+            <div className="card flex items-center gap-3 py-3">
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: '#2e1b06', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
+                🍻
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sp-gray font-bold text-[15px]">Viernes Botanero</p>
+                <p className="text-gray-400 text-[13px]">{textoBota}</p>
+              </div>
+              <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Ver →</span>
             </div>
-            <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Ver →</span>
-          </div>
+          )}
         </button>
 
         {/* 👑 Ladies Night (jueves, sólo mujeres) */}

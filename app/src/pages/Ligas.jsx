@@ -190,7 +190,45 @@ export default function Ligas() {
         })}
 
         {/* El Botanero: otro formato, pantalla propia */}
-        {!loading && (
+        {/* 🍟 Viernes patrocinado (German 6-oct-2026, Chip's): la tarjeta completa con el diseño de
+            las ligas patrocinadas — fondo de la marca, patrocinador en arco y su mascota. Sin
+            patrocinio, la tarjeta de siempre (abajo). */}
+        {!loading && botanero?.media?.colores?.a && (() => {
+          const pc = botanero.media.colores;
+          return (
+            <button onClick={() => navigate('/botanero')} className="text-left active:scale-[0.98] transition-transform">
+              <div className="rounded-3xl overflow-hidden shadow-md text-white relative" style={{ background: fondoPatro(pc), fontFamily: KANIT }}>
+                <div className="px-5 pt-5 pb-4 flex items-start gap-3.5">
+                  <span className="shrink-0" style={{ fontSize: 30, lineHeight: 1 }}>🍻</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-extrabold text-[21px] leading-tight">Liga Viernes Botanero</p>
+                    <p className="text-[14px] leading-snug mt-0.5" style={{ color: pc.tinte }}>Individual · todos los viernes · futbol en pantallas</p>
+                  </div>
+                  <span className="text-[13px] font-extrabold uppercase px-2.5 py-1 rounded-lg bg-white/25 shrink-0">{lider ? 'En juego' : 'Arranca'}</span>
+                </div>
+                <div className="mx-4 h-px bg-white/30" />
+                {fechaBonita && <p className="text-center text-[20px] mt-4 capitalize font-semibold">{fechaBonita}</p>}
+                <p className="text-center text-[15px] text-white/90">{turnos.map(t => `${t.hora} $${t.precio}`).join(' · ')}</p>
+                {cupo > 0 && <p className="text-center text-[13px] text-white/75 mt-0.5">{apuntados}/{cupo} apuntados este viernes</p>}
+                <div className="relative">
+                  <PatrocinioArco m={botanero.media} ancho="46%" className="mt-3 mb-4" />
+                  {botanero.media.mascota_url && (
+                    <img src={botanero.media.mascota_url} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                         className="absolute right-1 bottom-0 w-[24%] object-contain pointer-events-none" />
+                  )}
+                </div>
+                <div className="mx-4 h-px bg-white/30" />
+                <div className="px-5 py-3.5 flex items-center justify-between gap-3">
+                  <span className="text-[14px] text-white/90">
+                    {voy ? '✓ Vas este viernes' : enEspera ? '⏳ Estás en lista de espera' : 'Apúntate cada semana, sin inscripción'}
+                  </span>
+                  <span className="text-[15px] font-extrabold shrink-0" style={{ color: pc.tinte }}>Ver liga</span>
+                </div>
+              </div>
+            </button>
+          );
+        })()}
+        {!loading && !botanero?.media?.colores?.a && (
           <button onClick={() => navigate('/botanero')} className="text-left active:scale-[0.98] transition-transform">
             <div className="card p-0 overflow-hidden">
               <div className="px-4 py-3 flex items-center gap-3" style={{ background: '#2e1b06' }}>

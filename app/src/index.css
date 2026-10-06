@@ -152,3 +152,16 @@ body {
 .tema-patro .text-amber-600, .tema-patro .text-amber-700,
 .tema-patro .text-sp-green-dark, .tema-patro .text-green-700 { color: var(--patro-tinte, #ffc81e); }
 .tema-patro .bg-sp-green { background: var(--patro-tinte, #ffc81e); color: var(--patro-a, #650a0c); }
+/* 🍟 Las noches patrocinadas (Botanero, 6-oct-2026): lo que sólo esa página usa. Va bajo
+   `.noche` para no mover nada de las pantallas de la escalera. */
+.tema-patro.noche .btn-green { background: var(--patro-tinte); color: var(--patro-a); }
+.tema-patro.noche .bg-gray-50, .tema-patro.noche .card [class~="bg-white"] { background: rgba(255, 255, 255, .08); }
+.tema-patro.noche .border-gray-200 { border-color: rgba(255, 255, 255, .18); }
+.tema-patro.noche .bg-green-50, .tema-patro.noche .bg-amber-50,
+.tema-patro.noche .bg-blue-50, .tema-patro.noche .bg-pink-50 { background: rgba(255, 255, 255, .12); }
+.tema-patro.noche .text-green-600, .tema-patro.noche .text-sp-green { color: var(--patro-tinte); }
+.tema-patro.noche .border-sp-green\/40 { border-color: var(--patro-tinte); }
+.tema-patro.noche .text-blue-600 { color: #a5c8ff; }
+.tema-patro.noche .text-pink-600 { color: #ffb3d6; }
+.tema-patro.noche .border-blue-200, .tema-patro.noche .border-pink-200 { border-color: rgba(255, 255, 255, .25); }
+.tema-patro.noche input { background: transparent; color: #fff; }
