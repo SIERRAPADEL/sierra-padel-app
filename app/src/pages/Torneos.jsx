@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, Fragment } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { isPushSupported, usePushSubscription } from '../components/NotificationSetup';
@@ -442,13 +442,15 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
 // ──────────────────────────────────────────────────────────
 // InscripcionFlow
 // ──────────────────────────────────────────────────────────
-function InscripcionFlow({ torneo, onDone, apiFetch }) {
+function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
   // La MISMA regla que pinta la tarjeta: estado inscribible + ventana corriendo. Si aquí
   // fuera distinta, el botón diría "Inscribirme" y la lista de categorías saldría vacía.
   const cats = (torneo.torneo_categorias || []).filter(c => ABIERTA(c, torneo));
 
   const [step, setStep]     = useState(1);
-  const [catSel, setCatSel] = useState(null);
+  // 🎾 La invitación por categoría (German 6-oct-2026) trae ?cat=<id>: llega con SU categoría ya
+  // marcada y sólo le da «Siguiente». Si esa categoría ya no está abierta, elige como siempre.
+  const [catSel, setCatSel] = useState(() => (catInicial && cats.some(c => c.id === catInicial)) ? catInicial : null);
 
   // Pareja
   const [tel2, setTel2]         = useState('');
@@ -810,6 +812,8 @@ export default function Torneos() {
   // directo del evento para que al momento de dar click en wapp estés directo donde los
   // queremos»). Antes sólo existía /torneos y la gente caía en la lista.
   const { id: idLink } = useParams();
+  const [qs] = useSearchParams();
+  const catLink = qs.get('cat');
   const navigate       = useNavigate();
   const [linkNoHay, setLinkNoHay] = useState(false);
 
@@ -900,7 +904,7 @@ export default function Torneos() {
       {view === 'inscripcion' && torneoSel && (
         <div className="overflow-y-auto py-4">
           <SponsorBanner torneo={torneoSel} />
-          <InscripcionFlow torneo={torneoSel} onDone={goBack} apiFetch={apiFetch} />
+          <InscripcionFlow torneo={torneoSel} onDone={goBack} apiFetch={apiFetch} catInicial={idLink ? catLink : null} />
         </div>
       )}
 
