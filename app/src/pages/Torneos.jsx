@@ -47,6 +47,35 @@ function TorneoThumb({ torneo, size = 52 }) {
   );
 }
 
+// 📣 LA CONVOCATORIA DEL TORNEO (German 6-oct-2026: «subir el flyer para que puedan ver la
+// convocatoria… quiero que aparezca en el landing page del torneo»; NO va en el WhatsApp).
+// Vive en torneo_media.config_json.convocatoria_url. Arriba de la inscripción, recortada para que
+// el formulario no quede hasta abajo; al tocarla se ve completa.
+function Convocatoria({ torneo }) {
+  const url = mediaDe(torneo)?.config_json?.convocatoria_url;
+  const [abierta, setAbierta] = useState(false);
+  const [falló, setFalló] = useState(false);
+  if (!url || falló) return null;
+  return (
+    <div className="mx-4 mb-4">
+      <button type="button" onClick={() => setAbierta(a => !a)} className="block w-full text-left">
+        <div className="relative rounded-2xl overflow-hidden shadow-sm" style={abierta ? undefined : { maxHeight: 340 }}>
+          <img src={url} alt={'Convocatoria ' + (torneo?.nombre || '')} onError={() => setFalló(true)} className="block w-full" />
+          {!abierta && (
+            <div className="absolute inset-x-0 bottom-0 h-24 flex items-end justify-center pb-3"
+                 style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 100%)' }}>
+              <span className="text-white font-bold text-[13px] bg-black/40 rounded-full px-3 py-1">Ver convocatoria completa ▾</span>
+            </div>
+          )}
+        </div>
+      </button>
+      {abierta && (
+        <button type="button" onClick={() => setAbierta(false)} className="w-full text-center text-[12px] text-gray-400 mt-1.5">Ocultar convocatoria ▴</button>
+      )}
+    </div>
+  );
+}
+
 // Patrocinador PUNTUAL del torneo: encabeza su página (regla de German 17-ago-2026).
 // No es el patrocinador del club ni un carrusel — es el de este torneo y va arriba.
 function SponsorBanner({ torneo }) {
@@ -903,6 +932,7 @@ export default function Torneos() {
       {/* ── INSCRIPCION FLOW ── */}
       {view === 'inscripcion' && torneoSel && (
         <div className="overflow-y-auto py-4">
+          <Convocatoria torneo={torneoSel} />
           <SponsorBanner torneo={torneoSel} />
           <InscripcionFlow torneo={torneoSel} onDone={goBack} apiFetch={apiFetch} catInicial={idLink ? catLink : null} />
         </div>
@@ -911,6 +941,7 @@ export default function Torneos() {
       {/* ── DETALLE ── */}
       {view === 'detalle' && torneoSel && (
         <div className="overflow-y-auto py-4">
+          <Convocatoria torneo={torneoSel} />
           <SponsorBanner torneo={torneoSel} />
           <TorneoDetail torneo={torneoSel} apiFetch={apiFetch} miTelefono={miTelefono} />
         </div>
