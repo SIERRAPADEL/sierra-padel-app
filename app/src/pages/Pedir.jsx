@@ -12,7 +12,13 @@ export default function Pedir() {
   const { user } = useAuth();
   const [menu, setMenu]           = useState({});
   const [loading, setLoading]     = useState(true);
-  const [carrito, setCarrito]     = useState({});  // { itemId: cantidad }
+  const [carrito, setCarrito]     = useState({});  // { llave: cantidad } — llave = itemId, o itemId|opciones
+  // 🌮 COMPLEMENTOS (German, 13-oct-2026: «al pedir tacos no pregunta tortilla y es
+  // indispensable»). Un platillo con grupos (tortilla, guiso…) se agrega con su elección y
+  // cada elección es su propio renglón: 2 tacos en maíz y 1 en harina son dos líneas.
+  // elecciones[llave] = { itemId, complementos:[opcionId], detalle:'Tortilla: Maíz', extra:$ }
+  const [elecciones, setElecciones] = useState({});
+  const [eligiendo, setEligiendo]   = useState(null); // { item, sel:{ grupoId:[opcionId] } }
   const [ubicacion, setUbicacion] = useState('');
   // "Para llevar" no es un lugar donde esperar —el cliente puede ni estar en el club—,
   // así que ni el pin 📍 ni el "llegará hasta donde estés" aplican.
@@ -50,9 +56,9 @@ export default function Pedir() {
     const t = (horario && horario.tiempos) || { cocina: 20, barra: 5, tienda: 5, default: 5 };
     const idx = menuPorId();
     let max = 0;
-    for (const [id, cant] of Object.entries(carrito)) {
+    for (const [k, cant] of Object.entries(carrito)) {
       if (!cant || cant <= 0) continue;
-      const it = idx[id];
+      const it = idx[idDe(k)];
       const m = (it && t[it.area] != null) ? t[it.area] : t.default;
       if (m > max) max = m;
     }
@@ -140,6 +146,58 @@ export default function Pedir() {
     } catch { }
   }
 
+  // De la llave del carrito al producto (las llaves con complementos llevan «|opciones»).
+  function idDe(k) { return (elecciones[k] && elecciones[k].itemId) || String(k).split('|')[0]; }
+  const llevaComplementos = (it) => Array.isArray(it?.complementos) && it.complementos.length > 0;
+  // Cuántos de ese producto hay en el carrito, sumando todas sus variantes.
+  function cantDeItem(itemId) {
+    let n = 0;
+    for (const [k, c] of Object.entries(carrito)) if (idDe(k) === itemId) n += c;
+    return n;
+  }
+  // «+» de un producto: si tiene complementos se pregunta primero; si no, se agrega directo.
+  function agregarItem(item) {
+    if (llevaComplementos(item)) {
+      // Un grupo de UNA sola opción ya está elegido: no tiene caso preguntarlo.
+      const sel = {};
+      for (const g of item.complementos) if (g.opciones.length === 1 && g.min >= 1) sel[g.id] = [g.opciones[0].id];
+      setEligiendo({ item, sel });
+      return;
+    }
+    cambiarCantidad(item.id, 1);
+  }
+  function faltanEnEleccion(e) {
+    return (e?.item?.complementos || []).filter(g => (e.sel[g.id] || []).length < g.min);
+  }
+  function confirmarEleccion() {
+    const e = eligiendo;
+    if (!e || faltanEnEleccion(e).length) return;
+    const ids = [], partes = [];
+    let extra = 0;
+    for (const g of e.item.complementos) {
+      const elegidas = g.opciones.filter(o => (e.sel[g.id] || []).includes(o.id));
+      if (!elegidas.length) continue;
+      ids.push(...elegidas.map(o => o.id));
+      partes.push(`${g.nombre}: ${elegidas.map(o => o.nombre).join(', ')}`);
+      extra += elegidas.reduce((s, o) => s + (Number(o.precio_extra) || 0), 0);
+    }
+    const llave = `${e.item.id}|${[...ids].sort().join(',')}`;
+    setElecciones(prev => ({ ...prev, [llave]: { itemId: e.item.id, complementos: ids, detalle: partes.join(' · '), extra } }));
+    setCarrito(prev => ({ ...prev, [llave]: (prev[llave] || 0) + 1 }));
+    setEligiendo(null);
+  }
+  function tocarOpcion(g, o) {
+    setEligiendo(prev => {
+      const actual = prev.sel[g.id] || [];
+      let nuevo;
+      if (g.max <= 1) nuevo = actual.includes(o.id) ? [] : [o.id];
+      else if (actual.includes(o.id)) nuevo = actual.filter(x => x !== o.id);
+      else if (actual.length >= g.max) return prev;   // ya completó el máximo
+      else nuevo = [...actual, o.id];
+      return { ...prev, sel: { ...prev.sel, [g.id]: nuevo } };
+    });
+  }
+
   // Índice plano del menú por id (para cruzar hábitos con precio/disponibilidad vivos)
   function menuPorId() {
     const idx = {};
@@ -163,14 +221,26 @@ export default function Pedir() {
     const items = habitos?.ultimo?.items;
     if (!items?.length) return;
     const idx = menuPorId();
+    const nuevasElecciones = {};
     setCarrito(prev => {
       const next = { ...prev };
       for (const it of items) {
         const m = idx[it.item_id || it.id];
-        if (m && m.disponible) next[m.id] = (next[m.id] || 0) + (Number(it.cantidad) || 1);
+        if (!m || !m.disponible) continue;
+        let llave = m.id;
+        if (llevaComplementos(m)) {
+          // Se repite con la MISMA elección; si el pedido viejo no la traía, no se puede
+          // adivinar la tortilla: ese platillo se agrega a mano con su «+».
+          const ids = Array.isArray(it.complementos) ? it.complementos.map(String) : [];
+          if (!ids.length) continue;
+          llave = `${m.id}|${[...ids].sort().join(',')}`;
+          nuevasElecciones[llave] = { itemId: m.id, complementos: ids, detalle: it.detalle || '', extra: Math.max(0, (Number(it.precio) || m.precio) - m.precio) };
+        }
+        next[llave] = (next[llave] || 0) + (Number(it.cantidad) || 1);
       }
       return next;
     });
+    setElecciones(prev => ({ ...prev, ...nuevasElecciones }));
   }
 
   // Cantidad de items del último pedido que aún se pueden repetir
@@ -202,9 +272,9 @@ export default function Pedir() {
   function totalCarrito() {
     const idx = menuPorId();
     let total = 0;
-    for (const [id, cant] of Object.entries(carrito)) {
-      const item = idx[id];
-      if (item && cant > 0) total += item.precio * cant;
+    for (const [k, cant] of Object.entries(carrito)) {
+      const item = idx[idDe(k)];
+      if (item && cant > 0) total += (item.precio + ((elecciones[k] && elecciones[k].extra) || 0)) * cant;
     }
     return total;
   }
@@ -212,14 +282,18 @@ export default function Pedir() {
   function itemsCarrito() {
     const idx = menuPorId();
     const lista = [];
-    for (const [id, cant] of Object.entries(carrito)) {
-      const item = idx[id];
+    for (const [k, cant] of Object.entries(carrito)) {
+      const item = idx[idDe(k)];
       if (!item || !(cant > 0)) continue;
+      const el = elecciones[k];
       lista.push({
+        llave:    k,
         item_id:  item.id,
         nombre:   item.nombre,
         cantidad: cant,
-        precio:   item.precio,
+        precio:   item.precio + ((el && el.extra) || 0),
+        area:     item.area,
+        ...(el ? { complementos: el.complementos, detalle: el.detalle } : {}),
       });
     }
     return lista;
@@ -234,7 +308,7 @@ export default function Pedir() {
   function quitarDelCarrito(itemId) {
     setCarrito(prev => { const { [itemId]: _, ...rest } = prev; return rest; });
   }
-  function vaciarCarrito() { setCarrito({}); }
+  function vaciarCarrito() { setCarrito({}); setElecciones({}); }
 
   // ── HORARIO POR ÁREA ────────────────────────────────────────────────────────────
   // La cocina cierra a las 11 y la barra sigue abierta: apagar la app entera a esa hora
@@ -256,7 +330,7 @@ export default function Pedir() {
   function itemsCerrados() {
     const idx = menuPorId();
     return Object.keys(carrito)
-      .map(id => idx[id])
+      .map(k => (idx[idDe(k)] ? { ...idx[idDe(k)], llave: k } : null))
       .filter(it => it && areaCerrada(it.area));
   }
 
@@ -324,6 +398,7 @@ export default function Pedir() {
       setSeguim(null);
       setPedidoOk(d.data);
       setCarrito({});
+      setElecciones({});
       setNotas('');
     } catch (e) {
       setErrorEnvio(e.message || 'Error al enviar pedido. Intenta de nuevo.');
@@ -527,11 +602,11 @@ export default function Pedir() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {frecVivos.map(m => {
-                    const cant = carrito[m.id] || 0;
+                    const cant = cantDeItem(m.id);
                     return (
                       <button
                         key={m.id}
-                        onClick={() => cambiarCantidad(m.id, 1)}
+                        onClick={() => agregarItem(m)}
                         className={`flex items-center gap-2 px-3.5 py-2.5 rounded-full text-[15px] font-bold transition-colors ${
                           cant > 0 ? 'bg-sp-green text-white' : 'bg-sp-green-light text-sp-green-dark'
                         }`}
@@ -567,7 +642,8 @@ export default function Pedir() {
         {!loading && (
           <div className="flex flex-col gap-2.5">
             {itemsMostrar.map(item => {
-              const cant = carrito[item.id] || 0;
+              const cant = cantDeItem(item.id);
+              const conComp = llevaComplementos(item);
               // Lo que ya cerró se sigue VIENDO (para que el cliente sepa que existe y a
               // qué hora vuelve), pero apagado: no se puede agregar. Antes esto no existía
               // y a las 11 se apagaba la app completa, barra incluida.
@@ -593,12 +669,17 @@ export default function Pedir() {
                   </div>
                   {cerrado ? (
                     <span className="text-[12px] font-bold text-gray-400 flex-shrink-0">Cerrado</span>
-                  ) : cant === 0 ? (
+                  ) : (cant === 0 || conComp) ? (
+                    /* Con complementos siempre es «+» (cada uno pregunta su tortilla); los que ya
+                       van se ven y se ajustan en el carrito, porque pueden ser variantes distintas. */
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {cant > 0 && <span className="text-sp-green-dark text-[13px] font-black">{cant} en carrito</span>}
                     <button
-                      onClick={() => cambiarCantidad(item.id, 1)}
+                      onClick={() => agregarItem(item)}
                       className="w-10 h-10 rounded-full bg-sp-green-light text-sp-green-dark text-2xl font-black flex items-center justify-center flex-shrink-0"
                       style={{ lineHeight: 1 }}
                     >+</button>
+                    </div>
                   ) : (
                     <div className="flex items-center gap-2.5 flex-shrink-0">
                       <button onClick={() => cambiarCantidad(item.id, -1)} className="w-9 h-9 rounded-full bg-gray-100 text-sp-gray text-xl font-black flex items-center justify-center">−</button>
@@ -666,16 +747,19 @@ export default function Pedir() {
               {itemsCarrito().map(it => {
                 const cerrado = areaCerrada(it.area);
                 return (
-                  <div key={it.item_id} className="py-1.5 border-b border-gray-200 last:border-0">
+                  <div key={it.llave} className="py-1.5 border-b border-gray-200 last:border-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sp-gray text-[15px] flex-1">{it.nombre}</span>
+                      <span className="text-sp-gray text-[15px] flex-1">
+                        {it.nombre}
+                        {it.detalle && <span className="block text-[12px] font-bold text-sp-green-dark">{it.detalle}</span>}
+                      </span>
                       <span className="text-gray-500 text-[15px] font-bold">${(it.precio * it.cantidad).toFixed(0)}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <button onClick={() => cambiarCantidad(it.item_id, -1)} className="w-8 h-8 rounded-full bg-white border border-gray-200 text-sp-gray text-lg font-black flex items-center justify-center">−</button>
+                      <button onClick={() => cambiarCantidad(it.llave, -1)} className="w-8 h-8 rounded-full bg-white border border-gray-200 text-sp-gray text-lg font-black flex items-center justify-center">−</button>
                       <span className="text-sp-gray text-[15px] font-black min-w-[18px] text-center">{it.cantidad}</span>
-                      <button onClick={() => cambiarCantidad(it.item_id, 1)} className="w-8 h-8 rounded-full bg-sp-green text-white text-lg font-black flex items-center justify-center">+</button>
-                      <button onClick={() => quitarDelCarrito(it.item_id)} className="ml-1 px-2.5 h-8 rounded-full bg-white border border-gray-200 text-[13px] font-bold text-gray-500">🗑 Quitar</button>
+                      <button onClick={() => cambiarCantidad(it.llave, 1)} className="w-8 h-8 rounded-full bg-sp-green text-white text-lg font-black flex items-center justify-center">+</button>
+                      <button onClick={() => quitarDelCarrito(it.llave)} className="ml-1 px-2.5 h-8 rounded-full bg-white border border-gray-200 text-[13px] font-bold text-gray-500">🗑 Quitar</button>
                       <span className="flex-1" />
                       <span className="text-gray-400 text-[12px]">${it.precio} c/u</span>
                     </div>
@@ -731,7 +815,7 @@ export default function Pedir() {
                   {cerradosEnCarrito.map(i => i.nombre).join(', ')}. Lo demás sí se puede.
                 </p>
                 <button
-                  onClick={() => cerradosEnCarrito.forEach(i => quitarDelCarrito(i.id))}
+                  onClick={() => cerradosEnCarrito.forEach(i => quitarDelCarrito(i.llave))}
                   className="w-full py-2.5 rounded-xl font-black text-[14px] bg-white border"
                   style={{ borderColor: '#fed7aa', color: '#9a3412' }}
                 >Quitarlos y seguir</button>
@@ -757,6 +841,57 @@ export default function Pedir() {
           </div>
         </div>
       )}
+
+      {/* 🌮 ELEGIR COMPLEMENTOS — se pregunta ANTES de entrar al carrito (German, 13-oct-2026:
+          «al pedir tacos no pregunta tortilla y es indispensable»). Lo obligatorio no deja
+          agregar hasta elegirlo; el servidor rechaza igual un pedido sin elegir. */}
+      {eligiendo && (() => {
+        const it = eligiendo.item;
+        const faltan = faltanEnEleccion(eligiendo);
+        const extra = it.complementos.reduce((s, g) => s + g.opciones
+          .filter(o => (eligiendo.sel[g.id] || []).includes(o.id))
+          .reduce((t, o) => t + (Number(o.precio_extra) || 0), 0), 0);
+        return (
+          <div className="fixed inset-0 z-[70] flex items-end" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setEligiendo(null)}>
+            <div className="w-full bg-white rounded-t-3xl px-4 pt-5 pb-8" onClick={e => e.stopPropagation()}
+              style={{ maxWidth: 448, margin: '0 auto', maxHeight: 'min(85dvh, 85vh)', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+              <p className="text-sp-gray font-black text-lg">{it.nombre}</p>
+              <p className="text-sp-green-dark font-black text-base mb-3">${it.precio + extra}</p>
+              {it.complementos.map(g => {
+                const elegidas = eligiendo.sel[g.id] || [];
+                const pide = g.min >= 1
+                  ? (g.max <= 1 ? 'Elige 1 · obligatorio' : `Elige ${g.min === g.max ? g.max : `de ${g.min} a ${g.max}`} · obligatorio`)
+                  : `Opcional · hasta ${g.max}`;
+                return (
+                  <div key={g.id} className="mb-4">
+                    <div className="flex items-baseline justify-between mb-2">
+                      <p className="text-sp-gray font-black text-[16px]">{g.nombre}</p>
+                      <p className={`text-[12px] font-bold ${g.min >= 1 && elegidas.length < g.min ? 'text-[#9a3412]' : 'text-gray-400'}`}>{pide}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {g.opciones.map(o => {
+                        const on = elegidas.includes(o.id);
+                        return (
+                          <button key={o.id} onClick={() => tocarOpcion(g, o)}
+                            className={`py-3 px-3 rounded-xl text-[15px] font-bold border text-left ${on ? 'bg-sp-green text-white border-sp-green' : 'bg-white text-sp-gray border-gray-200'}`}>
+                            {o.nombre}
+                            {o.precio_extra > 0 && <span className={`block text-[12px] ${on ? 'text-white/80' : 'text-gray-400'}`}>+${o.precio_extra}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              <button onClick={confirmarEleccion} disabled={faltan.length > 0}
+                className={`w-full py-3.5 rounded-xl font-black text-[15px] ${faltan.length ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'}`}>
+                {faltan.length ? `Elige ${faltan.map(g => g.nombre.toLowerCase()).join(' y ')}` : `Agregar · $${it.precio + extra}`}
+              </button>
+              <button onClick={() => setEligiendo(null)} className="w-full text-center text-gray-400 text-sm font-semibold mt-3">Cancelar</button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* SELECTOR DE UBICACIÓN — desde el chip de arriba o desde la confirmación */}
       {pickUbi && (
