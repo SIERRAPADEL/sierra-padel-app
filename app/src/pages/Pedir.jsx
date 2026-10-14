@@ -161,10 +161,18 @@ export default function Pedir() {
       // Un grupo de UNA sola opción ya está elegido: no tiene caso preguntarlo.
       const sel = {};
       for (const g of item.complementos) if (g.opciones.length === 1 && g.min >= 1) sel[g.id] = [g.opciones[0].id];
-      setEligiendo({ item, sel });
+      setEligiendo({ item, sel, cant: 1 });
       return;
     }
     cambiarCantidad(item.id, 1);
+  }
+  // «−» de un producto con complementos (German 13-oct-2026: «quitaste el multiplicador»).
+  // Baja uno de la variante agregada al ÚLTIMO (el orden del carrito es el de inserción):
+  // es lo que el cliente espera al arrepentirse del último toque. Cada variante se sigue
+  // ajustando por separado en el carrito.
+  function quitarUnoDeItem(itemId) {
+    const llaves = Object.keys(carrito).filter(k => idDe(k) === itemId && carrito[k] > 0);
+    if (llaves.length) cambiarCantidad(llaves[llaves.length - 1], -1);
   }
   function faltanEnEleccion(e) {
     return (e?.item?.complementos || []).filter(g => (e.sel[g.id] || []).length < g.min);
@@ -183,7 +191,8 @@ export default function Pedir() {
     }
     const llave = `${e.item.id}|${[...ids].sort().join(',')}`;
     setElecciones(prev => ({ ...prev, [llave]: { itemId: e.item.id, complementos: ids, detalle: partes.join(' · '), extra } }));
-    setCarrito(prev => ({ ...prev, [llave]: (prev[llave] || 0) + 1 }));
+    const n = Math.max(1, Number(e.cant) || 1);
+    setCarrito(prev => ({ ...prev, [llave]: (prev[llave] || 0) + n }));
     setEligiendo(null);
   }
   function tocarOpcion(g, o) {
@@ -669,22 +678,19 @@ export default function Pedir() {
                   </div>
                   {cerrado ? (
                     <span className="text-[12px] font-bold text-gray-400 flex-shrink-0">Cerrado</span>
-                  ) : (cant === 0 || conComp) ? (
-                    /* Con complementos siempre es «+» (cada uno pregunta su tortilla); los que ya
-                       van se ven y se ajustan en el carrito, porque pueden ser variantes distintas. */
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {cant > 0 && <span className="text-sp-green-dark text-[13px] font-black">{cant} en carrito</span>}
+                  ) : cant === 0 ? (
                     <button
                       onClick={() => agregarItem(item)}
                       className="w-10 h-10 rounded-full bg-sp-green-light text-sp-green-dark text-2xl font-black flex items-center justify-center flex-shrink-0"
                       style={{ lineHeight: 1 }}
                     >+</button>
-                    </div>
                   ) : (
+                    /* − cantidad + para TODOS (German 13-oct-2026). Con complementos el «+» vuelve
+                       a preguntar (puede ser otra tortilla) y el «−» quita el último agregado. */
                     <div className="flex items-center gap-2.5 flex-shrink-0">
-                      <button onClick={() => cambiarCantidad(item.id, -1)} className="w-9 h-9 rounded-full bg-gray-100 text-sp-gray text-xl font-black flex items-center justify-center">−</button>
+                      <button onClick={() => (conComp ? quitarUnoDeItem(item.id) : cambiarCantidad(item.id, -1))} className="w-9 h-9 rounded-full bg-gray-100 text-sp-gray text-xl font-black flex items-center justify-center">−</button>
                       <span className="text-sp-gray text-base font-black min-w-[20px] text-center">{cant}</span>
-                      <button onClick={() => cambiarCantidad(item.id, 1)} className="w-9 h-9 rounded-full bg-sp-green text-white text-xl font-black flex items-center justify-center">+</button>
+                      <button onClick={() => (conComp ? agregarItem(item) : cambiarCantidad(item.id, 1))} className="w-9 h-9 rounded-full bg-sp-green text-white text-xl font-black flex items-center justify-center">+</button>
                     </div>
                   )}
                 </div>
@@ -883,9 +889,21 @@ export default function Pedir() {
                   </div>
                 );
               })}
+              {/* Cuántas piezas con ESTA elección: «4 tacos de maíz» de un jalón. */}
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sp-gray font-black text-[16px]">Cantidad</p>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setEligiendo(p => ({ ...p, cant: Math.max(1, (p.cant || 1) - 1) }))}
+                    className="w-10 h-10 rounded-full bg-gray-100 text-sp-gray text-xl font-black flex items-center justify-center">−</button>
+                  <span className="text-sp-gray text-lg font-black min-w-[24px] text-center">{eligiendo.cant || 1}</span>
+                  <button onClick={() => setEligiendo(p => ({ ...p, cant: Math.min(50, (p.cant || 1) + 1) }))}
+                    className="w-10 h-10 rounded-full bg-sp-green text-white text-xl font-black flex items-center justify-center">+</button>
+                </div>
+              </div>
               <button onClick={confirmarEleccion} disabled={faltan.length > 0}
                 className={`w-full py-3.5 rounded-xl font-black text-[15px] ${faltan.length ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'}`}>
-                {faltan.length ? `Elige ${faltan.map(g => g.nombre.toLowerCase()).join(' y ')}` : `Agregar · $${it.precio + extra}`}
+                {faltan.length ? `Elige ${faltan.map(g => g.nombre.toLowerCase()).join(' y ')}`
+                  : `Agregar ${eligiendo.cant || 1} · $${(it.precio + extra) * (eligiendo.cant || 1)}`}
               </button>
               <button onClick={() => setEligiendo(null)} className="w-full text-center text-gray-400 text-sm font-semibold mt-3">Cancelar</button>
             </div>
