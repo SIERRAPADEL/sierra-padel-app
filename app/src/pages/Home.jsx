@@ -19,6 +19,8 @@ function TarjetaJugadas({ navigate, apiFetch }) {
   const [d, setD] = useState(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { apiFetch('/replays/mias').then(r => { if (r?.ok) setD(r.data); }).catch(() => {}); }, []);
+  // Apagada hasta que German prenda las repeticiones (club_config replays.visible_app).
+  if (!d || !d.visible) return null;
   const ahora = d?.ahora;
   const nuevas = (d?.clips || []).filter(c => c.nueva).length;
   return (

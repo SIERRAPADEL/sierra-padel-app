@@ -52,6 +52,31 @@ function Clip({ c, dias, onAbrir }) {
   );
 }
 
+// Descargar: se baja el MP4 y se guarda con nombre propio (en iPhone abre el video para «Guardar»).
+async function bajarArchivo(c) {
+  const r = await fetch(c.url); const b = await r.blob();
+  return new File([b], `SierraPadel-cancha${c.cancha}-${(c.slug || c.id)}.mp4`, { type: 'video/mp4' });
+}
+async function descargar(c) {
+  try {
+    const f = await bajarArchivo(c);
+    const u = URL.createObjectURL(f), a = document.createElement('a');
+    a.href = u; a.download = f.name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 10000);
+  } catch { window.open(c.url, '_blank'); }
+}
+// Compartir: el menú del teléfono (WhatsApp, Instagram…) con el video como archivo.
+async function compartir(c) {
+  try {
+    const f = await bajarArchivo(c);
+    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+      await navigator.share({ files: [f], title: 'Mi jugada en Sierra Pádel', text: '🎾 Mi jugada en @sierra.padel' });
+      return;
+    }
+  } catch { /* cancelado o no soportado */ }
+  descargar(c);
+}
+
 export default function Jugadas() {
   const navigate = useNavigate();
   const { apiFetch } = useApi();
@@ -62,6 +87,7 @@ export default function Jugadas() {
   useEffect(() => { apiFetch('/replays/mias').then(d => { if (d.ok) setData(d.data); }); }, []);
 
   const dias = data?.dias_nube || 7;
+  const nombreConcurso = data?.concurso?.periodo === 'semana' ? 'JUGADA DE LA SEMANA' : 'JUGADA DE LA QUINCENA';
   const clips = data?.clips || [];
   const grupos = [];
   for (const c of clips) {
@@ -97,10 +123,13 @@ export default function Jugadas() {
           </div>
         )}
 
-        {clips.length > 0 && (
+        {clips.length > 0 && data?.concurso && (
           <div className="rounded-2xl px-4 py-3 text-white" style={{ background: 'linear-gradient(135deg,#13201a,#0a0f0c)' }}>
-            <p className="font-black text-[14.5px]" style={{ color: '#8dc63f' }}>🏆 JUGADA DEL MES</p>
-            <p className="text-[13.5px] mt-0.5 leading-snug">Súbela a tus redes y etiqueta a <b>@sierra.padel</b>. Las de más likes y comentarios del mes ganan premio.</p>
+            <p className="font-black text-[14.5px]" style={{ color: '#8dc63f' }}>🏆 {nombreConcurso}</p>
+            <p className="text-[13.5px] mt-0.5 leading-snug">Súbela a Instagram y etiqueta a <b>@sierra.padel</b>. Gana la de más likes y comentarios (mínimo {data.concurso.min_likes} likes).</p>
+            {(data.concurso.premios || []).length > 0 && (
+              <p className="text-[12.5px] mt-1 text-white/70">{data.concurso.premios.map((pr, i) => `${i + 1}º ${pr}`).join(' · ')}</p>
+            )}
           </div>
         )}
 
@@ -122,8 +151,10 @@ export default function Jugadas() {
         ))}
       </div>
 
+      {/* El reproductor rueda si el teléfono es chico y respeta el área segura de abajo (iPhone). */}
       {viendo && (
-        <div className="fixed inset-0 z-[70] bg-black flex flex-col" onClick={() => setViendo(null)}>
+        <div className="fixed inset-0 z-[70] bg-black flex flex-col overflow-y-auto overscroll-contain" onClick={() => setViendo(null)}
+             style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           <div className="flex items-center justify-between px-4 pt-4 pb-2 text-white">
             <div>
               <p className="font-black text-[16px]">Cancha {viendo.cancha}</p>
@@ -137,10 +168,10 @@ export default function Jugadas() {
           <div className="px-4 pb-8 pt-3 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
             <p className="text-amber-300 text-[13px] font-bold text-center">⏳ Disponible hasta el {hasta(viendo.iniciado_en, dias)} · descárgala para no perderla</p>
             <div className="grid grid-cols-2 gap-3">
-              <button className="py-3.5 rounded-xl bg-white text-sp-gray font-black text-[15px]">⬇ Descargar</button>
-              <button className="py-3.5 rounded-xl bg-sp-green text-white font-black text-[15px]">↗ Compartir</button>
+              <button onClick={() => descargar(viendo)} className="py-3.5 rounded-xl bg-white text-sp-gray font-black text-[15px]">⬇ Descargar</button>
+              <button onClick={() => compartir(viendo)} className="py-3.5 rounded-xl bg-sp-green text-white font-black text-[15px]">↗ Compartir</button>
             </div>
-            <p className="text-white/55 text-[12px] text-center">Etiqueta a @sierra.padel y entra a la Jugada del mes 🏆</p>
+            {data?.concurso && <p className="text-white/55 text-[12px] text-center">Etiqueta a @sierra.padel y entra a la {nombreConcurso === 'JUGADA DE LA SEMANA' ? 'Jugada de la semana' : 'Jugada de la quincena'} 🏆</p>}
           </div>
         </div>
       )}
