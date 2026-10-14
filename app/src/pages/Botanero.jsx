@@ -4,6 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { isPushSupported } from '../components/NotificationSetup';
 import PrenderAvisos from '../components/PrenderAvisos';
 import { fondoPatro, PatrocinioArco, KANIT } from '../components/PatrocinioJornada';
+import { infoNoche } from '../lib/noche';
 
 // Liga Viernes Botanero — Fase 1: apuntarse a la lista semanal (cupo + lista de espera).
 // Liga individual perpetua: 3 sets rotando pareja; el récord te va acomodando de cancha.
@@ -118,6 +119,9 @@ export default function Botanero({ liga = 'botanero' }) {
     setAccion(false);
   }
 
+  // 📅 La fecha va en GRANDE y, si esta semana no hay noche, se dice (German 13-oct-2026). Ver lib/noche.js.
+  const fn = infoNoche(data?.fecha);
+  const nombreCorto = L.titulo.replace(/^[^A-Za-zÁÉÍÓÚÑáéíóúñ]+/, '');
   const fechaBonita = data?.fecha
     ? new Date(data.fecha + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
     : '';
@@ -191,6 +195,24 @@ export default function Botanero({ liga = 'botanero' }) {
           <button onClick={() => navigate('/ligas')} className="text-white/80 text-sm mb-1">‹ Ligas</button>
           <h1 className="text-white font-black text-2xl">{L.titulo}</h1>
           <p className="text-white/85 text-[13px] mt-1 capitalize">{fechaBonita}</p>
+        </div>
+      )}
+
+      {fn && (
+        <div className="mx-4 mt-4 rounded-2xl border-2 border-sp-green bg-white px-4 py-3 text-center shadow-sm">
+          <p className="text-[11px] font-black tracking-widest text-gray-400">
+            {fn.saltaSemana ? 'PRÓXIMA FECHA' : 'FECHA DE ESTA SEMANA'}
+          </p>
+          <p className="text-sp-gray font-black text-[24px] leading-tight mt-0.5">📅 {fn.larga}</p>
+          {fn.cuando && <p className="text-[13px] font-bold text-sp-green-dark mt-0.5">{fn.cuando}</p>}
+        </div>
+      )}
+      {fn?.saltaSemana && (
+        <div className="mx-4 mt-2 rounded-2xl bg-amber-50 border-2 border-amber-300 px-4 py-3">
+          <p className="text-amber-800 font-black text-[15px]">⚠️ Esta semana NO hay {nombreCorto}</p>
+          <p className="text-amber-800 text-[13px] mt-0.5 leading-snug">
+            Si te apuntas, tu lugar es para el <b>{fn.larga}</b>.
+          </p>
         </div>
       )}
 
@@ -402,7 +424,7 @@ export default function Botanero({ liga = 'botanero' }) {
                 )}
                 {!t.mi_estado && pideSexo !== t.turno && (
                   <button onClick={() => apuntarse(t.turno)} disabled={accion} className="btn-green w-full disabled:opacity-50">
-                    {lleno || t.estado === 'cerrada' ? 'Anotarme en la espera' : '¡Me apunto!'}
+                    {lleno || t.estado === 'cerrada' ? 'Anotarme en la espera' : (fn ? `¡Me apunto el ${fn.corta}!` : '¡Me apunto!')}
                   </button>
                 )}
                 {!t.mi_estado && pideSexo === t.turno && (

@@ -12,6 +12,20 @@ import { TemporadaSaludo, TemporadaFranja } from '../components/Temporada';
 import { BACKEND } from '../lib/constants';
 import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/format';
 import { fondoPatro, KANIT } from '../components/PatrocinioJornada';
+import { infoNoche } from '../lib/noche';
+
+// 📅 Renglón de la fecha en la tarjeta de la noche (German 13-oct-2026: «énfasis en la fecha»).
+// Si esta semana no hay, lo dice en ámbar: quien se apunta el martes tiene que saber que no es
+// para este jueves. Sin fecha (sin red) no pinta nada.
+function FechaNoche({ fecha, claro }) {
+  const fn = infoNoche(fecha);
+  if (!fn) return null;
+  return fn.saltaSemana
+    ? <p className="text-[12.5px] font-black mt-0.5 rounded-md px-1.5 py-0.5 inline-block bg-amber-100 text-amber-800">
+        ⚠️ Esta semana no hay · próxima: {fn.corta}
+      </p>
+    : <p className={`text-[13px] font-black mt-0.5 ${claro ? '' : 'text-sp-green-dark'}`}>📅 {fn.corta}{fn.dias <= 1 ? ' · ' + fn.cuando : ''}</p>;
+}
 
 // ── Modal: ¿cómo te llamas? (nombre que no es un nombre) ──────────────────────────
 // German, 30-sep-2026: un usuario capturó su teléfono en el lugar del nombre y en el club
@@ -655,14 +669,19 @@ export default function Home() {
   const [turnosBota, setTurnosBota] = useState(null);
   // 🍟 Viernes patrocinado (German 6-oct-2026, Chip's): la tarjeta se viste con la marca.
   const [mediaBota, setMediaBota] = useState(null);
+  const [fechaBota, setFechaBota] = useState(null);
+  const [fechaLadies, setFechaLadies] = useState(null);
   useEffect(() => {
     apiFetch('/botanero/estado')
       .then(d => {
         const t = d?.ok ? (d.data?.turnos || []) : [];
         if (t.length) setTurnosBota(t.map(x => ({ hora: x.hora, precio: Number(x.precio) })));
-        if (d?.ok) setMediaBota(d.data?.media || null);
+        if (d?.ok) { setMediaBota(d.data?.media || null); setFechaBota(d.data?.fecha || null); }
       })
       .catch(() => {});   // sin red, la tarjeta se queda con su texto genérico
+    apiFetch('/ladies/estado')
+      .then(d => { if (d?.ok) setFechaLadies(d.data?.fecha || null); })
+      .catch(() => {});
   }, []);
   // El sistema habla en 24 h (18:30); la tarjeta siempre le habló al cliente en 12 h (6:30).
   const doce = (hhmm) => {
@@ -811,6 +830,7 @@ export default function Home() {
                 <p className="text-[13px] truncate" style={{ color: mediaBota.colores.tinte }}>
                   {mediaBota.sponsor_nombre ? 'Presenta ' + mediaBota.sponsor_nombre + ' · ' : ''}{textoBota.replace('Liga individual · ', '')}
                 </p>
+                <FechaNoche fecha={fechaBota} claro />
               </div>
               <span className="text-[13px] font-bold flex-shrink-0" style={{ color: mediaBota.colores.tinte }}>Ver →</span>
             </div>
@@ -822,6 +842,7 @@ export default function Home() {
               <div className="flex-1 min-w-0">
                 <p className="text-sp-gray font-bold text-[15px]">Viernes Botanero</p>
                 <p className="text-gray-400 text-[13px]">{textoBota}</p>
+                <FechaNoche fecha={fechaBota} />
               </div>
               <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Ver →</span>
             </div>
@@ -840,6 +861,7 @@ export default function Home() {
             <div className="flex-1 min-w-0">
               <p className="text-sp-gray font-bold text-[15px]">Ladies Night</p>
               <p className="text-gray-400 text-[13px]">Jueves 7:00 y 8:30 · sólo mujeres</p>
+              <FechaNoche fecha={fechaLadies} />
             </div>
             <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Ver →</span>
           </div>
