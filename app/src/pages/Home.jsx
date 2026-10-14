@@ -14,6 +14,27 @@ import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/for
 import { fondoPatro, KANIT } from '../components/PatrocinioJornada';
 import { infoNoche } from '../lib/noche';
 
+// 🎥 Tarjeta de las repeticiones. Jugando: roja, con «Guardar jugada» a un toque de distancia.
+function TarjetaJugadas({ navigate, apiFetch }) {
+  const [d, setD] = useState(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { apiFetch('/replays/mias').then(r => { if (r?.ok) setD(r.data); }).catch(() => {}); }, []);
+  const ahora = d?.ahora;
+  const nuevas = (d?.clips || []).filter(c => c.nueva).length;
+  return (
+    <button onClick={() => navigate('/jugadas')} className="text-left active:scale-[0.98] transition-transform">
+      <div className="rounded-2xl flex items-center gap-3 py-3 px-4 text-white shadow-md" style={{ background: ahora ? '#b91c1c' : '#111827' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>🎥</div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-[15px]">Mis jugadas{nuevas ? <span className="ml-2 text-[11px] font-black bg-white text-red-700 rounded px-1.5 py-0.5 align-middle">{nuevas} NUEVA{nuevas > 1 ? 'S' : ''}</span> : null}</p>
+          <p className="text-white/75 text-[13px] truncate">{ahora ? `Cancha ${ahora.cancha} · toca para grabar` : 'Las repeticiones de tus partidos'}</p>
+        </div>
+        <span className="text-[13px] font-bold flex-shrink-0">{ahora ? '⏺ Grabar' : 'Ver →'}</span>
+      </div>
+    </button>
+  );
+}
+
 // 📅 Renglón de la fecha en la tarjeta de la noche (German 13-oct-2026: «énfasis en la fecha»).
 // Si esta semana no hay, lo dice en ámbar: quien se apunta el martes tiene que saber que no es
 // para este jueves. Sin fecha (sin red) no pinta nada.
@@ -797,6 +818,10 @@ export default function Home() {
             <p style={{ color: 'var(--sp-ink-on-sub)', fontSize: 13, marginTop: 3, fontWeight: 600 }}>Directo a tu cancha</p>
           </button>
         </div>
+
+        {/* 🎥 Mis jugadas (repeticiones de las cámaras). Va arriba, junto a reservar y pedir:
+            si estás jugando se pone roja y es lo primero que ves. */}
+        <TarjetaJugadas navigate={navigate} apiFetch={apiFetch} />
 
         {/* Retas abiertas (matchmaking) */}
         <RetasAbiertas apiFetch={apiFetch} navigate={navigate} />

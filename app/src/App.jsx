@@ -23,6 +23,7 @@ import Ligas from './pages/Ligas';
 import LigaEscalera from './pages/LigaEscalera';
 import LigaJornada from './pages/LigaJornada';
 import Marcadores from './pages/Marcadores';
+import Jugadas from './pages/Jugadas';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -58,6 +59,7 @@ function AppRoutes() {
           "/retas" no se coma la lista. */}
       <Route path="/reta/:token" element={<ProtectedRoute><Reta /></ProtectedRoute>} />
       <Route path="/marcadores" element={<ProtectedRoute><Marcadores /></ProtectedRoute>} />
+      <Route path="/jugadas" element={<ProtectedRoute><Jugadas /></ProtectedRoute>} />
       <Route path="/ligas" element={<ProtectedRoute><Ligas /></ProtectedRoute>} />
       <Route path="/liga/:id" element={<ProtectedRoute><LigaEscalera /></ProtectedRoute>} />
       {/* Lo que pasó en una jornada. Cada una con su dirección, para poder volver
