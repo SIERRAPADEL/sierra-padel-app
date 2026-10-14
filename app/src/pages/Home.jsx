@@ -14,7 +14,7 @@ import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/for
 import { fondoPatro, KANIT } from '../components/PatrocinioJornada';
 import { infoNoche } from '../lib/noche';
 
-// 🎥 Tarjeta de las repeticiones. Jugando: roja, con «Guardar jugada» a un toque de distancia.
+// 🎥 Tarjeta de las repeticiones. Jugando: roja, recordando el botón físico de la cancha.
 function TarjetaJugadas({ navigate, apiFetch }) {
   const [d, setD] = useState(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -27,9 +27,9 @@ function TarjetaJugadas({ navigate, apiFetch }) {
         <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>🎥</div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-[15px]">Mis jugadas{nuevas ? <span className="ml-2 text-[11px] font-black bg-white text-red-700 rounded px-1.5 py-0.5 align-middle">{nuevas} NUEVA{nuevas > 1 ? 'S' : ''}</span> : null}</p>
-          <p className="text-white/75 text-[13px] truncate">{ahora ? `Cancha ${ahora.cancha} · toca para grabar` : 'Las repeticiones de tus partidos'}</p>
+          <p className="text-white/75 text-[13px] leading-snug">{ahora ? `Cancha ${ahora.cancha} · usa el botón de la cancha` : 'Las repeticiones de tus partidos'}</p>
         </div>
-        <span className="text-[13px] font-bold flex-shrink-0">{ahora ? '⏺ Grabar' : 'Ver →'}</span>
+        <span className="text-[13px] font-bold flex-shrink-0">Ver →</span>
       </div>
     </button>
   );

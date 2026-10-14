@@ -6,30 +6,37 @@ import { useApi } from '../hooks/useApi';
 // «ya va llegando el momento de implementar las repeticiones en la app, ya se termina el
 // contrato»). Reemplaza a ReplayMe con los MISMOS botones de cancha.
 //
-// Cada clip ya llega ligado a su renta y a sus jugadores (trigger replay_resolver en la base),
-// así que aquí sólo se pide «lo mío»:
-//   · ahora  → si estoy jugando: mi cancha y hasta qué hora, con el botón «Guardar jugada»
-//   · clips  → las jugadas de MIS rentas (las guardé yo, otro de mi cancha o el botón físico)
-// GET  /replays/mias     → { ahora: { cancha, hasta } | null, clips: [...] }
-// POST /replays/guardar  → { cancha }   (la PC del club corta los últimos 30 s)
+// 🔘 Se graba SÓLO con el botón físico al lado de la cancha (German: «el botón de grabar no va
+// en la app»). Aquí se ven, se descargan y se comparten.
+// ⏳ Cada jugada vive 7 días en la nube (German) → se dice en todos lados y se invita a descargarla.
+// 🏆 Jugada del mes: subirla a redes etiquetando al club; las de más movimiento ganan.
+//
+// Cada clip ya llega ligado a su renta y a sus jugadores (trigger replay_resolver en la base):
+// GET /replays/mias → { ahora: { cancha, hasta } | null, dias_nube: 7, clips: [...] }
 
-const fmtHora = (iso) => new Date(iso).toLocaleTimeString('es-MX', { timeZone: 'America/Monterrey', hour: 'numeric', minute: '2-digit' });
+const TZ = { timeZone: 'America/Monterrey' };
+const fmtHora = (iso) => new Date(iso).toLocaleTimeString('es-MX', { ...TZ, hour: 'numeric', minute: '2-digit' });
 const fmtDia = (iso) => {
   const d = new Date(iso);
-  const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
-  const dia = d.toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
-  if (dia === hoy) return 'Hoy';
-  const ayer = new Date(Date.now() - 864e5).toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
-  if (dia === ayer) return 'Ayer';
-  const t = d.toLocaleDateString('es-MX', { timeZone: 'America/Monterrey', weekday: 'long', day: 'numeric', month: 'long' });
+  const dia = d.toLocaleDateString('en-CA', TZ);
+  if (dia === new Date().toLocaleDateString('en-CA', TZ)) return 'Hoy';
+  if (dia === new Date(Date.now() - 864e5).toLocaleDateString('en-CA', TZ)) return 'Ayer';
+  const t = d.toLocaleDateString('es-MX', { ...TZ, weekday: 'long', day: 'numeric', month: 'long' });
   return t[0].toUpperCase() + t.slice(1);
 };
 const dur = (s) => `0:${String(Math.round(s || 30)).padStart(2, '0')}`;
+// Días que le quedan en la nube (se borra a los `dias` de grabada).
+const quedan = (iso, dias) => Math.max(0, Math.ceil((new Date(iso).getTime() + dias * 864e5 - Date.now()) / 864e5));
+const hasta = (iso, dias) => {
+  const t = new Date(new Date(iso).getTime() + dias * 864e5).toLocaleDateString('es-MX', { ...TZ, weekday: 'short', day: 'numeric', month: 'short' });
+  return t.replace(/\./g, '');
+};
 
-function Clip({ c, onAbrir }) {
+function Clip({ c, dias, onAbrir }) {
+  const q = quedan(c.iniciado_en, dias);
   return (
     <button onClick={() => onAbrir(c)} className="text-left active:scale-[0.98] transition-transform">
-      <div className="relative rounded-xl overflow-hidden bg-black" style={{ aspectRatio: '16/9' }}>
+      <div className="relative rounded-xl overflow-hidden bg-black" style={{ aspectRatio: '3/4' }}>
         <img src={c.thumb} alt="" className="w-full h-full object-cover" />
         <span className="absolute inset-0 flex items-center justify-center">
           <span className="w-11 h-11 rounded-full bg-white/90 flex items-center justify-center text-[18px] pl-0.5">▶</span>
@@ -38,7 +45,9 @@ function Clip({ c, onAbrir }) {
         {c.nueva && <span className="absolute top-1.5 left-1.5 text-[10px] font-black text-white bg-sp-green rounded px-1.5 py-0.5">NUEVA</span>}
       </div>
       <p className="text-sp-gray font-bold text-[13.5px] mt-1.5">Cancha {c.cancha} · {fmtHora(c.iniciado_en)}</p>
-      <p className="text-gray-400 text-[12px]">{c.disparo === 'boton' ? 'Botón de la cancha' : c.yo ? 'La guardaste tú' : 'Guardada en tu cancha'}</p>
+      <p className={`text-[12px] font-semibold ${q <= 2 ? 'text-[#b45309]' : 'text-gray-400'}`}>
+        {q <= 0 ? 'Se borra hoy' : q === 1 ? '⏳ Se borra mañana' : `Se borra en ${q} días`}
+      </p>
     </button>
   );
 }
@@ -48,24 +57,11 @@ export default function Jugadas() {
   const { apiFetch } = useApi();
   const [data, setData] = useState(null);
   const [viendo, setViendo] = useState(null);
-  const [guardando, setGuardando] = useState(false);
-  const [aviso, setAviso] = useState('');
 
-  async function cargar() {
-    const d = await apiFetch('/replays/mias');
-    if (d.ok) setData(d.data);
-  }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { apiFetch('/replays/mias').then(d => { if (d.ok) setData(d.data); }); }, []);
 
-  async function guardar() {
-    if (guardando || !data?.ahora) return;
-    setGuardando(true); setAviso('');
-    const d = await apiFetch('/replays/guardar', { method: 'POST', body: JSON.stringify({ cancha: data.ahora.cancha }) });
-    setAviso(d.ok ? '✅ ¡Listo! Guardamos los últimos 30 segundos. Aparece aquí en un minuto.' : (d.error || 'No se pudo guardar. Intenta de nuevo.'));
-    setGuardando(false);
-  }
-
+  const dias = data?.dias_nube || 7;
   const clips = data?.clips || [];
   const grupos = [];
   for (const c of clips) {
@@ -87,16 +83,24 @@ export default function Jugadas() {
           <div className="rounded-2xl p-4 text-white" style={{ background: '#111827' }}>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-[12px] font-black tracking-widest text-white/70">GRABANDO TU CANCHA</span>
+              <span className="text-[12px] font-black tracking-widest text-white/70">ESTÁS EN LA CANCHA {data.ahora.cancha}</span>
             </div>
-            <p className="font-black text-[22px] mt-1">Cancha {data.ahora.cancha}</p>
-            <p className="text-white/60 text-[13px]">Tu renta, hasta las {data.ahora.hasta}</p>
-            <button onClick={guardar} disabled={guardando}
-              className="w-full mt-3 py-4 rounded-xl bg-red-500 text-white font-black text-[17px] flex items-center justify-center gap-2 disabled:opacity-60">
-              <span className="w-4 h-4 rounded-full bg-white" /> {guardando ? 'Guardando…' : 'Guardar jugada'}
-            </button>
-            <p className="text-white/55 text-[12px] mt-2 text-center">Guarda los últimos 30 segundos. También puedes apretar el botón de la cancha.</p>
-            {aviso && <p className="text-[13px] font-bold mt-2 text-center">{aviso}</p>}
+            <p className="font-black text-[19px] mt-1.5 leading-snug">¿Buen punto? Aprieta el botón que está a un lado de la cancha</p>
+            <p className="text-white/60 text-[13px] mt-1">Tu renta es hasta las {data.ahora.hasta} · se guardan los últimos 30 segundos y aparecen aquí en un minuto</p>
+          </div>
+        )}
+
+        {clips.length > 0 && (
+          <div className="rounded-2xl px-4 py-3 bg-amber-50 border-2 border-amber-300">
+            <p className="text-amber-900 font-black text-[14.5px]">⏳ Tus jugadas se guardan {dias} días</p>
+            <p className="text-amber-900 text-[13px] mt-0.5 leading-snug">Después se borran de la nube. <b>Descarga las que quieras conservar.</b></p>
+          </div>
+        )}
+
+        {clips.length > 0 && (
+          <div className="rounded-2xl px-4 py-3 text-white" style={{ background: 'linear-gradient(135deg,#13201a,#0a0f0c)' }}>
+            <p className="font-black text-[14.5px]" style={{ color: '#8dc63f' }}>🏆 JUGADA DEL MES</p>
+            <p className="text-[13.5px] mt-0.5 leading-snug">Súbela a tus redes y etiqueta a <b>@sierra.padel</b>. Las de más likes y comentarios del mes ganan premio.</p>
           </div>
         )}
 
@@ -104,7 +108,7 @@ export default function Jugadas() {
           <div className="card text-center py-8">
             <p className="text-3xl">🎾</p>
             <p className="text-sp-gray font-black text-[16px] mt-1">Todavía no tienes jugadas</p>
-            <p className="text-gray-400 text-[13px] mt-1 max-w-[30ch] mx-auto">Cuando juegues, aprieta el botón de tu cancha después de un buen punto y la repetición aparece aquí.</p>
+            <p className="text-gray-400 text-[13px] mt-1 max-w-[30ch] mx-auto">Cuando juegues, aprieta el botón que está a un lado de tu cancha después de un buen punto y la repetición aparece aquí.</p>
           </div>
         )}
 
@@ -112,7 +116,7 @@ export default function Jugadas() {
           <div key={g.dia}>
             <p className="text-sp-gray font-black text-[15px] mb-2">{g.dia}</p>
             <div className="grid grid-cols-2 gap-3">
-              {g.clips.map(c => <Clip key={c.id} c={c} onAbrir={setViendo} />)}
+              {g.clips.map(c => <Clip key={c.id} c={c} dias={dias} onAbrir={setViendo} />)}
             </div>
           </div>
         ))}
@@ -127,12 +131,16 @@ export default function Jugadas() {
             </div>
             <button className="text-white/80 text-[26px] leading-none px-2">✕</button>
           </div>
-          <div className="flex-1 flex items-center" onClick={e => e.stopPropagation()}>
-            <video src={viendo.url} poster={viendo.thumb} controls playsInline className="w-full" />
+          <div className="flex-1 min-h-0 flex items-center justify-center" onClick={e => e.stopPropagation()}>
+            <video src={viendo.url} poster={viendo.thumb} controls playsInline className="max-h-full max-w-full" />
           </div>
-          <div className="grid grid-cols-2 gap-3 px-4 pb-8 pt-3" onClick={e => e.stopPropagation()}>
-            <button className="py-3.5 rounded-xl bg-white text-sp-gray font-black text-[15px]">⬇ Descargar</button>
-            <button className="py-3.5 rounded-xl bg-sp-green text-white font-black text-[15px]">↗ Compartir</button>
+          <div className="px-4 pb-8 pt-3 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+            <p className="text-amber-300 text-[13px] font-bold text-center">⏳ Disponible hasta el {hasta(viendo.iniciado_en, dias)} · descárgala para no perderla</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button className="py-3.5 rounded-xl bg-white text-sp-gray font-black text-[15px]">⬇ Descargar</button>
+              <button className="py-3.5 rounded-xl bg-sp-green text-white font-black text-[15px]">↗ Compartir</button>
+            </div>
+            <p className="text-white/55 text-[12px] text-center">Etiqueta a @sierra.padel y entra a la Jugada del mes 🏆</p>
           </div>
         </div>
       )}
