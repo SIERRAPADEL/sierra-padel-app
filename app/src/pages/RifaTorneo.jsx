@@ -62,8 +62,10 @@ export default function RifaTorneo() {
     return () => { vivo = false; clearInterval(id); };
   }, [fase, torneoId, apiFetch]);
 
-  const salioYo = rifa?.actual && yo && rifa.actual.nombre === yo.nombre && rifa.actual.resultado === 'pendiente';
+  // El último tiro puede traer varios nombres (un lote de vales o descuentos).
+  const salioYo = yo && (rifa?.tanda || []).find(p => p.nombre === yo.nombre && p.resultado === 'pendiente');
   const gane = rifa?.ganadores?.find(g => yo && g.nombre === yo.nombre);
+  const premioApp = (p) => /consumo|renta/i.test(p || '');
 
   return (
     <div className="page safe-bottom">
@@ -100,6 +102,7 @@ export default function RifaTorneo() {
                 <>
                   <p className="text-4xl mb-2">🙋</p>
                   <p className="text-sp-green-dark font-black text-[22px] leading-tight">¡Salió tu nombre!</p>
+                  {salioYo.premio && <p className="text-sp-gray font-bold text-[16px] mt-2">{salioYo.premio}</p>}
                   <p className="text-sp-gray text-[15px] mt-2">Levanta la mano y acércate con el organizador.</p>
                 </>
               ) : gane ? (
@@ -107,6 +110,7 @@ export default function RifaTorneo() {
                   <p className="text-4xl mb-2">🏆</p>
                   <p className="text-sp-green-dark font-black text-[22px] leading-tight">¡Ganaste!</p>
                   {gane.premio && <p className="text-sp-gray font-bold text-[16px] mt-2">{gane.premio}</p>}
+                  <p className="text-sp-gray text-[14px] mt-2">{premioApp(gane.premio) ? 'Ya está en tu app: lo ves en tus promociones y la caja lo aplica sola.' : 'Recógelo con el organizador.'}</p>
                 </>
               ) : (
                 <>
@@ -131,6 +135,20 @@ export default function RifaTorneo() {
                 Para ganar tienes que estar en el club cuando salga tu nombre; si no estás, sale otro.
               </p>
             </div>
+
+            {rifa?.premios?.length > 0 && (
+              <div className="card">
+                <p className="font-black text-sp-gray text-[15px] mb-2">Se rifan</p>
+                <ul className="flex flex-col gap-1.5">
+                  {rifa.premios.map((p, i) => (
+                    <li key={i} className="flex justify-between gap-3 text-[14px]">
+                      <span className="text-sp-gray font-semibold">{p.cantidad > 1 ? `${p.cantidad} × ` : ''}{p.nombre}</span>
+                      <span className="text-gray-400 text-right whitespace-nowrap">{p.por_lote ? 'a tu app' : 'en mano'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {rifa?.ganadores?.length > 0 && (
               <div className="card">
