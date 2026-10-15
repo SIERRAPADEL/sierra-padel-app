@@ -17,6 +17,7 @@ import Noticias from './pages/Noticias';
 import Pedir from './pages/Pedir';
 import Terminos from './pages/Terminos';
 import Retas from './pages/Retas';
+import ClaseAbierta from './pages/ClaseAbierta';
 import Reta from './pages/Reta';
 import Botanero from './pages/Botanero';
 import Ligas from './pages/Ligas';
@@ -55,6 +56,8 @@ function AppRoutes() {
       <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route path="/reservar" element={<ProtectedRoute><Reservar /></ProtectedRoute>} />
       <Route path="/retas" element={<ProtectedRoute><Retas /></ProtectedRoute>} />
+      {/* 🎾 Clase abierta (14-oct-2026): el push y el link de redes llevan aquí. */}
+      <Route path="/clase-abierta" element={<ProtectedRoute><ClaseAbierta /></ProtectedRoute>} />
       {/* La pantalla de UNA reta. Va despues de /retas: el orden importa para que
           "/retas" no se coma la lista. */}
       <Route path="/reta/:token" element={<ProtectedRoute><Reta /></ProtectedRoute>} />

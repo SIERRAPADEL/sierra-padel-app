@@ -365,6 +365,31 @@ function RetaActiva({ r, onAbrir }) {
   );
 }
 
+// ── 🎾 Clase abierta (14-oct-2026, piloto con Fran) ──────────────────────────────
+// Sale sólo si hay una clase programada. Lleva a /clase-abierta, que es a donde abre el push.
+function TarjetaClaseAbierta({ apiFetch, navigate }) {
+  const [c, setC] = useState(null);
+  useEffect(() => {
+    apiFetch('/clase-abierta/proximas-app').then(d => setC(d.ok && d.data && d.data[0] ? d.data[0] : null)).catch(() => {});
+  }, []);
+  if (!c) return null;
+  const [h, m] = String(c.hora).split(':').map(Number);
+  const hora = `${(h % 12) || 12}:${String(m || 0).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+  const dia = new Date(c.fecha + 'T12:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short' });
+  const desde = c.precio_grupo ? Math.min(c.precio, c.precio_grupo) : c.precio;
+  return (
+    <button onClick={() => navigate('/clase-abierta')} className="card text-left flex items-center gap-3 py-3 active:scale-[.99] transition-transform">
+      <span style={{ fontSize: 30, lineHeight: 1 }}>🎾</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sp-gray font-black text-[15px]">Clase abierta · todos los niveles</p>
+        <p className="text-[13px] text-gray-400">{c.mi_estado === 'inscrito' ? '✓ Ya vas · ' : ''}{dia.charAt(0).toUpperCase() + dia.slice(1)} · {hora} · con {String(c.coach).split(' ')[0]}</p>
+        <p className="text-[13px] font-black text-sp-green-dark">Desde ${desde} por persona</p>
+      </div>
+      <span className="text-sp-green-dark font-black">›</span>
+    </button>
+  );
+}
+
 // ── Seccion: Retas abiertas (matchmaking) ─────────────────────────────────────
 function RetasAbiertas({ apiFetch, navigate }) {
   const [retas, setRetas] = useState(null);
@@ -824,6 +849,9 @@ export default function Home() {
         {/* 🎥 Mis jugadas (repeticiones de las cámaras). Va arriba, junto a reservar y pedir:
             si estás jugando se pone roja y es lo primero que ves. */}
         <TarjetaJugadas navigate={navigate} apiFetch={apiFetch} />
+
+        {/* 🎾 Clase abierta: sólo si hay una programada */}
+        <TarjetaClaseAbierta apiFetch={apiFetch} navigate={navigate} />
 
         {/* Retas abiertas (matchmaking) */}
         <RetasAbiertas apiFetch={apiFetch} navigate={navigate} />
