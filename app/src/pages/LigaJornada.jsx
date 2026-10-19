@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import { KANIT, fondoPatro, Arco, PatrocinioArco, IconoPala } from '../components/PatrocinioJornada';
+import { KANIT, fondoPatro, Arco, PatrocinioArco, IconoPala, esClaro, claseClaro, varsClaro } from '../components/PatrocinioJornada';
 
 /**
  * LO QUE PASÓ EN UNA JORNADA DE LIGA — y sobre todo, la tarjeta para presumirlo.
@@ -203,7 +203,7 @@ export default function LigaJornada({ vista }) {
     const extremos = { esPrimero: b.numero_bloque === 1, esUltimo: b.numero_bloque === reglas.total };
 
     return (
-      <div className="w-full flex flex-col justify-center" style={{ minHeight: '100svh', background: fondo }}>
+      <div className={`w-full flex flex-col justify-center${patro ? claseClaro(col) : ''}`} style={{ minHeight: '100svh', background: fondo, ...(patro ? varsClaro(col) : {}) }}>
         <div className="px-6 py-8 text-center">
           {patro ? (
             <BloqueDiseno liga={liga} jornada={jornada} b={b} orden={orden} hayResultado={hayResultado} patro={patro} col={col} />
@@ -302,7 +302,9 @@ export default function LigaJornada({ vista }) {
               setCompartiendo(true);
               try {
                 const blob = await imagenDelBloque({
-                  liga, jornada, bloque: b, orden, reglas, extremos, col, hayResultado,
+                  liga, jornada, bloque: b, orden, reglas, extremos, hayResultado,
+                  // La imagen de compartir es de letra blanca: con un patrocinador de fondo claro va en los colores de la rama.
+                  col: esClaro(col) ? (RAMA[liga?.categoria] || RAMA._) : col,
                 });
                 if (!blob) throw new Error('no se pudo generar la imagen');
                 const archivo = new File(
@@ -383,9 +385,9 @@ export default function LigaJornada({ vista }) {
     // 🥩 Jornada patrocinada: la escalera del diseño — lista limpia y centrada, marca abajo.
     if (patro) {
       return (
-        <div className="w-full flex flex-col text-white" style={{ minHeight: '100svh', background: fondo, fontFamily: KANIT }}>
+        <div className={`w-full flex flex-col text-white${claseClaro(col)}`} style={{ minHeight: '100svh', background: fondo, fontFamily: KANIT, ...varsClaro(col) }}>
           <div className="px-5 pt-9 pb-8 text-center">
-            <img src="/icons/isotipo-mask.png" alt="" width="64" height="64" className="mx-auto" />
+            <img src="/icons/isotipo-mask.png" alt="" width="64" height="64" className="mx-auto isotipo-patro" />
             <p className="font-black text-[27px] leading-none mt-4">SIERRA PADEL</p>
             <p className="font-semibold text-[17px] mt-1.5" style={{ color: col.tinte }}>{liga.nombre}</p>
             <p className="font-extrabold text-[31px] leading-tight mt-1" style={{ color: col.tinte }}>Jornada {jornada.numero}</p>
@@ -478,7 +480,7 @@ export default function LigaJornada({ vista }) {
   if (patro) {
     const fila = 'w-full rounded-2xl bg-white/30 px-4 py-3.5 flex items-center gap-4 text-left active:scale-[.99] transition-transform';
     return (
-      <div className="min-h-screen text-white" style={{ background: fondo, fontFamily: KANIT }}>
+      <div className={`min-h-screen text-white${claseClaro(col)}`} style={{ background: fondo, fontFamily: KANIT, ...varsClaro(col) }}>
         <div className="px-5 pt-6 pb-10">
           <button onClick={() => navigate(`/liga/${id}`)} className="text-white/75 text-[13px] font-semibold">
             ← {liga.nombre}
@@ -786,7 +788,7 @@ function TablaBloque({ orden, col, jugado }) {
   const VERDE = '#bde52f';
   // Negro translúcido: sirve con la paleta de cualquier patrocinador (el rojo fijo era de Carnes Luis y con Pietra salía café).
   return (
-    <div className="mt-5 rounded-2xl px-4 pt-4 pb-3 text-left" style={{ background: 'rgba(0,0,0,.42)' }}>
+    <div className="mt-5 rounded-2xl px-4 pt-4 pb-3 text-left" style={{ background: 'var(--patro-caja, rgba(0,0,0,.42))' }}>
       <p className="text-center text-[15px] tracking-[.03em]">RESULTADO DEL BLOQUE</p>
       <div className="grid grid-cols-[22px_1fr_58px_62px] gap-x-1.5 items-end mt-3 text-[10.5px] text-white/85 text-center">
         <span /><span /><span>SETS G–P</span><span>DIF. JUEGOS</span>
@@ -800,9 +802,9 @@ function TablaBloque({ orden, col, jugado }) {
         return (
           <div key={j.id} className="grid grid-cols-[22px_1fr_58px_62px] gap-x-1.5 items-center py-1.5">
             <span className="font-extrabold text-[19px]">{lugar}</span>
-            <span className="text-[19px] truncate" style={{ color: primero ? col.tinte : '#fff' }}>{corto(j.jugadores?.nombre)}</span>
-            <span className="text-[19px] text-center tabular-nums" style={{ color: primero ? col.tinte : '#fff' }}>{sg}–{sp}</span>
-            <span className="text-[19px] text-center font-black tabular-nums" style={{ color: dif > 0 ? VERDE : '#fff' }}>
+            <span className="text-[19px] truncate" style={{ color: primero ? col.tinte : 'var(--patro-tinta, #fff)' }}>{corto(j.jugadores?.nombre)}</span>
+            <span className="text-[19px] text-center tabular-nums" style={{ color: primero ? col.tinte : 'var(--patro-tinta, #fff)' }}>{sg}–{sp}</span>
+            <span className="text-[19px] text-center font-black tabular-nums" style={{ color: dif > 0 ? 'var(--patro-dif, ' + VERDE + ')' : 'var(--patro-tinta, #fff)' }}>
               {dif > 0 ? `+${dif}` : dif}
             </span>
           </div>

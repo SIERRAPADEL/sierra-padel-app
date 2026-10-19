@@ -18,6 +18,24 @@ export function fondoPatro(col) {
 }
 
 /**
+ * ⚪ FONDO CLARO (German 18-oct-2026, Ortiz en la J5: «prefiero que sea blanca»). El diseño nació
+ * para fondos oscuros con letra blanca. Si el color de arriba (`a`) es claro, la página lleva
+ * `patro-claro` y lo blanco pasa a tinta (reglas en index.css). Misma regla que historias-liga.js.
+ */
+export function esClaro(col) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String((col && col.a) || '').trim());
+  if (!m) return false;
+  const n = parseInt(m[1], 16);
+  const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255) > 0.5;
+}
+/** Clase y variables para la página patrocinada: con fondo oscuro no agrega nada. */
+export function claseClaro(col) { return esClaro(col) ? ' patro-claro' : ''; }
+export function varsClaro(col) {
+  return esClaro(col) ? { '--patro-tinta': col.tinta || '#1d2321' } : {};
+}
+
+/**
  * Texto en ARCO (el «PATROCINADOR JORNADA 3» y el «GANADOR DEL BLOQUE» del diseño).
  * SVG con textPath: escala con el ancho de la pantalla sin perder la curva.
  */
@@ -29,7 +47,7 @@ export function Arco({ texto, color = CREMA, size = 17, ancho = 300, curva = 16,
     <svg viewBox={`0 0 ${ancho} ${alto}`} className={`block mx-auto w-full ${className}`}
          style={{ maxWidth: ancho }} aria-label={texto} role="img">
       <path id={id} d={`M 6 ${base} Q ${ancho / 2} ${base - 2 * curva} ${ancho - 6} ${base}`} fill="none" />
-      <text fill={color} fontFamily={KANIT} fontWeight="800" fontSize={size} letterSpacing=".5">
+      <text fill={color} style={color === CREMA ? { fill: `var(--patro-arco, ${CREMA})` } : undefined} fontFamily={KANIT} fontWeight="800" fontSize={size} letterSpacing=".5">
         <textPath href={`#${id}`} startOffset="50%" textAnchor="middle">{texto}</textPath>
       </text>
     </svg>

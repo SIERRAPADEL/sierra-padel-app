@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import { KANIT, fondoPatro, PatrocinioArco, IconoEscalera } from '../components/PatrocinioJornada';
+import { KANIT, fondoPatro, PatrocinioArco, IconoEscalera, claseClaro, varsClaro } from '../components/PatrocinioJornada';
 
 /**
  * Índice de LIGAS del club.
@@ -95,7 +95,7 @@ export default function Ligas() {
             return (
               <button key={l.id} onClick={() => navigate(`/liga/${l.id}`)}
                       className="text-left active:scale-[0.98] transition-transform">
-                <div className="rounded-3xl overflow-hidden shadow-md text-white" style={{ background: fondoPatro(pc), fontFamily: KANIT }}>
+                <div className={`rounded-3xl overflow-hidden shadow-md text-white${claseClaro(pc)}`} style={{ background: fondoPatro(pc), fontFamily: KANIT, ...varsClaro(pc) }}>
                   <div className="px-5 pt-5 pb-4 flex items-start gap-3.5">
                     <IconoEscalera className="w-11 h-12 shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">

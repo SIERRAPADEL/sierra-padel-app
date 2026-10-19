@@ -152,6 +152,31 @@ body {
 .tema-patro .text-amber-600, .tema-patro .text-amber-700,
 .tema-patro .text-sp-green-dark, .tema-patro .text-green-700 { color: var(--patro-tinte, #ffc81e); }
 .tema-patro .bg-sp-green { background: var(--patro-tinte, #ffc81e); color: var(--patro-a, #650a0c); }
+/* ⚪ PATROCINADOR DE FONDO CLARO (German 18-oct-2026, Ortiz en la J5: «prefiero que sea blanca»).
+   La página lleva `patro-claro` y --patro-tinta (PatrocinioJornada.jsx · esClaro): todo lo que el
+   diseño pintaba en blanco pasa a tinta, y las cajas translúcidas pasan de blanco/negro a tinta suave.
+   Con un patrocinador de fondo oscuro nada de esto aplica. */
+.patro-claro { --patro-arco: var(--patro-tinta); --patro-caja: color-mix(in srgb, var(--patro-tinta) 6%, transparent);
+  --patro-dif: #3f7d14; color: var(--patro-tinta); }
+.patro-claro.text-white, .patro-claro .text-white { color: var(--patro-tinta); }
+.patro-claro .text-white\/40 { color: color-mix(in srgb, var(--patro-tinta) 45%, transparent); }
+.patro-claro .text-white\/50, .patro-claro .text-white\/55 { color: color-mix(in srgb, var(--patro-tinta) 55%, transparent); }
+.patro-claro .text-white\/60, .patro-claro .text-white\/70 { color: color-mix(in srgb, var(--patro-tinta) 65%, transparent); }
+.patro-claro .text-white\/75, .patro-claro .text-white\/80, .patro-claro .text-white\/85,
+.patro-claro .text-white\/90 { color: color-mix(in srgb, var(--patro-tinta) 80%, transparent); }
+.patro-claro .bg-white\/25, .patro-claro .bg-white\/30 { background: color-mix(in srgb, var(--patro-tinta) 7%, transparent); }
+.patro-claro .bg-white\/20 { background: color-mix(in srgb, var(--patro-tinta) 12%, transparent); }
+.patro-claro .bg-black\/25 { background: color-mix(in srgb, var(--patro-tinta) 6%, transparent); }
+.patro-claro .border-white\/\[\.07\] { border-color: color-mix(in srgb, var(--patro-tinta) 10%, transparent); }
+.patro-claro img.isotipo-patro { filter: brightness(0); opacity: .88; }
+.tema-patro.patro-claro, .tema-patro.patro-claro .text-sp-gray, .tema-patro.patro-claro .text-gray-600,
+.tema-patro.patro-claro .text-gray-700 { color: var(--patro-tinta); }
+.tema-patro.patro-claro .card { background: #fff; border-color: color-mix(in srgb, var(--patro-tinta) 12%, transparent);
+  color: var(--patro-tinta); box-shadow: 0 1px 3px color-mix(in srgb, var(--patro-tinta) 8%, transparent); }
+.tema-patro.patro-claro .text-gray-400, .tema-patro.patro-claro .text-gray-500 { color: color-mix(in srgb, var(--patro-tinta) 65%, transparent); }
+.tema-patro.patro-claro .text-gray-300 { color: color-mix(in srgb, var(--patro-tinta) 45%, transparent); }
+.tema-patro.patro-claro .border-gray-100 { border-color: color-mix(in srgb, var(--patro-tinta) 12%, transparent); }
+.tema-patro.patro-claro .bg-sp-green { color: #fff; }
 /* 🍟 Las noches patrocinadas (Botanero, 6-oct-2026): lo que sólo esa página usa. Va bajo
    `.noche` para no mover nada de las pantallas de la escalera. */
 .tema-patro.noche .btn-green { background: var(--patro-tinte); color: var(--patro-a); }

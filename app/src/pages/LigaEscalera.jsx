@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import { fondoPatro, PatrocinioArco } from '../components/PatrocinioJornada';
+import { fondoPatro, PatrocinioArco, claseClaro, varsClaro } from '../components/PatrocinioJornada';
 
 /**
  * Una LIGA ESCALERA vista por el jugador: de qué se trata, quién va, y el botón
@@ -144,8 +144,8 @@ export default function LigaEscalera() {
   const rama = pc ? { fondo: pc.a, sub: pc.tinte } : ramaBase;
 
   return (
-    <div className={`page safe-bottom${pc ? ' tema-patro' : ''}`}
-         style={pc ? { background: fondoPatro(pc), '--patro-a': pc.a, '--patro-tinte': pc.tinte } : undefined}>
+    <div className={`page safe-bottom${pc ? ' tema-patro' + claseClaro(pc) : ''}`}
+         style={pc ? { background: fondoPatro(pc), '--patro-a': pc.a, '--patro-tinte': pc.tinte, ...varsClaro(pc) } : undefined}>
       <div className="px-5 pt-[env(safe-area-inset-top)] pb-4" style={{ background: pc ? 'transparent' : rama.fondo }}>
         <button onClick={() => navigate('/ligas')} className="text-white/80 text-[13px] pt-3">← Ligas</button>
         <p className="text-white font-black text-xl mt-1">{liga.nombre}</p>
