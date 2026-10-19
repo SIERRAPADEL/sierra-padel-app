@@ -12,7 +12,7 @@ import { infoNoche } from '../lib/noche';
 // motor que el Botanero (backend: crearLigaNoche). Aquí cambian la API, los textos y que no se
 // pregunta hombre/mujer: la noche es sólo de mujeres.
 export const NOCHES_APP = {
-  botanero: { api: '/botanero', titulo: '🍻 Viernes Botanero', dia: 'viernes', lema: 'La liga de los viernes 🎾⚽', soloMujeres: false, dosPorUno: true },
+  botanero: { api: '/botanero', titulo: '🍻 Viernes Botanero', dia: 'viernes', lema: 'La liga de los viernes 🎾⚽', soloMujeres: false, dosPorUno: true, exigeResultado: true },
   ladies:   { api: '/ladies',   titulo: '👑 Ladies Night',     dia: 'jueves',  lema: 'La noche de los jueves, sólo para ellas 👑🎾', soloMujeres: true, dosPorUno: false },
 };
 
@@ -248,6 +248,13 @@ export default function Botanero({ liga = 'botanero' }) {
               : <>Canchas <b>sólo de mujeres</b>. Y los jueves aplica la promo del club.</>}
             No es inscripción: cada semana te apuntas si quieres jugar. Cupo limitado*.
           </p>
+          {/* German 19-oct-2026: la condición va ESCRITA, para que nadie se sienta engañado. */}
+          {L.exigeResultado && (
+            <p className="mt-2 text-[13px] leading-relaxed rounded-xl px-3 py-2 bg-amber-50 text-amber-900">
+              📝 <b>El precio del Botanero y el 2x1 son sólo si tu cancha captura su resultado</b> en la app al terminar.
+              Sin resultado, cada quien paga la renta normal (00) y no hay 2x1.
+            </p>
+          )}
           {/* Anotación de precios por cancha extra (German 25-sep). Escala de club_config.botanero:
               canchas 1–4 al precio del turno; 5ª +$50, 6ª +$100, 7ª +$150; tope $200 por lugar. */}
           {(data?.turnos || []).some(t => t.precio != null) && (
@@ -289,7 +296,7 @@ export default function Botanero({ liga = 'botanero' }) {
                 </div>
                 <div className="text-right">
                   <p className="text-sp-green-dark font-black text-xl">${t.precio}</p>
-                  <p className="text-gray-400 text-[12px]">por jugador</p>
+                  <p className="text-gray-400 text-[12px]">{L.exigeResultado ? 'por jugador · con resultado' : 'por jugador'}</p>
                   <p className="text-amber-600 text-[11px] font-bold">precio de lanzamiento</p>
                 </div>
               </div>
@@ -356,7 +363,7 @@ export default function Botanero({ liga = 'botanero' }) {
                 {t.mi_estado === 'apuntado' && t.mi_cancha && capturando !== t.turno && !okMarcador && (
                   <button onClick={() => { setCapturando(t.turno); setError(''); }}
                           className="w-full mt-2 text-[13.5px] font-bold text-sp-green border border-sp-green/40 rounded-xl py-2.5">
-                    🏓 Capturar el marcador de mi cancha
+                    🏓 Capturar el marcador de mi cancha{L.exigeResultado ? ' (activa tu precio y el 2x1)' : ''}
                   </button>
                 )}
 
