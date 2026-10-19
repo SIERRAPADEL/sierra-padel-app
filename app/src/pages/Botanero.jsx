@@ -252,7 +252,7 @@ export default function Botanero({ liga = 'botanero' }) {
           {L.exigeResultado && (
             <p className="mt-2 text-[13px] leading-relaxed rounded-xl px-3 py-2 bg-amber-50 text-amber-900">
               📝 <b>El precio del Botanero y el 2x1 son sólo si tu cancha captura su resultado</b> en la app al terminar.
-              Sin resultado, cada quien paga la renta normal (00) y no hay 2x1.
+              Sin resultado, cada quien paga la renta normal ($200) y no hay 2x1.
             </p>
           )}
           {/* Anotación de precios por cancha extra (German 25-sep). Escala de club_config.botanero:
