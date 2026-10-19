@@ -412,6 +412,15 @@ export default function Reta() {
       </div>
 
       <div className="px-4 py-4 flex flex-col gap-4">
+        {/* 🎾 Martes de «Todo o Nada» (German 19-oct-2026): la regla va ESCRITA aquí, donde se
+            arman las parejas y se captura el marcador, para que nadie se sienta engañado. */}
+        {d.todo_o_nada?.aplica && (
+          <div className="rounded-2xl px-4 py-3 bg-amber-50 text-amber-900 text-[13.5px] leading-relaxed">
+            <p className="font-black text-[15px]">🎾 Martes de Todo o Nada</p>
+            <p className="mt-1">{d.todo_o_nada.texto}</p>
+            <p className="mt-1 font-bold">Armen parejas fijas y capturen el marcador al terminar.</p>
+          </div>
+        )}
         {msg && (
           <p className={`text-sm text-center font-medium ${msg.ok ? 'text-sp-green-dark' : 'text-red-500'}`}>
             {msg.text}
