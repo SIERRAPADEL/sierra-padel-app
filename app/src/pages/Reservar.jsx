@@ -386,6 +386,18 @@ function hoyISO() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Monterrey' });
 }
 
+// Hoy si es martes y aún no dan las 8:30 pm en el club; si no, el martes que sigue.
+function proximoMartes() {
+  const hoy = hoyISO();
+  const d = new Date(`${hoy}T12:00:00Z`);
+  const ahora = new Date().toLocaleTimeString('en-GB', { timeZone: 'America/Monterrey', hour12: false }).slice(0, 5);
+  let faltan = (2 - d.getUTCDay() + 7) % 7;
+  if (faltan === 0 && ahora >= '20:30') faltan = 7;
+  d.setUTCDate(d.getUTCDate() + faltan);
+  // d ya es la fecha del club a mediodía; sólo se le suman días.
+  return d.toLocaleDateString('en-CA', { timeZone: 'UTC' });
+}
+
 function formatDate(iso) {
   return new Date(iso + 'T12:00').toLocaleDateString('es-MX', {
     weekday: 'long', day: 'numeric', month: 'long',
@@ -407,6 +419,9 @@ export default function Reservar() {
   const cumpleDesde    = urlParams.get('desde') || '';
   const cumpleHasta    = urlParams.get('hasta') || '';
   const esCumple       = !!cumpleCodigo;
+  // 🎾 Link directo del Martes de Todo o Nada (German 19-oct): ?todo-o-nada abre el próximo
+  // martes a las 8:30 pm. La promo la aplica sola la caja; aquí no se manda ningún código.
+  const esTodoONada    = urlParams.has('todo-o-nada') && !esCumple && !tienePromo;
 
   // Puede venir a "Mis reservas" desde Mi cuenta (state) o desde un push (?tab=mis)
   const [mainTab, setMainTab] = useState(
@@ -415,9 +430,11 @@ export default function Reservar() {
   const [tipo, setTipo] = useState('cancha'); // 'cancha' | 'clase'
 
   // --- Cancha ---
-  const [fecha, setFecha]             = useState(esCumple && cumpleDesde > hoyISO() ? cumpleDesde : hoyISO());
+  const [fecha, setFecha]             = useState(
+    esTodoONada ? proximoMartes() : (esCumple && cumpleDesde > hoyISO() ? cumpleDesde : hoyISO())
+  );
   const [canchas2, setCanchas2]       = useState([]);     // 2x1: las dos canchas elegidas
-  const [hora, setHora]               = useState(null);
+  const [hora, setHora]               = useState(esTodoONada ? '20:30' : null);
   const [horasDisp, setHorasDisp]     = useState(null);   // [{hora, libres}] del backend
   const [canchasDisp, setCanchasDisp] = useState(null);
   const [loadingCanchas, setLoadingCanchas] = useState(false);
@@ -666,6 +683,21 @@ export default function Reservar() {
         {/* ── CANCHA ── */}
         {tipo === 'cancha' && (
           <>
+            {esTodoONada && (
+              <div className="rounded-2xl px-3 py-3 flex items-center gap-3 text-[13.5px] leading-relaxed"
+                   style={{ background: '#151515', color: '#F1E9DD' }}>
+                <img src="/todo-o-nada.webp" alt="Todo o Nada · El que pierde paga" width="84" height="99"
+                     className="w-[84px] h-auto shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-black text-[15px]" style={{ color: '#8DC63F' }}>Martes de Todo o Nada</p>
+                  <ul className="mt-1 list-disc pl-4 space-y-1">
+                    <li>Renta $600 desde las 8:30 pm.</li>
+                    <li>La pareja que gana no paga y la que pierde paga $300 cada quien.</li>
+                    <li className="font-bold">Para aplicar la promo, capturen el resultado en la app.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
             {esCumple && (
               <div className="card border-0" style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))' }}>
                 <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--sp-on-dark)' }}>🎂 Tu promo de cumpleaños</p>
