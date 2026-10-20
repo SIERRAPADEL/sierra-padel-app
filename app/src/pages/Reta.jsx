@@ -415,10 +415,21 @@ export default function Reta() {
         {/* 🎾 Martes de «Todo o Nada» (German 19-oct-2026): la regla va ESCRITA aquí, donde se
             arman las parejas y se captura el marcador, para que nadie se sienta engañado. */}
         {d.todo_o_nada?.aplica && (
-          <div className="rounded-2xl px-4 py-3 bg-amber-50 text-amber-900 text-[13.5px] leading-relaxed">
-            <p className="font-black text-[15px]">🎾 Martes de Todo o Nada</p>
-            <p className="mt-1">{d.todo_o_nada.texto}</p>
-            <p className="mt-1 font-bold">Armen parejas fijas y capturen el marcador al terminar.</p>
+          <div className="rounded-2xl px-3 py-3 flex items-center gap-3 text-[13.5px] leading-relaxed"
+               style={{ background: '#151515', color: '#F1E9DD' }}>
+            {/* Logo oficial que mandó German (19-oct). */}
+            <img src="/todo-o-nada.webp" alt="Todo o Nada · El que pierde paga" width="84" height="99"
+                 className="w-[84px] h-auto shrink-0" />
+            <div className="min-w-0">
+              <p className="font-black text-[15px]" style={{ color: '#8DC63F' }}>Martes de Todo o Nada</p>
+              {/* Una idea por renglón (German 19-oct: «cada oración como un bullet»). */}
+              <ul className="mt-1 list-disc pl-4 space-y-1">
+                {String(d.todo_o_nada.texto || '').split(/\.\s+/).filter(Boolean).map((o, i) => (
+                  <li key={i}>{o.replace(/\.$/, '')}.</li>
+                ))}
+                <li className="font-bold">Armen parejas fijas y capturen el marcador al terminar.</li>
+              </ul>
+            </div>
           </div>
         )}
         {msg && (
