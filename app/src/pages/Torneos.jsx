@@ -864,7 +864,12 @@ export default function Torneos() {
 
   // Un torneo es "pasado" cuando su FECHA ya quedó atrás (la fecha manda — muchos torneos
   // nunca se marcan "finalizado" en sus categorías) o cuando todas sus categorías terminaron.
+  // 🏁 German (21-oct-2026): «estorba lo que no esté activo». Manda lo que dice el servidor
+  // (`terminado`, regla de vigencia.js); y por si llega de una versión vieja, el estado
+  // finalizado/cancelado del torneo también lo manda a Pasados aunque su fecha no haya pasado.
   const esPasado = (t) => {
+    if (t.terminado === true) return true;
+    if (['finalizado', 'cancelado'].includes(t.estado_global)) return true;
     const hoy = new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10); // hoy en Monclova
     const fin = String(t.fecha_fin || t.fecha_inicio || '').slice(0, 10);
     if (fin && fin < hoy) return true;

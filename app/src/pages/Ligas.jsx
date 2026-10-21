@@ -43,7 +43,9 @@ export default function Ligas() {
       .then(([d, r, e]) => {
         if (d?.ok) setBotanero(d.data);
         if (r?.ok && (r.data || []).length) setLider(r.data[0]);
-        if (e?.ok) setEscaleras(e.data || []);
+        // 🏁 Lo terminado no se enseña (German 21-oct-2026). El servidor ya no lo manda;
+        // esto sólo cubre una respuesta de una versión vieja del backend.
+        if (e?.ok) setEscaleras((e.data || []).filter(l => !['finalizada', 'cancelada'].includes(l.estado)));
       })
       .catch(() => {})
       .finally(() => setLoading(false));

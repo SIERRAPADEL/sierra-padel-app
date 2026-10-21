@@ -512,6 +512,10 @@ function ProximosTorneos({ apiFetch, navigate }) {
           const hoy = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD local
           const proximos = lista
             .filter(t => {
+              // 🏁 Lo terminado no estorba en el inicio (German 21-oct-2026): el servidor lo
+              // marca (`terminado`, vigencia.js) y el estado finalizado/cancelado también manda.
+              if (t.terminado === true) return false;
+              if (['finalizado', 'cancelado'].includes(t.estado_global)) return false;
               const fin = (t.fecha_fin || t.fecha_inicio || '').slice(0, 10);
               return fin && fin >= hoy;
             })
