@@ -17,6 +17,9 @@ export default function Avisos() {
   useEffect(() => {
     apiFetch('/avisos-cliente').then(r => {
       if (r?.ok) { setDatos(r.data); avisarCambioBuzon(r.data?.no_leidos || 0); }
+      // 21-oct: la app sube a Vercel al instante y el servidor puede tardar en tomar la versión
+      // con el buzón (Railway). Mientras la ruta no exista (404) el buzón está vacío, no roto.
+      else if (/\(404\)/.test(String(r?.error || ''))) setDatos({ avisos: [], no_leidos: 0 });
       else setError(r?.error || 'No se pudieron cargar tus avisos.');
     });
   }, [apiFetch]);
