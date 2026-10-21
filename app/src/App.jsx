@@ -26,6 +26,7 @@ import LigaEscalera from './pages/LigaEscalera';
 import LigaJornada from './pages/LigaJornada';
 import Marcadores from './pages/Marcadores';
 import Jugadas from './pages/Jugadas';
+import Avisos from './pages/Avisos';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -84,6 +85,8 @@ function AppRoutes() {
       <Route path="/puntos" element={<ProtectedRoute><Puntos /></ProtectedRoute>} />
       <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
       <Route path="/noticias" element={<ProtectedRoute><Noticias /></ProtectedRoute>} />
+      {/* 🔔 Buzón de avisos (21-oct-2026): la campanita de Inicio lleva aquí. */}
+      <Route path="/avisos" element={<ProtectedRoute><Avisos /></ProtectedRoute>} />
       <Route path="/pedir" element={<ProtectedRoute><Pedir /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

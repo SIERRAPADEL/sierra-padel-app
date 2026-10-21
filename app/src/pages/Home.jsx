@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
+import Campanita from '../components/Campanita';
 import PromoExpressBanner from '../components/PromoExpressBanner';
 import AvisosApagados from '../components/AvisosApagados';
 import NivelSelector from '../components/NivelSelector';
@@ -784,7 +785,11 @@ export default function Home() {
             <p className="text-white/75 text-sm font-medium">{hora},</p>
             <p className="text-white text-xl font-black">{user?.nombre?.split(' ')[0] || 'Jugador'}</p>
           </div>
-          <Isotipo size={32} color="white" />
+          {/* 🔔 La campanita (21-oct-2026): los avisos que se cerraron sin querer no se pierden. */}
+          <div className="flex items-center gap-3">
+            <Campanita />
+            <Isotipo size={32} color="white" />
+          </div>
         </div>
         {/* Los puntos y, en temporada, su saludo al lado (🇲🇽 septiembre · 🎃 octubre). */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
