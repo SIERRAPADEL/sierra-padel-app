@@ -27,6 +27,8 @@ import LigaJornada from './pages/LigaJornada';
 import Marcadores from './pages/Marcadores';
 import Jugadas from './pages/Jugadas';
 import Avisos from './pages/Avisos';
+import AutorizarPuntos from './pages/AutorizarPuntos';
+import CuentaVencida from './pages/CuentaVencida';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -87,6 +89,10 @@ function AppRoutes() {
       <Route path="/noticias" element={<ProtectedRoute><Noticias /></ProtectedRoute>} />
       {/* 🔔 Buzón de avisos (21-oct-2026): la campanita de Inicio lleva aquí. */}
       <Route path="/avisos" element={<ProtectedRoute><Avisos /></ProtectedRoute>} />
+      {/* 🔐 La caja pide usar tus puntos (22-oct-2026): el push y la tarjeta de Inicio llevan aquí. */}
+      <Route path="/autorizar-puntos/:id" element={<ProtectedRoute><AutorizarPuntos /></ProtectedRoute>} />
+      {/* 🔒 Una cuenta tuya quedó sin pagar: detalle + «No es mía / ya la pagué». */}
+      <Route path="/cuenta-vencida/:id" element={<ProtectedRoute><CuentaVencida /></ProtectedRoute>} />
       <Route path="/pedir" element={<ProtectedRoute><Pedir /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { fmtRelativa } from '../lib/format';
 import { destinoDelAviso, marcarLeidoLocal, marcarTodosLocal, avisarCambioBuzon } from '../lib/buzon';
+import SolicitudesPuntos from '../components/SolicitudesPuntos';
 
 // 🔔 EL BUZÓN (German 21-oct-2026): «un mal click y se pierde». Aquí se quedan los avisos que
 // el club te mandó por push, aunque hayas cerrado la notificación o no te haya llegado.
@@ -77,6 +78,8 @@ export default function Avisos() {
       </div>
 
       <div className="px-4 pt-4 flex flex-col gap-2.5">
+        {/* 🔐 Una solicitud de la caja para usar tus puntos, mientras siga vigente */}
+        <SolicitudesPuntos />
         {!datos && !error && [1, 2, 3].map(i => (
           <div key={i} className="card h-[76px] animate-pulse" />
         ))}

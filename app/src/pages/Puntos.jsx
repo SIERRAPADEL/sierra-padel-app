@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { money } from '../lib/puntosAut';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
@@ -63,6 +64,14 @@ export default function Puntos() {
   const { user } = useAuth();
   const { apiFetch } = useApi();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // 🔒 Puntos bloqueados por una cuenta sin pagar (German 22-oct-2026): se dice CUÁL cuenta.
+  // Si el servidor todavía no tiene la ruta (404) o falla, no se pinta nada.
+  const [bloqueo, setBloqueo] = useState(null);
+  useEffect(() => {
+    apiFetch('/pagos/puntos/mi-bloqueo').then(r => { if (r?.ok && r.data?.bloqueado) setBloqueo(r.data); }).catch(() => {});
+  }, [apiFetch]);
 
   const [niveles, setNiveles]   = useState([]);
   const [saldo, setSaldo]       = useState(null);
@@ -233,6 +242,24 @@ export default function Puntos() {
             Tus puntos ya se están guardando y aquí ves cómo funciona, pero los regalos y los
             canjes empiezan ese día. Antes de esa fecha la caja todavía no los puede aplicar.
           </p>
+        </div>
+      )}
+
+      {/* 🔒 Puntos bloqueados: una cuenta suya de otro día quedó sin pagar */}
+      {bloqueo && (bloqueo.cuentas || []).length > 0 && (
+        <div className="mx-4 mt-4 rounded-2xl px-4 py-3 bg-amber-50 border border-amber-300">
+          <p className="text-sm font-black text-amber-800">🔒 Tus puntos están bloqueados</p>
+          <p className="text-xs text-amber-800/90 mt-1">
+            Los sigues acumulando, pero no los puedes usar hasta que se liquide esta cuenta:
+          </p>
+          {bloqueo.cuentas.map(c => (
+            <button key={c.cuenta_id} onClick={() => navigate(`/cuenta-vencida/${c.cuenta_id}`)}
+              className="w-full text-left mt-2 rounded-xl bg-white border border-amber-200 px-3 py-2 active:scale-[0.99]">
+              <p className="text-[13px] font-black text-gray-900">Cuenta {c.folio || ''} · {c.fecha} · {c.area}</p>
+              <p className="text-[12px] text-gray-600">Debes {money(c.saldo)}{c.abierta_por ? ` · la abrió ${c.abierta_por}` : ''}</p>
+              <p className="text-[12px] font-bold text-sp-green mt-0.5">Ver detalle · ¿no es tuya o ya la pagaste? →</p>
+            </button>
+          ))}
         </div>
       )}
 

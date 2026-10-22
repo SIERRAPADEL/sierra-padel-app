@@ -6,6 +6,7 @@ import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
 import Campanita from '../components/Campanita';
 import PromoExpressBanner from '../components/PromoExpressBanner';
+import SolicitudesPuntos from '../components/SolicitudesPuntos';
 import AvisosApagados from '../components/AvisosApagados';
 import NivelSelector from '../components/NivelSelector';
 import { soloLetras, errorNombre, nombreEsValido } from '../lib/nombre';
@@ -816,6 +817,9 @@ export default function Home() {
       {/* ── Contenido ── */}
       <PrenderAvisos motivo="Te avisamos tu cancha, tus retas y cuando se libere un lugar." />
       <div className="px-4 py-4 flex flex-col gap-4">
+        {/* 🔐 La caja quiere usar tus puntos: lo más urgente (vence en 3 min) */}
+        <SolicitudesPuntos />
+
         {/* Promo Express: sensible al tiempo, siempre hasta arriba */}
         <PromoExpressBanner />
 
