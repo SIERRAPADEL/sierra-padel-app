@@ -5,7 +5,7 @@ import { es404, money, MOTIVOS_RECLAMO } from '../lib/puntosAut';
 
 // 🔒 UNA CUENTA TUYA QUEDÓ SIN PAGAR (German 22-oct-2026). Aquí lleva el aviso: el detalle
 // (folio, fecha, área, cargos, saldo, quién la abrió) y el botón «No es mía / ya la pagué»,
-// que le llega a German. Mientras haya reclamo abierto, el club no aplica tus puntos a esa deuda.
+// que le llega a German. Al liquidarse, cada día de atraso descuenta puntos (si el reclamo procede, no).
 export default function CuentaVencida() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -34,8 +34,7 @@ export default function CuentaVencida() {
     else setError(r?.error || 'No se pudo enviar. Intenta de nuevo.');
   }
 
-  const fechaAplica = c && c.puntos_se_aplican_el
-    ? new Date(c.puntos_se_aplican_el).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) : null;
+  const pen = c && c.penalizacion;
 
   return (
     <div className="page safe-bottom">
@@ -73,7 +72,7 @@ export default function CuentaVencida() {
               {c.vencida && (
                 <p className="text-[13px] text-amber-700 bg-amber-50 rounded-xl px-3 py-2 mt-3">
                   🔒 Mientras siga sin pagar, tus puntos están bloqueados (los sigues acumulando).
-                  {fechaAplica && !c.reclamo ? ` Si no se liquida, el ${fechaAplica} el club aplicará tus puntos a esta deuda.` : ''}
+                  {pen && pen.puntos_por_dia > 0 ? ` Cada día de atraso te descuenta ${pen.puntos_por_dia} puntos al liquidarla${pen.dias_hasta_hoy > 0 ? `: si la liquidas hoy, son ${pen.puntos_si_liquida_hoy} (${pen.dias_hasta_hoy} día${pen.dias_hasta_hoy === 1 ? '' : 's'})` : ''}.` : ''}
                 </p>
               )}
             </div>
@@ -81,7 +80,7 @@ export default function CuentaVencida() {
             {c.vencida && (c.reclamo || enviado ? (
               <div className="card text-[14px] text-gray-700">
                 ✅ Recibimos tu aviso{c.reclamo && c.reclamo.motivo ? ` («${(MOTIVOS_RECLAMO.find(m => m.clave === c.reclamo.motivo) || {}).texto || ''}»)` : ''}.
-                Lo revisa el club; mientras tanto no se aplican tus puntos a esta cuenta.
+                Lo revisa el club; si no es tuya, no se te descuenta nada por atraso.
               </div>
             ) : (
               <div className="card">
