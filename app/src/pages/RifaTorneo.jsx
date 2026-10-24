@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
+import { t } from '../i18n';
 
 // 🎟️ RIFA DEL TORNEO (German 14-oct-2026): se escanea el QR de la pantalla del club, OBLIGA a
 // entrar con la cuenta de la app y sólo cuentan los jugadores inscritos.
@@ -26,12 +27,12 @@ export default function RifaTorneo() {
   useEffect(() => {
     if (hecho.current || loading) return;   // con la sesión aún cargando, no mandar a login
     const qs = new URLSearchParams(search);
-    const t = qs.get('t'), p = qs.get('p');
+    const tk = qs.get('t'), p = qs.get('p');
     (async () => {
-      if (t) {
+      if (tk) {
         hecho.current = true;
-        const d = await apiFetch(`/torneos/${torneoId}/rifa/pase`, { method: 'POST', body: JSON.stringify({ t }) });
-        if (!d.ok) { setError(d.error || 'No se pudo leer el código.'); setFase('error'); return; }
+        const d = await apiFetch(`/torneos/${torneoId}/rifa/pase`, { method: 'POST', body: JSON.stringify({ t: tk }) });
+        if (!d.ok) { setError(d.error || t('No se pudo leer el código.')); setFase('error'); return; }
         navigate(`/rifa/${torneoId}?p=${encodeURIComponent(d.data.pase)}`, { replace: true });
         hecho.current = false;
         return;
@@ -44,7 +45,7 @@ export default function RifaTorneo() {
       hecho.current = true;
       const d = await apiFetch(`/torneos/${torneoId}/rifa/entrar`, { method: 'POST', body: JSON.stringify({ pase: p || '' }) });
       if (!d.ok) {
-        setError(p ? (d.error || 'No se pudo entrar a la rifa.') : 'Para entrar a la rifa, escanea el QR que está en la pantalla del club.');
+        setError(p ? (d.error || t('No se pudo entrar a la rifa.')) : t('Para entrar a la rifa, escanea el QR que está en la pantalla del club.'));
         setFase('error'); return;
       }
       setYo(d.data); setFase('dentro');
@@ -74,10 +75,10 @@ export default function RifaTorneo() {
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          Inicio
+          {t('Inicio')}
         </button>
-        <p className="text-white font-black text-lg">Rifa del torneo</p>
-        <p className="text-white/70 text-[13px] mt-0.5">Sólo para jugadores inscritos</p>
+        <p className="text-white font-black text-lg">{t('Rifa del torneo')}</p>
+        <p className="text-white/70 text-[13px] mt-0.5">{t('Sólo para jugadores inscritos')}</p>
       </div>
 
       <div className="px-4 py-4 flex flex-col gap-3">
@@ -90,7 +91,7 @@ export default function RifaTorneo() {
         {fase === 'error' && (
           <div className="card text-center py-10 px-5">
             <p className="text-3xl mb-3">🎟️</p>
-            <p className="text-sp-gray font-black text-[16px]">No pudiste entrar</p>
+            <p className="text-sp-gray font-black text-[16px]">{t('No pudiste entrar')}</p>
             <p className="text-gray-500 text-[14px] mt-2 leading-snug">{error}</p>
           </div>
         )}
@@ -101,23 +102,23 @@ export default function RifaTorneo() {
               {salioYo ? (
                 <>
                   <p className="text-4xl mb-2">🙋</p>
-                  <p className="text-sp-green-dark font-black text-[22px] leading-tight">¡Salió tu nombre!</p>
+                  <p className="text-sp-green-dark font-black text-[22px] leading-tight">{t('¡Salió tu nombre!')}</p>
                   {salioYo.premio && <p className="text-sp-gray font-bold text-[16px] mt-2">{salioYo.premio}</p>}
-                  <p className="text-sp-gray text-[15px] mt-2">Levanta la mano y acércate con el organizador.</p>
+                  <p className="text-sp-gray text-[15px] mt-2">{t('Levanta la mano y acércate con el organizador.')}</p>
                 </>
               ) : gane ? (
                 <>
                   <p className="text-4xl mb-2">🏆</p>
-                  <p className="text-sp-green-dark font-black text-[22px] leading-tight">¡Ganaste!</p>
+                  <p className="text-sp-green-dark font-black text-[22px] leading-tight">{t('¡Ganaste!')}</p>
                   {gane.premio && <p className="text-sp-gray font-bold text-[16px] mt-2">{gane.premio}</p>}
-                  <p className="text-sp-gray text-[14px] mt-2">{premioApp(gane.premio) ? 'Ya está en tu app: lo ves en tus promociones y la caja lo aplica sola.' : 'Recógelo con el organizador.'}</p>
+                  <p className="text-sp-gray text-[14px] mt-2">{premioApp(gane.premio) ? t('Ya está en tu app: lo ves en tus promociones y la caja lo aplica sola.') : t('Recógelo con el organizador.')}</p>
                 </>
               ) : (
                 <>
                   <div style={{ width: 64, height: 64, borderRadius: 99, background: 'var(--sp-green-light)', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="var(--sp-green-deep)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
-                  <p className="text-sp-gray font-black text-[20px] leading-tight">Ya estás en la rifa</p>
+                  <p className="text-sp-gray font-black text-[20px] leading-tight">{t('Ya estás en la rifa')}</p>
                   <p className="text-gray-500 text-[14px] mt-1">{yo.nombre}</p>
                 </>
               )}
@@ -125,25 +126,25 @@ export default function RifaTorneo() {
 
             <div className="card">
               <div className="flex items-center justify-between">
-                <span className="text-[14px] text-gray-500">Jugadores en la rifa</span>
+                <span className="text-[14px] text-gray-500">{t('Jugadores en la rifa')}</span>
                 <span className="font-black text-sp-gray text-[18px]">{rifa?.total ?? yo.total}</span>
               </div>
               <p className="text-[13px] text-gray-400 mt-2 leading-snug">
-                {rifa?.estado === 'abierta' || !rifa ? 'El registro sigue abierto. '
-                  : rifa.estado === 'cerrada' ? 'El registro ya cerró: están sacando los nombres. '
-                  : 'La rifa terminó. '}
-                Para ganar tienes que estar en el club cuando salga tu nombre; si no estás, sale otro.
+                {rifa?.estado === 'abierta' || !rifa ? t('El registro sigue abierto.')
+                  : rifa.estado === 'cerrada' ? t('El registro ya cerró: están sacando los nombres.')
+                  : t('La rifa terminó.')}{' '}
+                {t('Para ganar tienes que estar en el club cuando salga tu nombre; si no estás, sale otro.')}
               </p>
             </div>
 
             {rifa?.premios?.length > 0 && (
               <div className="card">
-                <p className="font-black text-sp-gray text-[15px] mb-2">Se rifan</p>
+                <p className="font-black text-sp-gray text-[15px] mb-2">{t('Se rifan')}</p>
                 <ul className="flex flex-col gap-1.5">
                   {rifa.premios.map((p, i) => (
                     <li key={i} className="flex justify-between gap-3 text-[14px]">
                       <span className="text-sp-gray font-semibold">{p.cantidad > 1 ? `${p.cantidad} × ` : ''}{p.nombre}</span>
-                      <span className="text-gray-400 text-right whitespace-nowrap">{p.por_lote ? 'a tu app' : 'en mano'}</span>
+                      <span className="text-gray-400 text-right whitespace-nowrap">{p.por_lote ? t('a tu app') : t('en mano')}</span>
                     </li>
                   ))}
                 </ul>
@@ -152,7 +153,7 @@ export default function RifaTorneo() {
 
             {rifa?.ganadores?.length > 0 && (
               <div className="card">
-                <p className="font-black text-sp-gray text-[15px] mb-2">Ganadores</p>
+                <p className="font-black text-sp-gray text-[15px] mb-2">{t('Ganadores')}</p>
                 <ul className="flex flex-col gap-1.5">
                   {rifa.ganadores.map(g => (
                     <li key={g.orden} className="flex justify-between gap-3 text-[14px]">

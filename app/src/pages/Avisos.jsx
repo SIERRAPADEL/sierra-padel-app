@@ -4,6 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { fmtRelativa } from '../lib/format';
 import { destinoDelAviso, marcarLeidoLocal, marcarTodosLocal, avisarCambioBuzon } from '../lib/buzon';
 import SolicitudesPuntos from '../components/SolicitudesPuntos';
+import { t } from '../i18n';
 
 // 🔔 EL BUZÓN (German 21-oct-2026): «un mal click y se pierde». Aquí se quedan los avisos que
 // el club te mandó por push, aunque hayas cerrado la notificación o no te haya llegado.
@@ -21,7 +22,7 @@ export default function Avisos() {
       // 21-oct: la app sube a Vercel al instante y el servidor puede tardar en tomar la versión
       // con el buzón (Railway). Mientras la ruta no exista (404) el buzón está vacío, no roto.
       else if (/\(404\)/.test(String(r?.error || ''))) setDatos({ avisos: [], no_leidos: 0 });
-      else setError(r?.error || 'No se pudieron cargar tus avisos.');
+      else setError(r?.error || t('No se pudieron cargar tus avisos.'));
     });
   }, [apiFetch]);
 
@@ -54,26 +55,26 @@ export default function Avisos() {
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/home'))}
-              aria-label="Regresar"
+              aria-label={t('Regresar')}
               className="w-9 h-9 -ml-2 rounded-full flex items-center justify-center active:bg-black/10"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
-            <p className="text-white font-black text-lg truncate">Avisos</p>
+            <p className="text-white font-black text-lg truncate">{t('Avisos')}</p>
           </div>
           {noLeidos > 0 && (
             <button
               onClick={leerTodos}
               className="bg-black/20 rounded-full px-3.5 py-1.5 text-white text-[13px] font-bold active:scale-95 transition-transform flex-shrink-0"
             >
-              Marcar leídos
+              {t('Marcar leídos')}
             </button>
           )}
         </div>
         <p className="text-white/75 text-[13px] font-medium mt-1">
-          {noLeidos > 0 ? `${noLeidos} sin leer · ` : ''}Aquí se quedan aunque cierres la notificación.
+          {noLeidos > 0 ? t('{n} sin leer', { n: noLeidos }) + ' · ' : ''}{t('Aquí se quedan aunque cierres la notificación.')}
         </p>
       </div>
 
@@ -94,8 +95,8 @@ export default function Avisos() {
                 <path d="M13.73 21a2 2 0 01-3.46 0" />
               </svg>
             </div>
-            <p className="font-black text-gray-800">No tienes avisos</p>
-            <p className="text-sm text-gray-500 mt-1">Cuando el club te mande algo, aquí lo encuentras.</p>
+            <p className="font-black text-gray-800">{t('No tienes avisos')}</p>
+            <p className="text-sm text-gray-500 mt-1">{t('Cuando el club te mande algo, aquí lo encuentras.')}</p>
           </div>
         )}
 
@@ -123,14 +124,14 @@ export default function Avisos() {
                   </span>
                 </div>
                 {a.cuerpo && <p className="text-[13px] text-gray-500 leading-snug mt-0.5">{a.cuerpo}</p>}
-                {lleva && <p className="text-[12px] font-bold text-sp-green mt-1.5">Ver →</p>}
+                {lleva && <p className="text-[12px] font-bold text-sp-green mt-1.5">{t('Ver →')}</p>}
               </div>
             </button>
           );
         })}
 
         {avisos.length > 0 && (
-          <p className="text-[11px] text-gray-400 text-center mt-2">Cada aviso se borra solo cuando pasa su evento o a los 7 días.</p>
+          <p className="text-[11px] text-gray-400 text-center mt-2">{t('Cada aviso se borra solo cuando pasa su evento o a los 7 días.')}</p>
         )}
       </div>
     </div>

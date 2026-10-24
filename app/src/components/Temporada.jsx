@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { t } from '../i18n';
 
 // Los adornos de temporada del Inicio: el saludo junto a los puntos y la franja debajo del
 // encabezado. Los COLORES de toda la app no pasan por aquí: los pone index.css según
@@ -14,16 +15,19 @@ export function useTemporada() {
   return t;
 }
 
-const SALUDO = {
-  patria: '🇲🇽 ¡Viva México!',
+// Función y no objeto: t() se llama al pintar, no al importar.
+const saludo = (k) => ({
+  patria: '🇲🇽 ' + t('¡Viva México!'),
   // German (10-sep): «Spooky szn», con la calabaza y un fantasma, en lugar de «¡Feliz Halloween!».
+  // Ya es inglés: igual en los tres idiomas.
   halloween: '🎃 Spooky szn 👻',
-};
+})[k];
 
 export function TemporadaSaludo() {
-  const t = useTemporada();
-  if (!SALUDO[t]) return null;
-  return <span className={`temporada-saludo temporada-saludo--${t}`}>{SALUDO[t]}</span>;
+  const temp = useTemporada();
+  const s = saludo(temp);
+  if (!s) return null;
+  return <span className={`temporada-saludo temporada-saludo--${temp}`}>{s}</span>;
 }
 
 export function TemporadaFranja() {

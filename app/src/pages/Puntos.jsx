@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
 import PrenderAvisos from '../components/PrenderAvisos';
+import { t, locale } from '../i18n';
 
 // Estilo por nivel víbora (bolsa única): color + dibujo propio.
 // Los niveles se pintaban con EMOJIS del sistema (🪱 / 🐍 / 🐍🔥 / 👑🐍). Cada teléfono los
@@ -32,8 +33,9 @@ function NivelIcono({ nivel, orden, nombre, size = 40 }) {
          style={{ width: size, height: size, objectFit: 'contain', display: 'block' }} />
   );
 }
-const fmtMoney = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
-// Regalo tangible por día que juega, según nivel (Fase 2 al cobrar renta).
+const fmtMoney = n => '$' + Math.round(Number(n) || 0).toLocaleString(locale());
+// Regalo tangible por día que juega, según nivel (Fase 2 al cobrar renta). Son llaves en
+// español: se pintan con t(regalo).
 const TANGIBLE_NIVEL = { 2: 'Agua 500 ml gratis', 3: 'Agua de 1 L gratis', 4: 'Overgrip SP gratis' };
 
 // ── Countdown hook ─────────────────────────────────────────────────────────────
@@ -79,8 +81,8 @@ export default function Puntos() {
   const [historial, setHistorial] = useState([]);
   const [tab, setTab]           = useState(() => {
     const qTab = new URLSearchParams(location.search).get('tab');     // viene del push (/puntos?tab=promos)
-    const t = qTab || location.state?.tab || 'beneficios';
-    return ['beneficios', 'promos', 'historial'].includes(t) ? t : 'beneficios';
+    const tb = qTab || location.state?.tab || 'beneficios';
+    return ['beneficios', 'promos', 'historial'].includes(tb) ? tb : 'beneficios';
   });
   // Promos reclamables (motor de beneficios)
   const [promosDisp, setPromosDisp] = useState([]);
@@ -129,10 +131,10 @@ export default function Puntos() {
     const data = await apiFetch(`/beneficios/app/reclamar/${id}`, { method: 'POST' });
     setLoadingPromo('');
     if (data.ok) {
-      setPromoMsg({ ok: true, text: '¡Promo reclamada! Se aplicará sola en la caja cuando el cajero te identifique.' });
+      setPromoMsg({ ok: true, text: t('¡Promo reclamada! Se aplicará sola en la caja cuando el cajero te identifique.') });
       await cargarPromos();
     } else {
-      setPromoMsg({ ok: false, text: data.error || 'No se pudo reclamar' });
+      setPromoMsg({ ok: false, text: data.error || t('No se pudo reclamar') });
     }
   }
 
@@ -146,10 +148,10 @@ export default function Puntos() {
     return (
       <div className="page safe-bottom">
         <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
-          <p className="text-white font-black text-lg pt-3">Mis Puntos</p>
+          <p className="text-white font-black text-lg pt-3">{t('Mis Puntos')}</p>
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-gray-400 text-sm">Cargando...</p>
+          <p className="text-gray-400 text-sm">{t('Cargando...')}</p>
         </div>
       </div>
     );
@@ -176,12 +178,12 @@ export default function Puntos() {
       setCanjeActivo(data.data);
       setCanjeModal(null);
     } else {
-      setCanjeError(data.error || 'Error al generar codigo');
+      setCanjeError(data.error || t('Error al generar codigo'));
     }
   }
 
   function formatFecha(iso) {
-    return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+    return new Date(iso).toLocaleDateString(locale(), { day: '2-digit', month: 'short' });
   }
 
   // ── Pantalla de codigo activo ─────────────────────────────────────────────
@@ -189,11 +191,11 @@ export default function Puntos() {
     return (
       <div className="page safe-bottom">
         <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
-          <p className="text-white font-black text-lg pt-3">Codigo de canje</p>
+          <p className="text-white font-black text-lg pt-3">{t('Codigo de canje')}</p>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6 py-8">
           <div className="text-center">
-            <p className="text-gray-500 text-sm font-medium mb-1">Muestra este codigo al cajero</p>
+            <p className="text-gray-500 text-sm font-medium mb-1">{t('Muestra este codigo al cajero')}</p>
             <p className="text-xs text-gray-400">{canjeActivo.descripcion}</p>
           </div>
 
@@ -202,12 +204,12 @@ export default function Puntos() {
             <div className={`text-2xl font-bold tabular-nums ${segs < 60 ? 'text-red-400' : 'text-sp-green'}`}>
               {countdown}
             </div>
-            <p className="text-gray-500 text-xs">El codigo expira en {countdown}</p>
+            <p className="text-gray-500 text-xs">{t('El codigo expira en {tiempo}', { tiempo: countdown })}</p>
           </div>
 
           <div className="bg-sp-green-light rounded-2xl px-5 py-3 text-center w-full max-w-xs">
             <p className="text-sp-green-dark text-xs font-medium">
-              Se descontaran <strong>{canjeActivo.puntos_usados} puntos</strong> al confirmar el cajero
+              {t('Se descontaran {puntos} puntos al confirmar el cajero', { puntos: canjeActivo.puntos_usados })}
             </p>
           </div>
 
@@ -215,7 +217,7 @@ export default function Puntos() {
             onClick={() => setCanjeActivo(null)}
             className="text-gray-400 text-sm underline"
           >
-            Cancelar (no se descuentan puntos)
+            {t('Cancelar (no se descuentan puntos)')}
           </button>
         </div>
       </div>
@@ -227,7 +229,7 @@ export default function Puntos() {
     <div className="page safe-bottom">
       <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
         <div className="pt-3">
-          <p className="text-white font-black text-lg">Mis Puntos</p>
+          <p className="text-white font-black text-lg">{t('Mis Puntos')}</p>
         </div>
       </div>
 
@@ -237,10 +239,9 @@ export default function Puntos() {
           La fecha viene del backend (LEALTAD_INICIO), no se escribe aquí. */}
       {miNivel && miNivel.arrancada === false && (
         <div className="mx-4 mt-4 rounded-2xl px-4 py-3 bg-amber-50 border border-amber-200">
-          <p className="text-sm font-bold text-amber-700">🚦 Arranca el {miNivel.inicio_texto}</p>
+          <p className="text-sm font-bold text-amber-700">🚦 {t('Arranca el {fecha}', { fecha: miNivel.inicio_texto })}</p>
           <p className="text-xs text-amber-700/80 mt-1">
-            Tus puntos ya se están guardando y aquí ves cómo funciona, pero los regalos y los
-            canjes empiezan ese día. Antes de esa fecha la caja todavía no los puede aplicar.
+            {t('Tus puntos ya se están guardando y aquí ves cómo funciona, pero los regalos y los canjes empiezan ese día. Antes de esa fecha la caja todavía no los puede aplicar.')}
           </p>
         </div>
       )}
@@ -248,16 +249,16 @@ export default function Puntos() {
       {/* 🔒 Puntos bloqueados: una cuenta suya de otro día quedó sin pagar */}
       {bloqueo && (bloqueo.cuentas || []).length > 0 && (
         <div className="mx-4 mt-4 rounded-2xl px-4 py-3 bg-amber-50 border border-amber-300">
-          <p className="text-sm font-black text-amber-800">🔒 Tus puntos están bloqueados</p>
+          <p className="text-sm font-black text-amber-800">🔒 {t('Tus puntos están bloqueados')}</p>
           <p className="text-xs text-amber-800/90 mt-1">
-            Los sigues acumulando, pero no los puedes usar hasta que se liquide esta cuenta:
+            {t('Los sigues acumulando, pero no los puedes usar hasta que se liquide esta cuenta:')}
           </p>
           {bloqueo.cuentas.map(c => (
             <button key={c.cuenta_id} onClick={() => navigate(`/cuenta-vencida/${c.cuenta_id}`)}
               className="w-full text-left mt-2 rounded-xl bg-white border border-amber-200 px-3 py-2 active:scale-[0.99]">
-              <p className="text-[13px] font-black text-gray-900">Cuenta {c.folio || ''} · {c.fecha} · {c.area}</p>
-              <p className="text-[12px] text-gray-600">Debes {money(c.saldo)}{c.abierta_por ? ` · la abrió ${c.abierta_por}` : ''}</p>
-              <p className="text-[12px] font-bold text-sp-green mt-0.5">Ver detalle · ¿no es tuya o ya la pagaste? →</p>
+              <p className="text-[13px] font-black text-gray-900">{t('Cuenta {folio}', { folio: c.folio || '' })} · {c.fecha} · {c.area}</p>
+              <p className="text-[12px] text-gray-600">{t('Debes {monto}', { monto: money(c.saldo) })}{c.abierta_por ? ` · ${t('la abrió {nombre}', { nombre: c.abierta_por })}` : ''}</p>
+              <p className="text-[12px] font-bold text-sp-green mt-0.5">{t('Ver detalle · ¿no es tuya o ya la pagaste?')} →</p>
             </button>
           ))}
         </div>
@@ -270,14 +271,14 @@ export default function Puntos() {
           <div className="mx-4 mt-4 rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, #1C1C1C, #2A2A2A)' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Mis puntos</p>
+                <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{t('Mis puntos')}</p>
                 <p className="text-4xl font-black mt-1">{miNivel?.saldo_puntos ?? 0}</p>
-                <p className="text-sm mt-1" style={{ color: st.color }}>= {fmtMoney(miNivel?.valor ?? 0)} para usar en el club</p>
+                <p className="text-sm mt-1" style={{ color: st.color }}>{t('= {monto} para usar en el club', { monto: fmtMoney(miNivel?.valor ?? 0) })}</p>
               </div>
               <Isotipo size={26} color={st.color} />
             </div>
             <p className="text-gray-500 text-xs mt-3">
-              🎾 Cancha y 🍽️ consumo suman a la misma bolsa. El cajero los aplica al pagar cuando te identifica.
+              {t('🎾 Cancha y 🍽️ consumo suman a la misma bolsa. El cajero los aplica al pagar cuando te identifica.')}
             </p>
           </div>
         );
@@ -295,34 +296,41 @@ export default function Puntos() {
                 <NivelIcono nivel={miNivel.nivel} orden={miNivel.nivel.nivel} nombre={miNivel.nivel.nombre} size={48} />
                 <div>
                   <span className="font-black text-lg" style={{ color: st.color }}>{miNivel.nivel.nombre}</span>
-                  <p className="text-gray-400 text-xs">Ganas ×{miNivel.nivel.mult} puntos en cada visita</p>
+                  <p className="text-gray-400 text-xs">{t('Ganas ×{mult} puntos en cada visita', { mult: miNivel.nivel.mult })}</p>
                 </div>
               </div>
             </div>
 
             <div className="text-xs text-gray-400">
-              Últimos 30 días: <b className="text-sp-gray">{act.visitas}</b> visita{act.visitas === 1 ? '' : 's'} · <b className="text-sp-gray">{fmtMoney(act.gasto)}</b> de consumo
+              {act.visitas === 1
+                ? t('Últimos 30 días: {visitas} visita · {monto} de consumo', { visitas: act.visitas, monto: fmtMoney(act.gasto) })
+                : t('Últimos 30 días: {visitas} visitas · {monto} de consumo', { visitas: act.visitas, monto: fmtMoney(act.gasto) })}
             </div>
 
             {sig ? (
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs text-gray-500">
-                  Para subir a <b style={{ color: NIVEL_STYLE[miNivel.nivel.nivel + 1]?.color || st.color }}>{sig.nombre}</b> te falta lo que llegue primero:
+                  {(() => {
+                    // El nombre del nivel va en negritas y en su color; la frase se parte en {nivel}
+                    // para que el orden lo decida cada idioma (en coreano va al principio).
+                    const [antes, despues = ''] = t('Para subir a {nivel} te falta lo que llegue primero:').split('{nivel}');
+                    return <>{antes}<b style={{ color: NIVEL_STYLE[miNivel.nivel.nivel + 1]?.color || st.color }}>{sig.nombre}</b>{despues}</>;
+                  })()}
                 </p>
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   <div className="bg-white rounded-lg p-2 text-center border border-gray-100">
                     <p className="text-lg font-black text-sp-gray">{sig.faltan_visitas > 0 ? sig.faltan_visitas : '✓'}</p>
-                    <p className="text-[10px] text-gray-400">{sig.faltan_visitas > 0 ? 'visitas más' : 'visitas listas'}</p>
+                    <p className="text-[10px] text-gray-400">{sig.faltan_visitas > 0 ? t('visitas más') : t('visitas listas')}</p>
                   </div>
                   <div className="bg-white rounded-lg p-2 text-center border border-gray-100">
                     <p className="text-lg font-black text-sp-gray">{sig.faltan_gasto > 0 ? fmtMoney(sig.faltan_gasto) : '✓'}</p>
-                    <p className="text-[10px] text-gray-400">{sig.faltan_gasto > 0 ? 'consumo más' : 'consumo listo'}</p>
+                    <p className="text-[10px] text-gray-400">{sig.faltan_gasto > 0 ? t('consumo más') : t('consumo listo')}</p>
                   </div>
                 </div>
-                <p className="text-[11px] text-gray-400 mt-2">No tienes que jugar para subir: también cuenta lo que consumes 🍽️</p>
+                <p className="text-[11px] text-gray-400 mt-2">{t('No tienes que jugar para subir: también cuenta lo que consumes 🍽️')}</p>
               </div>
             ) : (
-              <p className="text-sm font-bold" style={{ color: st.color }}>👑 ¡Nivel máximo! Eres {miNivel.nivel.nombre}.</p>
+              <p className="text-sm font-bold" style={{ color: st.color }}>👑 {t('¡Nivel máximo! Eres {nivel}.', { nivel: miNivel.nivel.nombre })}</p>
             )}
           </div>
         );
@@ -330,7 +338,7 @@ export default function Puntos() {
 
       {/* Tabs */}
       <div className="mx-4 mt-3 flex gap-2">
-        {[['beneficios', 'Beneficios'], ['promos', 'Promos'], ['historial', 'Historial']].map(([val, label]) => (
+        {[['beneficios', t('Beneficios')], ['promos', t('Promos')], ['historial', t('Historial')]].map(([val, label]) => (
           <button
             key={val}
             onClick={() => setTab(val)}
@@ -348,18 +356,18 @@ export default function Puntos() {
         <div className="mx-4 mt-3 flex flex-col gap-3 pb-24">
           {/* Cómo funciona */}
           <div className="card flex flex-col gap-2">
-            <p className="text-sm font-bold text-sp-gray">Cómo ganas 🐍</p>
+            <p className="text-sm font-bold text-sp-gray">{t('Cómo ganas 🐍')}</p>
             <p className="text-xs text-gray-500">
-              Ganas <b>1 punto por cada $20</b> en cancha, tienda y consumo (el alcohol no acumula). Cada punto vale <b>$0.50</b> — el <b>2.5%</b> de todo lo que gastas, en una sola bolsa.
+              {t('Ganas 1 punto por cada $20 en cancha, tienda y consumo (el alcohol no acumula). Cada punto vale $0.50 — el 2.5% de todo lo que gastas, en una sola bolsa.')}
             </p>
             <p className="text-xs text-gray-500">
-              Entre más alto tu nivel, <b>más rápido</b> acumulas y desbloqueas un regalo por cada día que juegas.
+              {t('Entre más alto tu nivel, más rápido acumulas y desbloqueas un regalo por cada día que juegas.')}
             </p>
           </div>
 
           {/* Los niveles + tangibles */}
           <div className="card">
-            <p className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wide">Los niveles</p>
+            <p className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wide">{t('Los niveles')}</p>
             <div className="flex flex-col gap-2">
               {(miNivel?.niveles || []).map((n) => {
                 const st = NIVEL_STYLE[n.nivel] || NIVEL_STYLE[1];
@@ -371,22 +379,22 @@ export default function Puntos() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-bold" style={{ color: st.color }}>{n.nombre}</p>
-                        <span className="text-[10px] text-gray-400">gana ×{n.mult}</span>
+                        <span className="text-[10px] text-gray-400">{t('gana ×{mult}', { mult: n.mult })}</span>
                         {esActual && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: st.color }}>Actual</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: st.color }}>{t('Actual')}</span>
                         )}
                       </div>
                       <p className="text-xs text-gray-400">
-                        {n.nivel === 1 ? 'Desde tu primer punto' : `${n.min_visitas} visitas o ${fmtMoney(n.min_gasto)} en 30 días`}
+                        {n.nivel === 1 ? t('Desde tu primer punto') : t('{visitas} visitas o {monto} en 30 días', { visitas: n.min_visitas, monto: fmtMoney(n.min_gasto) })}
                       </p>
-                      {regalo && <p className="text-xs mt-0.5" style={{ color: st.color }}>🎁 {regalo} por día que juegas</p>}
+                      {regalo && <p className="text-xs mt-0.5" style={{ color: st.color }}>🎁 {t('{regalo} por día que juegas', { regalo: t(regalo) })}</p>}
                     </div>
                   </div>
                 );
               })}
             </div>
             <p className="text-[11px] text-gray-400 mt-3">
-              Tu nivel se mide por tus últimos 30 días. Si dejas de venir bajas de nivel, así que mantente activo 🎾
+              {t('Tu nivel se mide por tus últimos 30 días. Si dejas de venir bajas de nivel, así que mantente activo 🎾')}
             </p>
           </div>
         </div>
@@ -399,9 +407,9 @@ export default function Puntos() {
             <p className={`text-sm text-center font-medium ${promoMsg.ok ? 'text-sp-green' : 'text-red-500'}`}>{promoMsg.text}</p>
           )}
 
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Promos para ti</p>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">{t('Promos para ti')}</p>
           {promosDisp.length === 0 && (
-            <div className="card text-center text-gray-400 text-sm py-6">No hay promos disponibles ahora</div>
+            <div className="card text-center text-gray-400 text-sm py-6">{t('No hay promos disponibles ahora')}</div>
           )}
           {promosDisp.map(p => (
             <div key={p.id}>
@@ -411,9 +419,9 @@ export default function Puntos() {
                 <p className="text-xs text-sp-green font-semibold">{p.valor}</p>
                 {(p.monto_minimo || p.valido_hasta) && (
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {p.monto_minimo ? `Mínimo $${p.monto_minimo}` : ''}
+                    {p.monto_minimo ? t('Mínimo ${monto}', { monto: p.monto_minimo }) : ''}
                     {p.monto_minimo && p.valido_hasta ? ' · ' : ''}
-                    {p.valido_hasta ? `Hasta ${String(p.valido_hasta).slice(0, 10)}` : ''}
+                    {p.valido_hasta ? t('Hasta {fecha}', { fecha: String(p.valido_hasta).slice(0, 10) }) : ''}
                   </p>
                 )}
                 {/* 🔒 Promo atada a las notificaciones (German, 24-ago-2026: «condiciónale
@@ -432,14 +440,14 @@ export default function Puntos() {
                 className="py-2 px-4 rounded-xl text-xs font-bold text-white active:scale-95 transition-transform disabled:opacity-50"
                 style={{ background: p.bloqueada ? '#9CA3AF' : nivel.color }}
               >
-                {loadingPromo === p.id ? '...' : (p.bloqueada ? '🔒' : 'Reclamar')}
+                {loadingPromo === p.id ? '...' : (p.bloqueada ? '🔒' : t('Reclamar'))}
               </button>
             </div>
             {/* El botón para prenderlas, PEGADO a la promo que las pide. Mandarlo a buscarlo
                 a Perfil es donde se pierde la gente; aquí el premio y el paso están juntos. */}
             {p.bloqueada && (
               <div className="mt-2">
-                <PrenderAvisos compacto motivo={`Prende tus notificaciones y reclama: ${p.nombre}.`} />
+                <PrenderAvisos compacto motivo={t('Prende tus notificaciones y reclama: {promo}.', { promo: p.nombre })} />
               </div>
             )}
             </div>
@@ -447,7 +455,7 @@ export default function Puntos() {
 
           {promosMias.length > 0 && (
             <>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mt-2">Mis promos</p>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mt-2">{t('Mis promos')}</p>
               {promosMias.map(p => (
                 <div key={p.id} className="card flex items-center justify-between gap-3">
                   <div className="flex-1">
@@ -455,7 +463,7 @@ export default function Puntos() {
                     <p className="text-xs text-sp-green font-semibold">{p.valor}</p>
                   </div>
                   <span className={`text-xs font-bold px-2 py-1 rounded-full ${p.estado === 'usada' ? 'bg-gray-100 text-gray-400' : 'bg-sp-green-light text-sp-green-dark'}`}>
-                    {p.estado === 'usada' ? 'Usada' : 'Lista'}
+                    {p.estado === 'usada' ? t('Usada') : t('Lista')}
                   </span>
                 </div>
               ))}
@@ -463,7 +471,7 @@ export default function Puntos() {
           )}
 
           <p className="text-xs text-gray-400 text-center mt-2">
-            Las promos que reclames se aplican solas cuando el cajero te identifica en la caja.
+            {t('Las promos que reclames se aplican solas cuando el cajero te identifica en la caja.')}
           </p>
         </div>
       )}
@@ -472,17 +480,17 @@ export default function Puntos() {
       {tab === 'historial' && (
         <div className="mx-4 mt-3 flex flex-col gap-2 pb-24">
           {historial.length === 0 && (
-            <div className="card text-center text-gray-400 text-sm py-8">Sin movimientos aun</div>
+            <div className="card text-center text-gray-400 text-sm py-8">{t('Sin movimientos aun')}</div>
           )}
           {/* El movimiento se nombra por su ORIGEN, no por el signo: un ajuste del club NO es
               un canje (decirle "canje" a lo que el cliente nunca gastó confunde y se ve mal). */}
           {historial.map(h => {
             const canje  = h.registrado_por === 'redencion_pos';
             const ajuste = h.registrado_por === 'ajuste_admin' || h.registrado_por === 'redencion_revert';
-            const titulo = canje  ? '🎁 Puntos usados en el club'
-                         : ajuste ? '⚙️ Ajuste de puntos'
-                         : h.tipo === 'renta'   ? '🎾 Renta de cancha'
-                         : h.tipo === 'consumo' ? '🍽️ Consumo'
+            const titulo = canje  ? t('🎁 Puntos usados en el club')
+                         : ajuste ? t('⚙️ Ajuste de puntos')
+                         : h.tipo === 'renta'   ? t('🎾 Renta de cancha')
+                         : h.tipo === 'consumo' ? t('🍽️ Consumo')
                          : h.tipo;
             return (
               <div key={h.id} className="card flex items-center justify-between">
@@ -515,7 +523,7 @@ export default function Puntos() {
           >
             <div className="text-center">
               <p className="text-xl font-black text-sp-gray">
-                {canjeModal.tipo === 'cancha' ? '🎾 Canjear cancha' : '🍽️ Canjear restaurante'}
+                {canjeModal.tipo === 'cancha' ? t('🎾 Canjear cancha') : t('🍽️ Canjear restaurante')}
               </p>
               <p className="text-sm text-gray-400 mt-1">
                 {canjeModal.tipo === 'cancha'
@@ -525,7 +533,7 @@ export default function Puntos() {
             </div>
             <div className="bg-sp-green-light rounded-xl px-4 py-3 text-center">
               <p className="text-sp-green-dark text-sm">
-                Se generara un codigo de 6 digitos valido por <strong>5 minutos</strong>. Muestraselo al cajero para aplicar el descuento.
+                {t('Se generara un codigo de 6 digitos valido por 5 minutos. Muestraselo al cajero para aplicar el descuento.')}
               </p>
             </div>
             {canjeError && <p className="text-red-500 text-sm text-center">{canjeError}</p>}
@@ -534,10 +542,10 @@ export default function Puntos() {
               disabled={loadingCanje}
               className="btn-green disabled:opacity-50"
             >
-              {loadingCanje ? 'Generando...' : 'Generar codigo'}
+              {loadingCanje ? t('Generando...') : t('Generar codigo')}
             </button>
             <button onClick={() => setCanjeModal(null)} className="text-gray-400 text-sm text-center">
-              Cancelar
+              {t('Cancelar')}
             </button>
           </div>
         </div>

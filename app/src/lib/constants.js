@@ -1,4 +1,5 @@
 // Constantes compartidas de la app
+import { t } from '../i18n';
 
 export const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://sierra-padel-backend-production-a55f.up.railway.app';
 
@@ -17,3 +18,14 @@ export const UBICACIONES = [
 // "Para llevar". Una sola palabra en la app, en la caja y en el papel.
 // Se guarda en el mismo campo `ubicacion` del pedido para no partir el modelo de datos.
 export const PARA_LLEVAR = 'Para llevar';
+
+// 🌐 Cómo se VE una ubicación en el idioma del cliente. El valor que se guarda y se manda
+// al backend sigue siendo el español de arriba ('Cancha 3', 'Para llevar'): esto sólo pinta.
+// Lo que no se reconoce (una mesa que puso la caja, p. ej.) se enseña tal cual.
+export function nombreUbicacion(u) {
+  const s = String(u || '');
+  const m = s.match(/^Cancha (\d+)$/);
+  if (m) return t('Cancha {n}', { n: m[1] });
+  if (s === 'Bar / Mesa' || s === 'Terraza' || s === 'Recepcion' || s === PARA_LLEVAR) return t(s);
+  return s;
+}

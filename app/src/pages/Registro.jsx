@@ -6,6 +6,8 @@ import Isotipo from '../components/Isotipo';
 import PinInput from '../components/PinInput';
 import NivelSelector from '../components/NivelSelector';
 import { soloLetras, errorNombre } from '../lib/nombre';
+import SelectorIdioma from '../components/SelectorIdioma';
+import { t } from '../i18n';
 
 // Registro en 3 pasos: datos → nivel de juego (obligatorio) → PIN + casillas.
 // Las DOS casillas (términos y avisos) son obligatorias para crear la cuenta.
@@ -33,23 +35,23 @@ export default function Registro() {
     e.preventDefault();
     const eNom = errorNombre(nombre);
     if (eNom) return setError(eNom);
-    if (telefono.length < 10) return setError('Ingresa tu numero de 10 digitos');
+    if (telefono.length < 10) return setError(t('Ingresa tu numero de 10 digitos'));
     setError('');
     setStep(2);
   }
 
   function handleNivel() {
-    if (!nivel) return setError('Elige tu nivel de juego para continuar');
+    if (!nivel) return setError(t('Elige tu nivel de juego para continuar'));
     setError('');
     setStep(3);
   }
 
   async function handlePin(e) {
     e.preventDefault();
-    if (pin.length < 4) return setError('Ingresa un PIN de 4 digitos');
-    if (pin !== pinConfirm) return setError('Los PINs no coinciden');
-    if (!aceptaTerminos) return setError('Debes aceptar los terminos y condiciones');
-    if (!aceptaAvisos) return setError('Debes aceptar recibir avisos del club');
+    if (pin.length < 4) return setError(t('Ingresa un PIN de 4 digitos'));
+    if (pin !== pinConfirm) return setError(t('Los PINs no coinciden'));
+    if (!aceptaTerminos) return setError(t('Debes aceptar los terminos y condiciones'));
+    if (!aceptaAvisos) return setError(t('Debes aceptar recibir avisos del club'));
     setLoading(true);
     setError('');
     try {
@@ -88,13 +90,18 @@ export default function Registro() {
   }
 
   return (
-    <div className="min-h-full bg-white flex flex-col items-center justify-center px-6 py-8" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="relative min-h-full bg-white flex flex-col items-center justify-center px-6 py-8" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      {/* 🌐 Idioma ANTES de registrarse. El selector compacto es blanco: aquí el fondo es
+          blanco, así que va dentro de una pastilla verde. */}
+      <div className="absolute right-4 bg-sp-green rounded-full p-1" style={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}>
+        <SelectorIdioma compacto />
+      </div>
       <div className="w-full max-w-xs flex flex-col items-center gap-6">
         <div className="flex flex-col items-center gap-3 mb-1">
           <Isotipo size={52} />
           <div className="text-center leading-tight">
             <div className="text-xl font-black text-sp-gray tracking-widest">SIERRA PADEL</div>
-            <div className="text-sm text-gray-400 mt-1 font-medium">Crear cuenta</div>
+            <div className="text-sm text-gray-400 mt-1 font-medium">{t('Crear cuenta')}</div>
           </div>
         </div>
 
@@ -115,15 +122,15 @@ export default function Registro() {
         {step === 1 && (
           <form onSubmit={handleDatos} className="w-full flex flex-col gap-4">
             <div>
-              <label className="text-sm text-gray-500 font-medium mb-1 block">Nombre completo</label>
-              <input className="input-field" type="text" placeholder="Nombre y apellido" autoComplete="name" autoCapitalize="words" value={nombre} onChange={e => setNombre(soloLetras(e.target.value))} autoFocus />
+              <label className="text-sm text-gray-500 font-medium mb-1 block">{t('Nombre completo')}</label>
+              <input className="input-field" type="text" placeholder={t('Nombre y apellido')} autoComplete="name" autoCapitalize="words" value={nombre} onChange={e => setNombre(soloLetras(e.target.value))} autoFocus />
             </div>
             <div>
-              <label className="text-sm text-gray-500 font-medium mb-1 block">Telefono (WhatsApp)</label>
+              <label className="text-sm text-gray-500 font-medium mb-1 block">{t('Telefono (WhatsApp)')}</label>
               <input className="input-field" type="tel" placeholder="866 123 4567" value={telefono} onChange={e => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))} />
             </div>
             <div>
-              <label className="text-sm text-gray-500 font-medium mb-1 block">Tu cumpleanos <span className="text-gray-400 font-normal">(opcional)</span></label>
+              <label className="text-sm text-gray-500 font-medium mb-1 block">{t('Tu cumpleanos')} <span className="text-gray-400 font-normal">{t('(opcional)')}</span></label>
               <input
                 className="input-field"
                 type="date"
@@ -131,11 +138,11 @@ export default function Registro() {
                 max={new Date(Date.now() - 6 * 3600 * 1000).toISOString().slice(0, 10)}
                 onChange={e => setCumple(e.target.value)}
               />
-              <p className="text-xs text-gray-400 mt-1">🎉 Para mandarte tu promo de cumpleanos y avisarte con tiempo.</p>
+              <p className="text-xs text-gray-400 mt-1">🎉 {t('Para mandarte tu promo de cumpleanos y avisarte con tiempo.')}</p>
             </div>
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-            <button type="submit" className="btn-green">Continuar</button>
-            <Link to={`/login${window.location.search}`} className="text-center text-gray-400 text-sm">¿Ya tienes cuenta? Entrar</Link>
+            <button type="submit" className="btn-green">{t('Continuar')}</button>
+            <Link to={`/login${window.location.search}`} className="text-center text-gray-400 text-sm">{t('¿Ya tienes cuenta? Entrar')}</Link>
           </form>
         )}
 
@@ -143,13 +150,13 @@ export default function Registro() {
         {step === 2 && (
           <div className="w-full flex flex-col gap-4">
             <div className="text-center">
-              <p className="text-sp-gray font-black text-lg">¿Cual es tu nivel de juego?</p>
-              <p className="text-gray-400 text-sm mt-1">Con esto te avisamos de retas y torneos de tu nivel</p>
+              <p className="text-sp-gray font-black text-lg">{t('¿Cual es tu nivel de juego?')}</p>
+              <p className="text-gray-400 text-sm mt-1">{t('Con esto te avisamos de retas y torneos de tu nivel')}</p>
             </div>
             <NivelSelector value={nivel} onChange={n => { setNivel(n); setError(''); }} />
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-            <button type="button" onClick={handleNivel} disabled={!nivel} className="btn-green disabled:opacity-50">Continuar</button>
-            <button type="button" onClick={() => { setStep(1); setError(''); }} className="text-center text-gray-400 text-sm">Atras</button>
+            <button type="button" onClick={handleNivel} disabled={!nivel} className="btn-green disabled:opacity-50">{t('Continuar')}</button>
+            <button type="button" onClick={() => { setStep(1); setError(''); }} className="text-center text-gray-400 text-sm">{t('Atras')}</button>
           </div>
         )}
 
@@ -157,11 +164,11 @@ export default function Registro() {
         {step === 3 && (
           <form onSubmit={handlePin} className="w-full flex flex-col gap-5">
             <div>
-              <p className="text-center text-sm text-gray-500 mb-4">Crea un PIN de 4 digitos</p>
+              <p className="text-center text-sm text-gray-500 mb-4">{t('Crea un PIN de 4 digitos')}</p>
               <PinInput value={pin} onChange={setPin} />
             </div>
             <div>
-              <p className="text-center text-sm text-gray-500 mb-4">Confirma tu PIN</p>
+              <p className="text-center text-sm text-gray-500 mb-4">{t('Confirma tu PIN')}</p>
               <PinInput value={pinConfirm} onChange={setPinConfirm} />
             </div>
 
@@ -175,9 +182,12 @@ export default function Registro() {
                   className="mt-0.5 w-4 h-4 accent-sp-green"
                 />
                 <span className="text-[13px] text-gray-600 leading-snug">
-                  Acepto los{' '}
-                  <Link to="/terminos" className="text-sp-green-dark font-semibold underline">terminos y condiciones</Link>
-                  {' '}de Sierra Padel
+                  {(() => {
+                    // El enlace va en medio de la frase: se parte en {terminos} para que cada
+                    // idioma ponga el orden que le toca.
+                    const [antes, despues = ''] = t('Acepto los {terminos} de Sierra Padel').split('{terminos}');
+                    return <>{antes}<Link to="/terminos" className="text-sp-green-dark font-semibold underline">{t('terminos y condiciones')}</Link>{despues}</>;
+                  })()}
                 </span>
               </label>
               <label className="flex items-start gap-2.5 cursor-pointer">
@@ -188,7 +198,7 @@ export default function Registro() {
                   className="mt-0.5 w-4 h-4 accent-sp-green"
                 />
                 <span className="text-[13px] text-gray-600 leading-snug">
-                  Acepto recibir avisos del club: confirmaciones, retas de mi nivel y promociones (puedes desactivarlos despues en tu Perfil)
+                  {t('Acepto recibir avisos del club: confirmaciones, retas de mi nivel y promociones (puedes desactivarlos despues en tu Perfil)')}
                 </span>
               </label>
             </div>
@@ -199,10 +209,10 @@ export default function Registro() {
               disabled={pin.length < 4 || pinConfirm.length < 4 || !aceptaTerminos || !aceptaAvisos || loading}
               className="btn-green disabled:opacity-50"
             >
-              {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+              {loading ? t('Creando cuenta...') : t('Crear cuenta')}
             </button>
             <button type="button" onClick={() => { setStep(2); setPin(''); setPinConfirm(''); setError(''); }} className="text-center text-gray-400 text-sm">
-              Atras
+              {t('Atras')}
             </button>
           </form>
         )}

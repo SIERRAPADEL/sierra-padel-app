@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { t } from '../i18n';
 
 // Aviso de "hay version nueva, recarga".
 //
@@ -42,12 +43,12 @@ export default function NuevaVersion() {
       } catch (_) { /* sin red: se reintenta al rato */ }
     }
     revisar();
-    const t = setInterval(revisar, CADA_MS);
+    const reloj = setInterval(revisar, CADA_MS);
     // Al volver a la app (cambio de pestaña / desbloquear el telefono) se revisa de una:
     // es justo el momento en que alguien retoma una app que llevaba horas abierta.
     const alVolver = () => { if (document.visibilityState === 'visible') revisar(); };
     document.addEventListener('visibilitychange', alVolver);
-    return () => { vivo = false; clearInterval(t); document.removeEventListener('visibilitychange', alVolver); };
+    return () => { vivo = false; clearInterval(reloj); document.removeEventListener('visibilitychange', alVolver); };
   }, []);
 
   if (!hayNueva) return null;
@@ -59,13 +60,13 @@ export default function NuevaVersion() {
     >
       <div className="rounded-2xl bg-sp-gray text-white shadow-lg flex items-center gap-3 px-4 py-3">
         <span className="text-[13px] font-bold flex-1 leading-tight">
-          Hay una versión nueva de la app
+          {t('Hay una versión nueva de la app')}
         </span>
         <button
           onClick={() => window.location.reload()}
           className="text-[13px] font-black px-4 py-2 rounded-full bg-sp-green text-white active:scale-95 transition-transform shrink-0"
         >
-          Actualizar
+          {t('Actualizar')}
         </button>
       </div>
     </div>

@@ -5,6 +5,8 @@ import { useApi } from '../hooks/useApi';
 import PinInput from '../components/PinInput';
 import NivelSelector from '../components/NivelSelector';
 import { soloLetras, errorNombre } from '../lib/nombre';
+import SelectorIdioma from '../components/SelectorIdioma';
+import { t, IDIOMAS, idioma } from '../i18n';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
@@ -40,13 +42,13 @@ function Icon({ d }) {
   );
 }
 
-function BackBtn({ onBack, label = 'Perfil' }) {
+function BackBtn({ onBack, label }) {
   return (
     <button onClick={onBack} className="flex items-center gap-1 text-white/70 text-sm mb-2 -ml-1">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
-      {label}
+      {label || t('Perfil')}
     </button>
   );
 }
@@ -94,7 +96,7 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
         method: 'PATCH',
         body: JSON.stringify(body),
       });
-      if (!d.ok) throw new Error(d.error || 'No se pudo guardar. Intenta de nuevo.');
+      if (!d.ok) throw new Error(d.error || t('No se pudo guardar. Intenta de nuevo.'));
       if (d.data?.token) {
         localStorage.setItem('sp_token', d.data.token);
       }
@@ -112,32 +114,32 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
     <div className="flex flex-col min-h-full bg-gray-50">
       <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
         <BackBtn onBack={onBack} />
-        <p className="text-white font-black text-lg">Mi informacion</p>
+        <p className="text-white font-black text-lg">{t('Mi informacion')}</p>
       </div>
 
       <div className="px-4 py-5 flex flex-col gap-4">
         <div className="card flex flex-col gap-3">
           <div>
-            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Nombre completo</p>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">{t('Nombre completo')}</p>
             <input
               type="text"
               value={nombre}
               onChange={e => { setNombre(soloLetras(e.target.value)); setError(''); setSaved(false); }}
               className="input-field"
-              placeholder="Nombre y apellido"
+              placeholder={t('Nombre y apellido')}
               autoComplete="name"
               autoCapitalize="words"
             />
           </div>
           <div>
-            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Telefono</p>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">{t('Telefono')}</p>
             <p className="text-sp-gray font-semibold px-1">{user?.telefono || '—'}</p>
-            <p className="text-xs text-gray-400 px-1">El telefono no se puede cambiar</p>
+            <p className="text-xs text-gray-400 px-1">{t('El telefono no se puede cambiar')}</p>
           </div>
           {/* 🎂 El gancho va ANTES del campo: nadie da su fecha de nacimiento "porque sí",
               la da si sabe qué gana. Y quien ya la tiene puesta no necesita el sermón. */}
           <div>
-            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Mi cumpleanos</p>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">{t('Mi cumpleanos')}</p>
             <input
               type="date"
               value={cumple}
@@ -147,7 +149,7 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
             />
             {!cumpleOriginal && (
               <p className="text-xs text-gray-400 px-1 mt-1">
-                🎉 Ponla y te llega tu promo de cumpleanos — te avisamos con tiempo para que lo festejes aqui.
+                🎉 {t('Ponla y te llega tu promo de cumpleanos — te avisamos con tiempo para que lo festejes aqui.')}
               </p>
             )}
           </div>
@@ -155,7 +157,7 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
               Instagram "porque sí"; lo da si sabe qué gana — que lo etiquetemos cuando
               suba su tarjeta de campeón. Sin el usuario no hay a quién etiquetar. */}
           <div>
-            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Mi Instagram</p>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">{t('Mi Instagram')}</p>
             <div className="flex items-center gap-1.5">
               <span className="text-gray-400 font-bold text-[15px] pl-1">@</span>
               <input
@@ -167,13 +169,12 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
                 value={insta}
                 onChange={e => { setInsta(e.target.value); setError(''); setSaved(false); }}
                 className="input-field flex-1"
-                placeholder="tu.usuario"
+                placeholder={t('tu.usuario')}
               />
             </div>
             {!instaOriginal && (
               <p className="text-xs text-gray-400 px-1 mt-1">
-                🏆 Ponlo y te etiquetamos cuando subamos tu foto de campeon — asi la puedes
-                compartir en tu historia de un toque.
+                🏆 {t('Ponlo y te etiquetamos cuando subamos tu foto de campeon — asi la puedes compartir en tu historia de un toque.')}
               </p>
             )}
           </div>
@@ -181,20 +182,20 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
 
         {/* Nivel de juego */}
         <div className="card">
-          <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">Mi nivel de juego</p>
+          <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">{t('Mi nivel de juego')}</p>
           <NivelSelector value={nivel} onChange={n => { setNivel(n); setError(''); setSaved(false); }} compact />
         </div>
 
         {/* Avisos del club */}
         <div className="card flex items-center justify-between gap-3">
           <div className="flex-1">
-            <p className="text-sp-gray font-bold text-sm">Avisos del club</p>
-            <p className="text-xs text-gray-400 mt-0.5">Retas de tu nivel, promociones y novedades</p>
+            <p className="text-sp-gray font-bold text-sm">{t('Avisos del club')}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{t('Retas de tu nivel, promociones y novedades')}</p>
           </div>
           <button
             type="button"
             onClick={() => { setAvisos(v => !v); setError(''); setSaved(false); }}
-            aria-label="Avisos del club"
+            aria-label={t('Avisos del club')}
             style={{
               width: 44, height: 26, borderRadius: 13,
               background: avisos ? 'var(--sp-green)' : '#E5E7EB',
@@ -219,7 +220,7 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
 
         {saved && (
           <div className="bg-sp-green-light border border-sp-green/20 rounded-2xl px-4 py-3">
-            <p className="text-sp-green-dark text-sm font-medium">✓ Nombre actualizado correctamente</p>
+            <p className="text-sp-green-dark text-sm font-medium">✓ {t('Nombre actualizado correctamente')}</p>
           </div>
         )}
 
@@ -232,7 +233,7 @@ function MiInformacion({ user, apiFetch, onBack, onUpdate }) {
               : 'bg-gray-100 text-gray-400'
           }`}
         >
-          {loading ? 'Guardando…' : 'Guardar cambios'}
+          {loading ? t('Guardando…') : t('Guardar cambios')}
         </button>
       </div>
     </div>
@@ -266,7 +267,7 @@ function CambiarPin({ apiFetch, onBack }) {
     setError('');
     if (val.length === 4) {
       if (val !== pinNuevo) {
-        setError('Los PINs no coinciden. Vuelve a intentarlo.');
+        setError(t('Los PINs no coinciden. Vuelve a intentarlo.'));
         setPinNuevo('');
         setPinConfirm('');
         setPinStep(2);
@@ -278,7 +279,7 @@ function CambiarPin({ apiFetch, onBack }) {
           method: 'POST',
           body: JSON.stringify({ pin_actual: pinActual, nuevo_pin: pinNuevo }),
         });
-        if (!d.ok) throw new Error(d.error || 'No se pudo cambiar el PIN. Intenta de nuevo.');
+        if (!d.ok) throw new Error(d.error || t('No se pudo cambiar el PIN. Intenta de nuevo.'));
         setSuccess(true);
       } catch (e) {
         setError(e.message);
@@ -296,7 +297,7 @@ function CambiarPin({ apiFetch, onBack }) {
     return (
       <div className="flex flex-col min-h-full bg-gray-50">
         <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
-          <p className="text-white font-black text-lg pt-8">Cambiar PIN</p>
+          <p className="text-white font-black text-lg pt-8">{t('Cambiar PIN')}</p>
         </div>
         <div className="flex flex-col items-center justify-center flex-1 gap-5 px-6">
           <div className="w-20 h-20 rounded-full bg-sp-green-light flex items-center justify-center">
@@ -304,21 +305,21 @@ function CambiarPin({ apiFetch, onBack }) {
               <path d="M20 6L9 17l-5-5" />
             </svg>
           </div>
-          <p className="text-xl font-black text-sp-gray text-center">PIN actualizado</p>
-          <p className="text-gray-500 text-sm text-center">Tu nuevo PIN esta activo. Usalo la proxima vez que entres a la app.</p>
-          <button className="btn-green w-full max-w-xs" onClick={onBack}>Volver a perfil</button>
+          <p className="text-xl font-black text-sp-gray text-center">{t('PIN actualizado')}</p>
+          <p className="text-gray-500 text-sm text-center">{t('Tu nuevo PIN esta activo. Usalo la proxima vez que entres a la app.')}</p>
+          <button className="btn-green w-full max-w-xs" onClick={onBack}>{t('Volver a perfil')}</button>
         </div>
       </div>
     );
   }
 
-  const labels = ['PIN actual', 'PIN nuevo', 'Confirmar PIN nuevo'];
+  const labels = [t('PIN actual'), t('PIN nuevo'), t('Confirmar PIN nuevo')];
 
   return (
     <div className="flex flex-col min-h-full bg-gray-50">
       <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
         <BackBtn onBack={onBack} />
-        <p className="text-white font-black text-lg">Cambiar PIN</p>
+        <p className="text-white font-black text-lg">{t('Cambiar PIN')}</p>
       </div>
 
       <div className="flex flex-col items-center justify-center flex-1 gap-6 px-6 pb-12">
@@ -336,16 +337,16 @@ function CambiarPin({ apiFetch, onBack }) {
 
         <div className="text-center">
           <p className="text-sp-gray font-black text-lg">{labels[pinStep - 1]}</p>
-          {pinStep === 1 && <p className="text-gray-400 text-sm mt-1">Ingresa tu PIN actual para continuar</p>}
-          {pinStep === 2 && <p className="text-gray-400 text-sm mt-1">Elige un PIN de 4 digitos nuevo</p>}
-          {pinStep === 3 && <p className="text-gray-400 text-sm mt-1">Repite el nuevo PIN para confirmar</p>}
+          {pinStep === 1 && <p className="text-gray-400 text-sm mt-1">{t('Ingresa tu PIN actual para continuar')}</p>}
+          {pinStep === 2 && <p className="text-gray-400 text-sm mt-1">{t('Elige un PIN de 4 digitos nuevo')}</p>}
+          {pinStep === 3 && <p className="text-gray-400 text-sm mt-1">{t('Repite el nuevo PIN para confirmar')}</p>}
         </div>
 
         {pinStep === 1 && <PinInput value={pinActual} onChange={handlePinActualChange} />}
         {pinStep === 2 && <PinInput value={pinNuevo} onChange={handlePinNuevoChange} />}
         {pinStep === 3 && <PinInput value={pinConfirm} onChange={handlePinConfirmChange} />}
 
-        {loading && <p className="text-sp-green text-sm font-semibold">Guardando…</p>}
+        {loading && <p className="text-sp-green text-sm font-semibold">{t('Guardando…')}</p>}
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 w-full max-w-xs">
@@ -399,17 +400,17 @@ function Notificaciones({ apiFetch, onBack }) {
         method: 'POST',
         body: JSON.stringify(sub.toJSON()),
       });
-      if (!result.ok) throw new Error(result.error || 'No se pudo activar.');
+      if (!result.ok) throw new Error(result.error || t('No se pudo activar.'));
       localStorage.setItem('pushSubscribed', '1');
       setSubscribed(true);
       setPermission(Notification.permission);
-      setSuccess('¡Notificaciones activadas correctamente!');
+      setSuccess(t('¡Notificaciones activadas correctamente!'));
     } catch (err) {
       if (err.name === 'NotAllowedError') {
         setPermission('denied');
-        setError('Permiso denegado. Activalo desde la configuracion de tu dispositivo.');
+        setError(t('Permiso denegado. Activalo desde la configuracion de tu dispositivo.'));
       } else {
-        setError(err.message || 'Error al activar notificaciones.');
+        setError(err.message || t('Error al activar notificaciones.'));
       }
     } finally {
       setLoading(false);
@@ -426,9 +427,9 @@ function Notificaciones({ apiFetch, onBack }) {
       if (sub) await sub.unsubscribe();
       localStorage.removeItem('pushSubscribed');
       setSubscribed(false);
-      setSuccess('Notificaciones desactivadas.');
+      setSuccess(t('Notificaciones desactivadas.'));
     } catch (err) {
-      setError('No se pudo desactivar. Intenta de nuevo.');
+      setError(t('No se pudo desactivar. Intenta de nuevo.'));
     } finally {
       setLoading(false);
     }
@@ -440,7 +441,7 @@ function Notificaciones({ apiFetch, onBack }) {
     <div className="flex flex-col min-h-full bg-gray-50">
       <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
         <BackBtn onBack={onBack} />
-        <p className="text-white font-black text-lg">Notificaciones</p>
+        <p className="text-white font-black text-lg">{t('Notificaciones')}</p>
       </div>
 
       <div className="px-4 py-5 flex flex-col gap-4">
@@ -451,9 +452,9 @@ function Notificaciones({ apiFetch, onBack }) {
                 🔔
               </div>
               <div>
-                <p className="text-sp-gray font-bold text-sm">Notificaciones push</p>
+                <p className="text-sp-gray font-bold text-sm">{t('Notificaciones push')}</p>
                 <p className="text-xs mt-0.5" style={{ color: isActive ? 'var(--sp-green)' : permission === 'denied' ? '#EF4444' : '#9CA3AF' }}>
-                  {isActive ? 'Activas' : permission === 'denied' ? 'Bloqueadas' : 'Inactivas'}
+                  {isActive ? t('Activas') : permission === 'denied' ? t('Bloqueadas') : t('Inactivas')}
                 </p>
               </div>
             </div>
@@ -474,9 +475,9 @@ function Notificaciones({ apiFetch, onBack }) {
 
           <div style={{ background: '#f9fafb', borderRadius: 10, padding: '10px 12px' }}>
             {[
-              { icon: '📅', text: 'Confirmacion de reservas al instante' },
-              { icon: '🏆', text: 'Novedades de tus torneos' },
-              { icon: '⭐', text: 'Puntos y promociones del club' },
+              { icon: '📅', text: t('Confirmacion de reservas al instante') },
+              { icon: '🏆', text: t('Novedades de tus torneos') },
+              { icon: '⭐', text: t('Puntos y promociones del club') },
             ].map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-2 py-1" style={{ fontSize: 12, color: '#555' }}>
                 <span style={{ fontSize: 14 }}>{icon}</span>
@@ -499,12 +500,12 @@ function Notificaciones({ apiFetch, onBack }) {
 
         {permission === 'unsupported' ? (
           <div className="card text-center py-4">
-            <p className="text-gray-400 text-sm">Tu dispositivo no soporta notificaciones push.</p>
+            <p className="text-gray-400 text-sm">{t('Tu dispositivo no soporta notificaciones push.')}</p>
           </div>
         ) : permission === 'denied' ? (
           <div className="card text-center py-4 flex flex-col gap-2">
-            <p className="text-gray-500 text-sm font-medium">Permiso bloqueado</p>
-            <p className="text-gray-400 text-xs">Ve a Configuracion → Safari / Chrome → Notificaciones y activalas para Sierra Padel.</p>
+            <p className="text-gray-500 text-sm font-medium">{t('Permiso bloqueado')}</p>
+            <p className="text-gray-400 text-xs">{t('Ve a Configuracion → Safari / Chrome → Notificaciones y activalas para Sierra Padel.')}</p>
           </div>
         ) : isActive ? (
           <button
@@ -512,7 +513,7 @@ function Notificaciones({ apiFetch, onBack }) {
             disabled={loading}
             className="w-full py-3 rounded-2xl font-bold text-sm border border-red-200 text-red-500 bg-red-50 active:bg-red-100 transition-all"
           >
-            {loading ? 'Desactivando…' : 'Desactivar notificaciones'}
+            {loading ? t('Desactivando…') : t('Desactivar notificaciones')}
           </button>
         ) : (
           <button
@@ -521,7 +522,7 @@ function Notificaciones({ apiFetch, onBack }) {
             className="w-full py-3 rounded-2xl font-black text-base transition-all"
             style={{ background: loading ? 'var(--sp-green-soft)' : 'var(--sp-green)', color: 'var(--sp-ink-on)' }}
           >
-            {loading ? 'Activando…' : 'Activar notificaciones'}
+            {loading ? t('Activando…') : t('Activar notificaciones')}
           </button>
         )}
       </div>
@@ -535,6 +536,17 @@ export default function Perfil() {
   const { apiFetch }                 = useApi();
   const navigate                     = useNavigate();
   const [subScreen, setSubScreen]    = useState(null);
+  // 🌐 El renglón «Idioma» se despliega aquí mismo. Al cambiar de idioma la app se vuelve a
+  // montar (App.jsx), así que se recuerda en sessionStorage que estaba abierto: la persona
+  // ve marcado el idioma que eligió en vez de que el panel se cierre solo.
+  const [idiomaAbierto, setIdiomaAbierto] = useState(() => {
+    try { return sessionStorage.getItem('sp_idioma_abierto') === '1'; } catch { return false; }
+  });
+  const toggleIdioma = () => setIdiomaAbierto(v => {
+    try { if (v) sessionStorage.removeItem('sp_idioma_abierto'); else sessionStorage.setItem('sp_idioma_abierto', '1'); } catch { /* sin storage */ }
+    return !v;
+  });
+  const nombreIdioma = (IDIOMAS.find(i => i.clave === idioma()) || IDIOMAS[0]).nombre;
 
   const pushPermission = isPushSupported() ? Notification.permission : 'unsupported';
   const pushSubscribed = Boolean(localStorage.getItem('pushSubscribed'));
@@ -581,13 +593,13 @@ export default function Perfil() {
   return (
     <div className="page safe-bottom">
       <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-6">
-        <p className="text-white font-black text-xl pt-3">Mi cuenta</p>
+        <p className="text-white font-black text-xl pt-3">{t('Mi cuenta')}</p>
         <div className="flex items-center gap-4 mt-4">
           <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
             <span className="text-white font-black text-2xl">{inicial}</span>
           </div>
           <div>
-            <p className="text-white font-black text-lg leading-tight">{user?.nombre || 'Jugador'}</p>
+            <p className="text-white font-black text-lg leading-tight">{user?.nombre || t('Jugador')}</p>
             <p className="text-white/60 text-sm">{user?.telefono || ''}</p>
           </div>
         </div>
@@ -603,8 +615,8 @@ export default function Perfil() {
           <div className="flex items-center gap-3">
             <span style={{ fontSize: 32, flexShrink: 0 }}>🎁</span>
             <div>
-              <p style={{ color: 'white', fontWeight: 900, fontSize: 17 }}>Mis puntos y promos</p>
-              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, marginTop: 2 }}>Tus puntos, niveles y promociones</p>
+              <p style={{ color: 'white', fontWeight: 900, fontSize: 17 }}>{t('Mis puntos y promos')}</p>
+              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, marginTop: 2 }}>{t('Tus puntos, niveles y promociones')}</p>
             </div>
           </div>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ stroke: 'var(--sp-on-dark)' }} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
@@ -618,7 +630,7 @@ export default function Perfil() {
           >
             <div className="flex items-center gap-3">
               <Icon d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              <span className="text-sp-gray font-semibold text-base">Mis reservas</span>
+              <span className="text-sp-gray font-semibold text-base">{t('Mis reservas')}</span>
             </div>
             <ChevronRight />
           </button>
@@ -628,7 +640,7 @@ export default function Perfil() {
           >
             <div className="flex items-center gap-3">
               <Icon d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-              <span className="text-sp-gray font-semibold text-base">Novedades</span>
+              <span className="text-sp-gray font-semibold text-base">{t('Novedades')}</span>
             </div>
             <ChevronRight />
           </button>
@@ -642,7 +654,7 @@ export default function Perfil() {
           >
             <div className="flex items-center gap-3">
               <Icon d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" />
-              <span className="text-sp-gray font-semibold text-base">Mi informacion</span>
+              <span className="text-sp-gray font-semibold text-base">{t('Mi informacion')}</span>
             </div>
             <ChevronRight />
           </button>
@@ -653,29 +665,53 @@ export default function Perfil() {
           >
             <div className="flex items-center gap-3">
               <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              <span className="text-sp-gray font-semibold text-base">Cambiar PIN</span>
+              <span className="text-sp-gray font-semibold text-base">{t('Cambiar PIN')}</span>
             </div>
             <ChevronRight />
           </button>
 
           <button
             onClick={() => setSubScreen('notif')}
-            className="w-full flex items-center justify-between px-4 py-4 active:bg-gray-50"
+            className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-50 active:bg-gray-50"
           >
             <div className="flex items-center gap-3">
               <Icon d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
-              <span className="text-sp-gray font-semibold text-base">Notificaciones</span>
+              <span className="text-sp-gray font-semibold text-base">{t('Notificaciones')}</span>
             </div>
             <div className="flex items-center gap-2">
               {notifStatus === 'on' && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--sp-green-light)', color: 'var(--sp-green-deep)' }}>Activas</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--sp-green-light)', color: 'var(--sp-green-deep)' }}>{t('Activas')}</span>
               )}
               {notifStatus === 'off' && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-400">Bloqueadas</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-400">{t('Bloqueadas')}</span>
               )}
               <ChevronRight />
             </div>
           </button>
+
+          {/* 🌐 Idioma (German, 23-oct-2026). Mismo renglón que sus hermanos; al tocarlo se
+              despliega el selector debajo. El nombre del idioma va en su propio idioma. */}
+          <button
+            onClick={toggleIdioma}
+            aria-expanded={idiomaAbierto}
+            className="w-full flex items-center justify-between px-4 py-4 active:bg-gray-50"
+          >
+            <div className="flex items-center gap-3">
+              <Icon d="M12 22a10 10 0 100-20 10 10 0 000 20zM2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+              <span className="text-sp-gray font-semibold text-base">{t('Idioma')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold" style={{ color: 'var(--sp-green)' }}>{nombreIdioma}</span>
+              <span style={{ display: 'inline-flex', transform: idiomaAbierto ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>
+                <ChevronRight />
+              </span>
+            </div>
+          </button>
+          {idiomaAbierto && (
+            <div className="px-4 pb-4 -mt-1">
+              <SelectorIdioma />
+            </div>
+          )}
         </div>
 
         <button
@@ -685,7 +721,7 @@ export default function Perfil() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
           </svg>
-          <span className="text-red-500 font-semibold text-base">Cerrar sesion</span>
+          <span className="text-red-500 font-semibold text-base">{t('Cerrar sesion')}</span>
         </button>
       </div>
 

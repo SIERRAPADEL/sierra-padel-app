@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
+import { t, locale } from '../i18n';
 
 // Marcadores de las retas: capturarlos y objetarlos.
 //
@@ -15,11 +16,11 @@ function fmtFecha(iso) {
   if (!iso) return '';
   const hoy = new Date().toLocaleDateString('sv-SE');
   const ayer = new Date(Date.now() - 864e5).toLocaleDateString('sv-SE');
-  if (String(iso).slice(0, 10) === hoy) return 'Hoy';
-  if (String(iso).slice(0, 10) === ayer) return 'Ayer';
-  return new Date(iso + 'T12:00').toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+  if (String(iso).slice(0, 10) === hoy) return t('Hoy');
+  if (String(iso).slice(0, 10) === ayer) return t('Ayer');
+  return new Date(iso + 'T12:00').toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
 }
-const nombreCorto = (n) => String(n || 'Jugador').trim().split(/\s+/)[0];
+const nombreCorto = (n) => String(n || t('Jugador')).trim().split(/\s+/)[0];
 
 // ── Capturar el marcador de UNA reta ─────────────────────────────────────────────
 function Capturar({ reta, onListo, onCancelar }) {
@@ -54,13 +55,13 @@ function Capturar({ reta, onListo, onCancelar }) {
     const d = await apiFetch(`/historial/reta/${reta.reservacion_id}`, { method: 'POST', body: JSON.stringify(body) });
     setGuardando(false);
     if (d.ok) onListo(d.data);
-    else setError(d.error || 'No se pudo guardar el marcador');
+    else setError(d.error || t('No se pudo guardar el marcador'));
   }
 
   return (
     <div className="card">
-      <p className="font-black text-sp-gray text-[15px]">{fmtFecha(reta.fecha)} · Cancha {reta.cancha}</p>
-      <p className="text-gray-400 text-xs mt-0.5">Toca a cada quien para ponerlo en un equipo. Un toque = equipo 1, dos = equipo 2.</p>
+      <p className="font-black text-sp-gray text-[15px]">{fmtFecha(reta.fecha)} · {t('Cancha {n}', { n: reta.cancha })}</p>
+      <p className="text-gray-400 text-xs mt-0.5">{t('Toca a cada quien para ponerlo en un equipo. Un toque = equipo 1, dos = equipo 2.')}</p>
 
       <div className="flex flex-wrap gap-2 mt-3">
         {reta.jugadores.map(j => {
@@ -80,13 +81,13 @@ function Capturar({ reta, onListo, onCancelar }) {
       {parejasOk && (
         <div className="mt-4">
           <p className="text-xs font-bold text-gray-500 mb-2">
-            <span style={{ color: 'var(--sp-green-dark)' }}>{enA.map(j => nombreCorto(j.nombre)).join(' y ')}</span>
+            <span style={{ color: 'var(--sp-green-dark)' }}>{enA.map(j => nombreCorto(j.nombre)).join(t(' y '))}</span>
             {' '}vs{' '}
-            <span style={{ color: '#2F6BFF' }}>{enB.map(j => nombreCorto(j.nombre)).join(' y ')}</span>
+            <span style={{ color: '#2F6BFF' }}>{enB.map(j => nombreCorto(j.nombre)).join(t(' y '))}</span>
           </p>
           {sets.map((s, i) => (
             <div key={i} className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-gray-400 w-10">Set {i + 1}</span>
+              <span className="text-xs text-gray-400 w-10">{t('Set {n}', { n: i + 1 })}</span>
               <input type="number" inputMode="numeric" min="0" max="30" value={s.a} placeholder="0"
                 onChange={e => setSets(v => v.map((x, k) => k === i ? { ...x, a: e.target.value } : x))}
                 className="w-16 text-center rounded-lg border border-gray-200 py-2 font-black" />
@@ -96,13 +97,13 @@ function Capturar({ reta, onListo, onCancelar }) {
                 className="w-16 text-center rounded-lg border border-gray-200 py-2 font-black" />
               {sets.length > 1 && (
                 <button type="button" className="text-gray-300 text-lg px-1"
-                  onClick={() => setSets(v => v.filter((_, k) => k !== i))} aria-label="Quitar set">×</button>
+                  onClick={() => setSets(v => v.filter((_, k) => k !== i))} aria-label={t('Quitar set')}>×</button>
               )}
             </div>
           ))}
           {sets.length < 5 && (
             <button type="button" className="text-xs font-bold" style={{ color: 'var(--sp-green-dark)' }}
-              onClick={() => setSets(v => [...v, { a: '', b: '' }])}>+ Agregar set</button>
+              onClick={() => setSets(v => [...v, { a: '', b: '' }])}>{t('+ Agregar set')}</button>
           )}
         </div>
       )}
@@ -110,14 +111,14 @@ function Capturar({ reta, onListo, onCancelar }) {
       {error && <p className="text-xs mt-3" style={{ color: '#E11D48' }}>{error}</p>}
 
       <div className="flex gap-2 mt-4">
-        <button type="button" onClick={onCancelar} className="flex-1 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-500 text-sm">Ahora no</button>
+        <button type="button" onClick={onCancelar} className="flex-1 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-500 text-sm">{t('Ahora no')}</button>
         <button type="button" onClick={guardar} disabled={!puede}
           className="flex-[1.4] py-2.5 rounded-xl font-black text-sm disabled:opacity-40"
           style={{ background: 'var(--sp-green)', color: '#fff' }}>
-          {guardando ? 'Guardando…' : 'Guardar marcador'}
+          {guardando ? t('Guardando…') : t('Guardar marcador')}
         </button>
       </div>
-      {!parejasOk && <p className="text-[11px] text-gray-400 mt-2">Necesitas al menos un jugador en cada equipo.</p>}
+      {!parejasOk && <p className="text-[11px] text-gray-400 mt-2">{t('Necesitas al menos un jugador en cada equipo.')}</p>}
     </div>
   );
 }
@@ -133,26 +134,26 @@ function RevisarCard({ j, onObjetar, ocupado }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="font-black text-sp-gray text-[15px]">
-            {j.gane ? '🏆 Ganaste' : 'Perdiste'} <span className="font-mono">{j.marcador}</span>
+            {j.gane ? t('🏆 Ganaste') : t('Perdiste')} <span className="font-mono">{j.marcador}</span>
           </p>
           <p className="text-gray-400 text-xs mt-0.5">
-            {fmtFecha(j.fecha)}{j.cancha ? ` · Cancha ${j.cancha}` : ''} · vs {j.contra.map(nombreCorto).join(' y ')}
+            {fmtFecha(j.fecha)}{j.cancha ? ' · ' + t('Cancha {n}', { n: j.cancha }) : ''} · vs {j.contra.map(n => nombreCorto(n)).join(t(' y '))}
           </p>
-          <p className="text-gray-300 text-[11px] mt-0.5">Si no dices nada, en {j.horas_restantes} h queda firme</p>
+          <p className="text-gray-300 text-[11px] mt-0.5">{t('Si no dices nada, en {n} h queda firme', { n: j.horas_restantes })}</p>
         </div>
         {!corrigiendo && (
           <button type="button" onClick={() => setCorrigiendo(true)}
             className="px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 whitespace-nowrap">
-            No quedó así
+            {t('No quedó así')}
           </button>
         )}
       </div>
 
       {corrigiendo && (
         <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F1F3EC' }}>
-          <p className="text-xs font-bold text-gray-500 mb-2">¿Cómo quedó? Pon el marcador y se lo mandamos para que lo confirme.</p>
+          <p className="text-xs font-bold text-gray-500 mb-2">{t('¿Cómo quedó? Pon el marcador y se lo mandamos para que lo confirme.')}</p>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400">Ustedes</span>
+            <span className="text-xs text-gray-400">{t('Ustedes')}</span>
             <input type="number" inputMode="numeric" min="0" max="30" value={mis} placeholder="0"
               onChange={e => setMis(e.target.value)}
               className="w-16 text-center rounded-lg border border-gray-200 py-2 font-black" />
@@ -160,18 +161,18 @@ function RevisarCard({ j, onObjetar, ocupado }) {
             <input type="number" inputMode="numeric" min="0" max="30" value={sus} placeholder="0"
               onChange={e => setSus(e.target.value)}
               className="w-16 text-center rounded-lg border border-gray-200 py-2 font-black" />
-            <span className="text-xs text-gray-400">Ellos</span>
+            <span className="text-xs text-gray-400">{t('Ellos')}</span>
           </div>
           <p className="text-[11px] text-gray-400 mt-2">
-            Si no se ponen de acuerdo, el juego no cuenta para nadie.
+            {t('Si no se ponen de acuerdo, el juego no cuenta para nadie.')}
           </p>
           <div className="flex gap-2 mt-3">
             <button type="button" onClick={() => setCorrigiendo(false)}
-              className="flex-1 py-2 rounded-xl border border-gray-200 font-bold text-gray-500 text-sm">Cancelar</button>
+              className="flex-1 py-2 rounded-xl border border-gray-200 font-bold text-gray-500 text-sm">{t('Cancelar')}</button>
             <button type="button" disabled={!puede || ocupado} onClick={() => onObjetar(j.id, mis, sus)}
               className="flex-[1.4] py-2 rounded-xl font-black text-sm disabled:opacity-40"
               style={{ background: '#2F6BFF', color: '#fff' }}>
-              {ocupado ? 'Enviando…' : 'Enviar mi marcador'}
+              {ocupado ? t('Enviando…') : t('Enviar mi marcador')}
             </button>
           </div>
         </div>
@@ -202,8 +203,8 @@ export default function Marcadores() {
     });
     setObjetando('');
     setMsg(d.ok
-      ? { ok: true, t: 'Listo. Le avisamos a quien lo capturó para que lo confirme.' }
-      : { ok: false, t: d.error || 'No se pudo enviar' });
+      ? { ok: true, t: t('Listo. Le avisamos a quien lo capturó para que lo confirme.') }
+      : { ok: false, t: d.error || t('No se pudo enviar') });
     if (d.ok) cargar();
   }
 
@@ -211,7 +212,7 @@ export default function Marcadores() {
     setObjetando(id);
     const d = await apiFetch(`/historial/${id}/resolver`, { method: 'POST', body: JSON.stringify({ acepto }) });
     setObjetando('');
-    setMsg(d.ok ? { ok: true, t: d.data.mensaje } : { ok: false, t: d.error || 'No se pudo' });
+    setMsg(d.ok ? { ok: true, t: d.data.mensaje } : { ok: false, t: d.error || t('No se pudo') });
     if (d.ok) cargar();
   }
 
@@ -223,8 +224,8 @@ export default function Marcadores() {
   return (
     <div className="page safe-bottom">
       <div className="bg-sp-gray px-5 pt-[env(safe-area-inset-top)] pb-4">
-        <p className="text-white font-black text-lg pt-3">Marcadores</p>
-        <p className="text-gray-300 text-xs mt-0.5">Tus retas y cómo quedaron</p>
+        <p className="text-white font-black text-lg pt-3">{t('Marcadores')}</p>
+        <p className="text-gray-300 text-xs mt-0.5">{t('Tus retas y cómo quedaron')}</p>
       </div>
 
       {msg && (
@@ -234,33 +235,33 @@ export default function Marcadores() {
         </div>
       )}
 
-      {!data && <p className="text-center text-gray-400 text-sm mt-10">Cargando…</p>}
+      {!data && <p className="text-center text-gray-400 text-sm mt-10">{t('Cargando…')}</p>}
 
       {nada && (
         <div className="mx-4 mt-6 card text-center">
           <p className="text-4xl">🎾</p>
-          <p className="font-black text-sp-gray mt-2">Nada pendiente</p>
-          <p className="text-gray-400 text-sm mt-1">Cuando juegues una reta, aquí podrás poner cómo quedó.</p>
+          <p className="font-black text-sp-gray mt-2">{t('Nada pendiente')}</p>
+          <p className="text-gray-400 text-sm mt-1">{t('Cuando juegues una reta, aquí podrás poner cómo quedó.')}</p>
         </div>
       )}
 
       {porResolver.length > 0 && (
         <div className="mx-4 mt-4">
-          <p className="text-sm font-black text-sp-gray mb-1">No están de acuerdo contigo</p>
-          <p className="text-gray-400 text-xs mb-2">Pusiste un marcador y un rival dice que quedó de otra forma. Si aceptas, cuenta el suyo; si no, el juego no cuenta para nadie.</p>
+          <p className="text-sm font-black text-sp-gray mb-1">{t('No están de acuerdo contigo')}</p>
+          <p className="text-gray-400 text-xs mb-2">{t('Pusiste un marcador y un rival dice que quedó de otra forma. Si aceptas, cuenta el suyo; si no, el juego no cuenta para nadie.')}</p>
           {porResolver.map(j => (
             <div key={j.id} className="card mb-2">
               <p className="font-black text-sp-gray text-[15px]">
-                {fmtFecha(j.fecha)}{j.cancha ? ` · Cancha ${j.cancha}` : ''} · vs {j.contra.map(nombreCorto).join(' y ')}
+                {fmtFecha(j.fecha)}{j.cancha ? ' · ' + t('Cancha {n}', { n: j.cancha }) : ''} · vs {j.contra.map(n => nombreCorto(n)).join(t(' y '))}
               </p>
               <div className="flex items-center gap-4 mt-2">
                 <div>
-                  <p className="text-[11px] text-gray-400">Pusiste</p>
+                  <p className="text-[11px] text-gray-400">{t('Pusiste')}</p>
                   <p className="font-mono font-black text-gray-400 line-through">{j.pusiste}</p>
                 </div>
                 <span className="text-gray-300">→</span>
                 <div>
-                  <p className="text-[11px] text-gray-400">{nombreCorto(j.quien)} dice</p>
+                  <p className="text-[11px] text-gray-400">{t('{nombre} dice', { nombre: nombreCorto(j.quien) })}</p>
                   <p className="font-mono font-black" style={{ color: '#2F6BFF' }}>{j.dice}</p>
                 </div>
               </div>
@@ -268,12 +269,12 @@ export default function Marcadores() {
               <div className="flex gap-2 mt-3">
                 <button type="button" onClick={() => resolver(j.id, false)} disabled={objetando === j.id}
                   className="flex-1 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-500 text-sm disabled:opacity-40">
-                  No fue así
+                  {t('No fue así')}
                 </button>
                 <button type="button" onClick={() => resolver(j.id, true)} disabled={objetando === j.id}
                   className="flex-[1.4] py-2.5 rounded-xl font-black text-sm disabled:opacity-40"
                   style={{ background: 'var(--sp-green)', color: '#fff' }}>
-                  {objetando === j.id ? '…' : 'Tiene razón'}
+                  {objetando === j.id ? '…' : t('Tiene razón')}
                 </button>
               </div>
             </div>
@@ -283,8 +284,8 @@ export default function Marcadores() {
 
       {porRevisar.length > 0 && (
         <div className="mx-4 mt-4">
-          <p className="text-sm font-black text-sp-gray mb-1">Revisa estos marcadores</p>
-          <p className="text-gray-400 text-xs mb-2">Los capturó otro jugador. Si algo no cuadra, dilo y el club lo revisa. Si no, en unas horas quedan firmes.</p>
+          <p className="text-sm font-black text-sp-gray mb-1">{t('Revisa estos marcadores')}</p>
+          <p className="text-gray-400 text-xs mb-2">{t('Los capturó otro jugador. Si algo no cuadra, dilo y el club lo revisa. Si no, en unas horas quedan firmes.')}</p>
           {porRevisar.map(j => (
             <RevisarCard key={j.id} j={j} onObjetar={objetar} ocupado={objetando === j.id} />
           ))}
@@ -293,22 +294,22 @@ export default function Marcadores() {
 
       {porCapturar.length > 0 && (
         <div className="mx-4 mt-5">
-          <p className="text-sm font-black text-sp-gray mb-1">¿Cómo quedaron?</p>
-          <p className="text-gray-400 text-xs mb-2">Pon el marcador de tus retas. Cuenta para tu récord y el ranking del club.</p>
+          <p className="text-sm font-black text-sp-gray mb-1">{t('¿Cómo quedaron?')}</p>
+          <p className="text-gray-400 text-xs mb-2">{t('Pon el marcador de tus retas. Cuenta para tu récord y el ranking del club.')}</p>
           {porCapturar.map(r => (
             abierta === r.reservacion_id
               ? <Capturar key={r.reservacion_id} reta={r}
                   onCancelar={() => setAbierta(null)}
-                  onListo={() => { setAbierta(null); setMsg({ ok: true, t: 'Marcador guardado. Tus rivales pueden revisarlo.' }); cargar(); }} />
+                  onListo={() => { setAbierta(null); setMsg({ ok: true, t: t('Marcador guardado. Tus rivales pueden revisarlo.') }); cargar(); }} />
               : (
                 <div key={r.reservacion_id} className="card mb-2 flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-black text-sp-gray text-[15px]">{fmtFecha(r.fecha)} · Cancha {r.cancha}</p>
+                    <p className="font-black text-sp-gray text-[15px]">{fmtFecha(r.fecha)} · {t('Cancha {n}', { n: r.cancha })}</p>
                     <p className="text-gray-400 text-xs mt-0.5">{r.jugadores.map(j => nombreCorto(j.nombre)).join(', ')}</p>
                   </div>
                   <button type="button" onClick={() => setAbierta(r.reservacion_id)}
                     className="px-3.5 py-2 rounded-xl font-black text-xs whitespace-nowrap"
-                    style={{ background: 'var(--sp-green)', color: '#fff' }}>Poner marcador</button>
+                    style={{ background: 'var(--sp-green)', color: '#fff' }}>{t('Poner marcador')}</button>
                 </div>
               )
           ))}

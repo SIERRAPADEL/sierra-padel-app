@@ -15,6 +15,13 @@ import { BACKEND } from '../lib/constants';
 import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/format';
 import { fondoPatro, KANIT } from '../components/PatrocinioJornada';
 import { infoNoche } from '../lib/noche';
+import { t, locale } from '../i18n';
+
+// Texto traducido con <b>…</b> adentro: las negritas viajan dentro de la frase, porque en
+// inglés o coreano el orden de las palabras cambia y no se puede partir en pedazos.
+function negritas(s, cls) {
+  return String(s).split(/<b>(.*?)<\/b>/g).map((p, i) => (i % 2 ? <b key={i} className={cls}>{p}</b> : p));
+}
 
 // 🎥 Tarjeta de las repeticiones. Jugando: roja, recordando el botón físico de la cancha.
 function TarjetaJugadas({ navigate, apiFetch }) {
@@ -30,10 +37,10 @@ function TarjetaJugadas({ navigate, apiFetch }) {
       <div className="rounded-2xl flex items-center gap-3 py-3 px-4 text-white shadow-md" style={{ background: ahora ? '#b91c1c' : '#111827' }}>
         <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>🎥</div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-[15px]">Mis jugadas{nuevas ? <span className="ml-2 text-[11px] font-black bg-white text-red-700 rounded px-1.5 py-0.5 align-middle">{nuevas} NUEVA{nuevas > 1 ? 'S' : ''}</span> : null}</p>
-          <p className="text-white/75 text-[13px] leading-snug">{ahora ? `Cancha ${ahora.cancha} · usa el botón de la cancha` : 'Las repeticiones de tus partidos'}</p>
+          <p className="font-bold text-[15px]">{t('Mis jugadas')}{nuevas ? <span className="ml-2 text-[11px] font-black bg-white text-red-700 rounded px-1.5 py-0.5 align-middle">{nuevas > 1 ? t('{n} NUEVAS', { n: nuevas }) : t('{n} NUEVA', { n: nuevas })}</span> : null}</p>
+          <p className="text-white/75 text-[13px] leading-snug">{ahora ? t('Cancha {cancha} · usa el botón de la cancha', { cancha: ahora.cancha }) : t('Las repeticiones de tus partidos')}</p>
         </div>
-        <span className="text-[13px] font-bold flex-shrink-0">Ver →</span>
+        <span className="text-[13px] font-bold flex-shrink-0">{t('Ver →')}</span>
       </div>
     </button>
   );
@@ -47,7 +54,7 @@ function FechaNoche({ fecha, claro }) {
   if (!fn) return null;
   return fn.saltaSemana
     ? <p className="text-[12.5px] font-black mt-0.5 rounded-md px-1.5 py-0.5 inline-block bg-amber-100 text-amber-800">
-        ⚠️ Esta semana no hay · próxima: {fn.corta}
+        ⚠️ {t('Esta semana no hay · próxima: {fecha}', { fecha: fn.corta })}
       </p>
     : <p className={`text-[13px] font-black mt-0.5 ${claro ? '' : 'text-sp-green-dark'}`}>📅 {fn.corta}{fn.dias <= 1 ? ' · ' + fn.cuando : ''}</p>;
 }
@@ -63,7 +70,7 @@ function NombreModal({ apiFetch, updateUser }) {
 
   async function guardar() {
     const e = errorNombre(nombre);
-    if (e) return setError(e);
+    if (e) return setError(e);   // errorNombre ya regresa el texto traducido (lib/nombre.js)
     setSaving(true); setError('');
     const d = await apiFetch('/auth/profile', {
       method: 'PATCH',
@@ -71,7 +78,7 @@ function NombreModal({ apiFetch, updateUser }) {
     });
     setSaving(false);
     if (d.ok) updateUser({ nombre: d.data?.cliente?.nombre || nombre.trim() });
-    else setError(d.error || 'No se pudo guardar. Intenta de nuevo.');
+    else setError(d.error || t('No se pudo guardar. Intenta de nuevo.'));
   }
 
   return (
@@ -79,15 +86,15 @@ function NombreModal({ apiFetch, updateUser }) {
          style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}>
       <div className="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4">
         <div className="text-center">
-          <p className="text-xl font-black text-sp-gray">👋 ¿Cómo te llamas?</p>
-          <p className="text-sm text-gray-400 mt-1">Tu nombre quedó mal guardado. Escríbelo para que en el club te encontremos.</p>
+          <p className="text-xl font-black text-sp-gray">👋 {t('¿Cómo te llamas?')}</p>
+          <p className="text-sm text-gray-400 mt-1">{t('Tu nombre quedó mal guardado. Escríbelo para que en el club te encontremos.')}</p>
         </div>
-        <input className="input-field" type="text" placeholder="Nombre y apellido" autoComplete="name"
+        <input className="input-field" type="text" placeholder={t('Nombre y apellido')} autoComplete="name"
                autoCapitalize="words" value={nombre} autoFocus
                onChange={e => { setNombre(soloLetras(e.target.value)); setError(''); }} />
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
         <button className="btn-green py-3" disabled={saving || !nombre.trim()} onClick={guardar}>
-          {saving ? 'Guardando…' : 'Guardar'}
+          {saving ? t('Guardando…') : t('Guardar')}
         </button>
       </div>
     </div>
@@ -113,7 +120,7 @@ function NivelModal({ apiFetch, updateUser, onClose }) {
       updateUser({ categoria: d.data?.cliente?.categoria || nivel });
       onClose();
     } else {
-      setError(d.error || 'No se pudo guardar. Intenta de nuevo.');
+      setError(d.error || t('No se pudo guardar. Intenta de nuevo.'));
     }
   }
 
@@ -126,15 +133,15 @@ function NivelModal({ apiFetch, updateUser, onClose }) {
       <div className="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4 overflow-y-auto overscroll-contain"
            style={{ maxHeight: "min(85dvh, calc(100vh - 48px))" }}>
         <div className="text-center">
-          <p className="text-xl font-black text-sp-gray">🎾 ¿Cual es tu nivel de juego?</p>
-          <p className="text-sm text-gray-400 mt-1">Con esto te avisamos de retas y torneos de tu nivel</p>
+          <p className="text-xl font-black text-sp-gray">🎾 {t('¿Cual es tu nivel de juego?')}</p>
+          <p className="text-sm text-gray-400 mt-1">{t('Con esto te avisamos de retas y torneos de tu nivel')}</p>
         </div>
         <NivelSelector value={nivel} onChange={setNivel} compact />
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
         <button onClick={guardar} disabled={!nivel || saving} className="btn-green disabled:opacity-50">
-          {saving ? 'Guardando…' : 'Guardar mi nivel'}
+          {saving ? t('Guardando…') : t('Guardar mi nivel')}
         </button>
-        <button onClick={onClose} className="text-gray-400 text-sm text-center">Lo hago despues</button>
+        <button onClick={onClose} className="text-gray-400 text-sm text-center">{t('Lo hago despues')}</button>
       </div>
     </div>
   );
@@ -175,7 +182,7 @@ function CumpleModal({ apiFetch, updateUser, onClose }) {
       updateUser({ fecha_nacimiento: d.data?.cliente?.fecha_nacimiento || fecha });
       onClose();
     } else {
-      setError(d.error || 'No se pudo guardar. Intenta de nuevo.');
+      setError(d.error || t('No se pudo guardar. Intenta de nuevo.'));
     }
   }
 
@@ -187,11 +194,11 @@ function CumpleModal({ apiFetch, updateUser, onClose }) {
       <div className="bg-white rounded-3xl p-5 w-full max-w-sm flex flex-col gap-4 overflow-y-auto overscroll-contain"
            style={{ maxHeight: 'min(85dvh, calc(100vh - 48px))' }}>
         <div className="text-center">
-          <p className="text-xl font-black text-sp-gray">🎂 ¿Cuando es tu cumpleanos?</p>
+          <p className="text-xl font-black text-sp-gray">🎂 {t('¿Cuando es tu cumpleanos?')}</p>
           {/* El gancho concreto, no "para conocerte mejor": la 2ª cancha gratis es la razón
               por la que alguien teclea su fecha de nacimiento. */}
           <p className="text-sm text-gray-400 mt-1">
-            Te regalamos la <b className="text-sp-gray">2a cancha gratis</b> en tu semana de cumpleanos
+            {negritas(t('Te regalamos la <b>2a cancha gratis</b> en tu semana de cumpleanos'), 'text-sp-gray')}
           </p>
         </div>
 
@@ -205,13 +212,13 @@ function CumpleModal({ apiFetch, updateUser, onClose }) {
 
         {/* Y ya que está aquí, las notificaciones — es el aviso de ESTA promo el que las
             necesita. Si ya las tiene, este bloque no pinta nada. */}
-        <PrenderAvisos compacto motivo="Asi te avisamos unos dias antes, con tiempo de juntar a tus amigos." />
+        <PrenderAvisos compacto motivo={t('Asi te avisamos unos dias antes, con tiempo de juntar a tus amigos.')} />
 
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
         <button onClick={guardar} disabled={!fecha || saving} className="btn-green disabled:opacity-50">
-          {saving ? 'Guardando…' : 'Guardar mi cumpleanos'}
+          {saving ? t('Guardando…') : t('Guardar mi cumpleanos')}
         </button>
-        <button onClick={onClose} className="text-gray-400 text-sm text-center">Lo hago despues</button>
+        <button onClick={onClose} className="text-gray-400 text-sm text-center">{t('Lo hago despues')}</button>
       </div>
     </div>
   );
@@ -267,7 +274,7 @@ function MisReservas({ apiFetch, navigate }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <SectionHeader title="Mis proximas reservas" actionLabel="Ver todas" onAction={() => navigate('/reservar', { state: { tab: 'mis' } })} />
+      <SectionHeader title={t('Mis proximas reservas')} actionLabel={t('Ver todas')} onAction={() => navigate('/reservar', { state: { tab: 'mis' } })} />
 
       {loading ? (
         <CardSpinner />
@@ -277,15 +284,15 @@ function MisReservas({ apiFetch, navigate }) {
             <div key={i} className="card flex items-center gap-3 py-3">
               <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--sp-green-light)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--sp-green-deep)', lineHeight: 1 }}>
-                  {parseLocalDate(r.fecha).toLocaleDateString('es-MX', { day: 'numeric' })}
+                  {parseLocalDate(r.fecha).toLocaleDateString(locale(), { day: 'numeric' })}
                 </span>
                 <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--sp-green-dark)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  {parseLocalDate(r.fecha).toLocaleDateString('es-MX', { month: 'short' })}
+                  {parseLocalDate(r.fecha).toLocaleDateString(locale(), { month: 'short' })}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sp-gray font-bold text-[15px] truncate">
-                  {r.tipo === 'clase' ? (r.instructor ? `Clase con ${r.instructor}` : 'Clase') : `Cancha ${r.cancha}`}
+                  {r.tipo === 'clase' ? (r.instructor ? t('Clase con {instructor}', { instructor: r.instructor }) : t('Clase')) : t('Cancha {cancha}', { cancha: r.cancha })}
                 </p>
                 <p className="text-gray-400 text-[13px]">
                   {formatHora(r.hora_inicio)}{r.duracion_minutos ? ` · ${r.duracion_minutos} min` : ''}
@@ -296,19 +303,19 @@ function MisReservas({ apiFetch, navigate }) {
                   ? 'bg-green-50 text-green-600'
                   : 'bg-yellow-50 text-yellow-600'
               }`}>
-                {r.estado === 'confirmada' ? 'Confirmada' : 'Pendiente'}
+                {r.estado === 'confirmada' ? t('Confirmada') : t('Pendiente')}
               </span>
             </div>
           ))}
         </div>
       ) : (
         <div className="card py-5 text-center">
-          <p className="text-gray-400 text-sm">No tienes reservas proximas</p>
+          <p className="text-gray-400 text-sm">{t('No tienes reservas proximas')}</p>
           <button
             onClick={() => navigate('/reservar')}
             className="mt-2 text-[15px] font-bold text-sp-green-dark"
           >
-            Reservar ahora →
+            {t('Reservar ahora →')}
           </button>
         </div>
       )}
@@ -332,10 +339,10 @@ function RetaActiva({ r, onAbrir }) {
       <div className="px-5 py-4">
         <div className="flex items-center justify-between">
           <span className="text-white/70 text-[11px] font-black tracking-[.18em] uppercase">
-            Tu reta de hoy
+            {t('Tu reta de hoy')}
           </span>
           <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 text-white">
-            {completa ? 'Completa' : r.faltan === 1 ? 'falta 1' : `faltan ${r.faltan}`}
+            {completa ? t('Completa') : r.faltan === 1 ? t('falta 1') : t('faltan {n}', { n: r.faltan })}
           </span>
         </div>
 
@@ -343,7 +350,7 @@ function RetaActiva({ r, onAbrir }) {
           <p className="text-white font-black leading-none tabular-nums" style={{ fontSize: 40 }}>
             {r.hora_inicio}
           </p>
-          <p className="text-white/85 font-bold text-[15px] pb-1">Cancha {r.cancha}</p>
+          <p className="text-white/85 font-bold text-[15px] pb-1">{t('Cancha {cancha}', { cancha: r.cancha })}</p>
         </div>
 
         <div className="flex items-center justify-between mt-3">
@@ -352,11 +359,11 @@ function RetaActiva({ r, onAbrir }) {
               <span key={i} style={{ width: 9, height: 9, borderRadius: 99, background: i < r.apuntados ? '#fff' : 'rgba(255,255,255,.35)' }} />
             ))}
             <span className="text-white/80 text-[12px] font-bold ml-1.5">
-              {r.apuntados} de {r.cupo}
+              {t('{apuntados} de {cupo}', { apuntados: r.apuntados, cupo: r.cupo })}
             </span>
           </div>
           <span className="text-white font-black text-[14px] flex items-center gap-1">
-            Abrir
+            {t('Abrir')}
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -377,15 +384,15 @@ function TarjetaClaseAbierta({ apiFetch, navigate }) {
   if (!c) return null;
   const [h, m] = String(c.hora).split(':').map(Number);
   const hora = `${(h % 12) || 12}:${String(m || 0).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
-  const dia = new Date(c.fecha + 'T12:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short' });
+  const dia = new Date(c.fecha + 'T12:00').toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'short' });
   const desde = c.precio_grupo ? Math.min(c.precio, c.precio_grupo) : c.precio;
   return (
     <button onClick={() => navigate('/clase-abierta')} className="card text-left flex items-center gap-3 py-3 active:scale-[.99] transition-transform">
       <span style={{ fontSize: 30, lineHeight: 1 }}>🎾</span>
       <div className="flex-1 min-w-0">
-        <p className="text-sp-gray font-black text-[15px]">Clase abierta · todos los niveles</p>
-        <p className="text-[13px] text-gray-400">{c.mi_estado === 'inscrito' ? '✓ Ya vas · ' : ''}{dia.charAt(0).toUpperCase() + dia.slice(1)} · {hora} · con {String(c.coach).split(' ')[0]}</p>
-        <p className="text-[13px] font-black text-sp-green-dark">Desde ${desde} por persona</p>
+        <p className="text-sp-gray font-black text-[15px]">{t('Clase abierta · todos los niveles')}</p>
+        <p className="text-[13px] text-gray-400">{c.mi_estado === 'inscrito' ? '✓ ' + t('Ya vas') + ' · ' : ''}{t('{dia} · {hora} · con {coach}', { dia: dia.charAt(0).toUpperCase() + dia.slice(1), hora, coach: String(c.coach).split(' ')[0] })}</p>
+        <p className="text-[13px] font-black text-sp-green-dark">{t('Desde ${precio} por persona', { precio: desde })}</p>
       </div>
       <span className="text-sp-green-dark font-black">›</span>
     </button>
@@ -410,8 +417,8 @@ function RetasAbiertas({ apiFetch, navigate }) {
     setMsg(null);
     const d = await apiFetch(`/reta/${r.token}/unirme-app`, { method: 'POST' });
     setJoining('');
-    if (d.ok) { setMsg({ ok: true, text: '¡Estas dentro! 🎾' }); load(); }
-    else setMsg({ ok: false, text: d.error || 'No se pudo. Intenta de nuevo.' });
+    if (d.ok) { setMsg({ ok: true, text: t('¡Estas dentro!') + ' 🎾' }); load(); }
+    else setMsg({ ok: false, text: d.error || t('No se pudo. Intenta de nuevo.') });
   }
 
   // Sin retas no ocupamos espacio (la página completa vive en /retas)
@@ -429,7 +436,7 @@ function RetasAbiertas({ apiFetch, navigate }) {
       {activa && <RetaActiva r={activa} onAbrir={() => navigate(`/reta/${activa.token}`)} />}
 
       {top.length > 0 && (
-        <SectionHeader title="🎾 Retas abiertas" actionLabel="Ver todas" onAction={() => navigate('/retas')} />
+        <SectionHeader title={'🎾 ' + t('Retas abiertas')} actionLabel={t('Ver todas')} onAction={() => navigate('/retas')} />
       )}
       {msg && (
         <p className={`text-[13px] text-center font-medium ${msg.ok ? 'text-sp-green' : 'text-red-500'}`}>{msg.text}</p>
@@ -439,29 +446,29 @@ function RetasAbiertas({ apiFetch, navigate }) {
           <div key={r.token} className="card flex items-center gap-3 py-3">
             <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--sp-green-light)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--sp-green-deep)', textTransform: 'capitalize' }}>
-                {formatFecha(r.fecha).split(' ')[0]}
+                {parseLocalDate(r.fecha).toLocaleDateString(locale(), { weekday: 'short' }).replace(/\./g, '')}
               </span>
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--sp-green-dark)' }}>{r.hora_inicio}</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sp-gray font-bold text-[15px] truncate">
-                {r.organizador || 'Reta'} · Cancha {r.cancha}
+                {r.organizador || t('Reta')} · {t('Cancha {cancha}', { cancha: r.cancha })}
               </p>
               <p className="text-gray-400 text-[13px]">
-                {r.nivel_objetivo || 'Abierta a todos'} · {r.faltan === 1 ? 'falta 1' : `faltan ${r.faltan}`}
+                {r.nivel_objetivo || t('Abierta a todos')} · {r.faltan === 1 ? t('falta 1') : t('faltan {n}', { n: r.faltan })}
               </p>
             </div>
             {r.es_mia ? (
-              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">Tu reta</span>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 flex-shrink-0">{t('Tu reta')}</span>
             ) : r.ya_apuntado ? (
-              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-sp-green-light text-sp-green-dark flex-shrink-0">✓ Ya vas</span>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-sp-green-light text-sp-green-dark flex-shrink-0">✓ {t('Ya vas')}</span>
             ) : (
               <button
                 onClick={() => join(r)}
                 disabled={joining === r.token}
                 className="text-[13px] font-black px-3.5 py-2 rounded-full bg-sp-green text-white active:scale-95 transition-transform flex-shrink-0 disabled:opacity-50"
               >
-                {joining === r.token ? '…' : 'Me apunto'}
+                {joining === r.token ? '…' : t('Me apunto')}
               </button>
             )}
           </div>
@@ -537,35 +544,35 @@ function ProximosTorneos({ apiFetch, navigate }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <SectionHeader title="Proximos torneos" actionLabel="Ver todos" onAction={() => navigate('/torneos')} />
+      <SectionHeader title={t('Proximos torneos')} actionLabel={t('Ver todos')} onAction={() => navigate('/torneos')} />
 
       {loading ? (
         <CardSpinner />
       ) : (
         <div className="flex flex-col gap-2">
-          {torneos.map((t, i) => {
+          {torneos.map((tor, i) => {
             // "En curso" si hoy ya está dentro de las fechas del torneo (el filtro
             // de arriba garantiza que aún no termina)
             const hoy = new Date().toLocaleDateString('sv-SE');
-            const enCurso = (t.fecha_inicio || '').slice(0, 10) <= hoy;
+            const enCurso = (tor.fecha_inicio || '').slice(0, 10) <= hoy;
             return (
               <div
                 key={i}
                 className="card flex items-center gap-3 py-3 active:scale-[0.98] transition-transform cursor-pointer"
                 onClick={() => navigate('/torneos')}
               >
-                <TorneoAvatar torneo={t} />
+                <TorneoAvatar torneo={tor} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sp-gray font-bold text-[15px] truncate">{t.nombre}</p>
+                  <p className="text-sp-gray font-bold text-[15px] truncate">{tor.nombre}</p>
                   <p className="text-gray-400 text-[13px]">
-                    {t.fecha_inicio ? formatFecha(t.fecha_inicio) : 'Fecha por confirmar'}
-                    {t.torneo_categorias?.length > 0 && ` · ${t.torneo_categorias.length} categorias`}
+                    {tor.fecha_inicio ? formatFecha(tor.fecha_inicio) : t('Fecha por confirmar')}
+                    {tor.torneo_categorias?.length > 0 && ' · ' + t('{n} categorias', { n: tor.torneo_categorias.length })}
                   </p>
                 </div>
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
                   enCurso ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-500'
                 }`}>
-                  {enCurso ? 'En curso' : 'Proximo'}
+                  {enCurso ? t('En curso') : t('Proximo')}
                 </span>
               </div>
             );
@@ -592,7 +599,7 @@ function Novedades({ navigate }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <SectionHeader title="Novedades del club" actionLabel="Ver todas" onAction={() => navigate('/noticias')} />
+      <SectionHeader title={t('Novedades del club')} actionLabel={t('Ver todas')} onAction={() => navigate('/noticias')} />
       <div className="flex flex-col gap-2">
         {items.map(p => (
           <div
@@ -635,12 +642,12 @@ function PromoBienvenida({ apiFetch, navigate }) {
           🎉
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sp-gray font-bold text-[15px]">Tu primera renta a ${promo.precio || 200}</p>
+          <p className="text-sp-gray font-bold text-[15px]">{t('Tu primera renta a ${precio}', { precio: promo.precio || 200 })}</p>
           <p className="text-gray-400 text-[13px]">
-            Comprando 1 bote de pelotas SP{promo.bote?.precio ? ` ($${promo.bote.precio})` : ''} · cancha completa 90 min
+            {t('Comprando 1 bote de pelotas SP{bote} · cancha completa 90 min', { bote: promo.bote?.precio ? ` ($${promo.bote.precio})` : '' })}
           </p>
         </div>
-        <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Reservar →</span>
+        <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">{t('Reservar →')}</span>
       </div>
     </button>
   );
@@ -664,16 +671,16 @@ function AvisoMarcadores() {
   // Primero lo que trae a alguien esperando respuesta: si no contestas, ese juego se
   // invalida para los dos. Luego lo tuyo por capturar, y al final lo que sólo hay que ojear.
   const texto = res
-    ? (res === 1 ? 'Un rival no está de acuerdo con tu marcador' : `${res} rivales no están de acuerdo con tus marcadores`)
+    ? (res === 1 ? t('Un rival no está de acuerdo con tu marcador') : t('{n} rivales no están de acuerdo con tus marcadores', { n: res }))
     : cap
-    ? (cap === 1 ? 'Tienes una reta sin marcador' : `Tienes ${cap} retas sin marcador`)
-    : (rev === 1 ? 'Revisa el marcador de tu reta' : `Revisa ${rev} marcadores de tus retas`);
+    ? (cap === 1 ? t('Tienes una reta sin marcador') : t('Tienes {n} retas sin marcador', { n: cap }))
+    : (rev === 1 ? t('Revisa el marcador de tu reta') : t('Revisa {n} marcadores de tus retas', { n: rev }));
   return (
     <button type="button" onClick={() => navigate('/marcadores')}
       className="w-full text-left px-5 py-3 flex items-center justify-between gap-3 active:opacity-80"
       style={{ background: 'var(--sp-green-light)' }}>
       <span className="text-sm font-black" style={{ color: 'var(--sp-green-deep)' }}>🎾 {texto}</span>
-      <span className="text-xs font-bold" style={{ color: 'var(--sp-green-dark)' }}>Abrir ›</span>
+      <span className="text-xs font-bold" style={{ color: 'var(--sp-green-dark)' }}>{t('Abrir')} ›</span>
     </button>
   );
 }
@@ -696,9 +703,10 @@ export default function Home() {
   );
   const [hora] = useState(() => {
     const h = new Date().getHours();
-    if (h < 12) return 'Buenos dias';
-    if (h < 19) return 'Buenas tardes';
-    return 'Buenas noches';
+    // t() aquí sí vale: corre al montar, y App vuelve a montar todo al cambiar de idioma.
+    if (h < 12) return t('Buenos dias');
+    if (h < 19) return t('Buenas tardes');
+    return t('Buenas noches');
   });
 
   // El cumpleaños sale de /auth/me y NO del `user` guardado: ese `sp_user` vive en el
@@ -745,9 +753,10 @@ export default function Home() {
     const h12 = hn % 12 === 0 ? 12 : hn % 12;
     return h12 + ':' + (m || '00');
   };
-  const textoBota = turnosBota
-    ? 'Liga individual · ' + turnosBota.map(t => doce(t.hora) + ' $' + t.precio).join(' · ')
-    : 'Liga individual · dos turnos cada viernes';
+  const turnosTxt = turnosBota
+    ? turnosBota.map(x => doce(x.hora) + ' $' + x.precio).join(' · ')
+    : t('dos turnos cada viernes');
+  const textoBota = t('Liga individual') + ' · ' + turnosTxt;
 
   return (
     <div className="page safe-bottom">
@@ -784,7 +793,7 @@ export default function Home() {
         <div className="flex items-center justify-between pt-3">
           <div>
             <p className="text-white/75 text-sm font-medium">{hora},</p>
-            <p className="text-white text-xl font-black">{user?.nombre?.split(' ')[0] || 'Jugador'}</p>
+            <p className="text-white text-xl font-black">{user?.nombre?.split(' ')[0] || t('Jugador')}</p>
           </div>
           {/* 🔔 La campanita (21-oct-2026): los avisos que se cerraron sin querer no se pierden. */}
           <div className="flex items-center gap-3">
@@ -802,7 +811,7 @@ export default function Home() {
             <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
           </svg>
           <span className="text-white text-sm font-bold">
-            {puntos !== null ? `${puntos} puntos` : 'Mis puntos'}
+            {puntos !== null ? t('{n} puntos', { n: puntos }) : t('Mis puntos')}
           </span>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 18l6-6-6-6" />
@@ -815,7 +824,7 @@ export default function Home() {
       <TemporadaFranja />
 
       {/* ── Contenido ── */}
-      <PrenderAvisos motivo="Te avisamos tu cancha, tus retas y cuando se libere un lugar." />
+      <PrenderAvisos motivo={t('Te avisamos tu cancha, tus retas y cuando se libere un lugar.')} />
       <div className="px-4 py-4 flex flex-col gap-4">
         {/* 🔐 La caja quiere usar tus puntos: lo más urgente (vence en 3 min) */}
         <SolicitudesPuntos />
@@ -839,8 +848,8 @@ export default function Home() {
             }}
           >
             <span style={{ fontSize: 30, lineHeight: 1, display: 'block' }}>🎾</span>
-            <p style={{ color: 'white', fontWeight: 900, fontSize: 17, lineHeight: 1.15, marginTop: 10 }}>Reservar cancha</p>
-            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, marginTop: 3, fontWeight: 600 }}>Canchas y clases</p>
+            <p style={{ color: 'white', fontWeight: 900, fontSize: 17, lineHeight: 1.15, marginTop: 10 }}>{t('Reservar cancha')}</p>
+            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, marginTop: 3, fontWeight: 600 }}>{t('Canchas y clases')}</p>
           </button>
 
           <button
@@ -854,8 +863,8 @@ export default function Home() {
             }}
           >
             <span style={{ fontSize: 30, lineHeight: 1, display: 'block' }}>🍺</span>
-            <p style={{ color: 'var(--sp-ink-on)', fontWeight: 900, fontSize: 17, lineHeight: 1.15, marginTop: 10 }}>Pedir al bar</p>
-            <p style={{ color: 'var(--sp-ink-on-sub)', fontSize: 13, marginTop: 3, fontWeight: 600 }}>Directo a tu cancha</p>
+            <p style={{ color: 'var(--sp-ink-on)', fontWeight: 900, fontSize: 17, lineHeight: 1.15, marginTop: 10 }}>{t('Pedir al bar')}</p>
+            <p style={{ color: 'var(--sp-ink-on-sub)', fontSize: 13, marginTop: 3, fontWeight: 600 }}>{t('Directo a tu cancha')}</p>
           </button>
         </div>
 
@@ -891,16 +900,16 @@ export default function Home() {
             <div className="rounded-2xl flex items-center gap-3 py-3 px-4 shadow-md text-white"
                  style={{ background: fondoPatro(mediaBota.colores), fontFamily: KANIT }}>
               {mediaBota.sponsor_url
-                ? <img src={mediaBota.sponsor_url} alt={mediaBota.sponsor_nombre || 'Patrocinador'} className="w-11 h-11 object-contain flex-shrink-0" />
+                ? <img src={mediaBota.sponsor_url} alt={mediaBota.sponsor_nombre || t('Patrocinador')} className="w-11 h-11 object-contain flex-shrink-0" />
                 : <span style={{ fontSize: 20 }}>🍻</span>}
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-[15px]">Viernes Botanero</p>
                 <p className="text-[13px] truncate" style={{ color: mediaBota.colores.tinte }}>
-                  {mediaBota.sponsor_nombre ? 'Presenta ' + mediaBota.sponsor_nombre + ' · ' : ''}{textoBota.replace('Liga individual · ', '')}
+                  {mediaBota.sponsor_nombre ? t('Presenta {marca}', { marca: mediaBota.sponsor_nombre }) + ' · ' : ''}{turnosTxt}
                 </p>
                 <FechaNoche fecha={fechaBota} claro />
               </div>
-              <span className="text-[13px] font-bold flex-shrink-0" style={{ color: mediaBota.colores.tinte }}>Ver →</span>
+              <span className="text-[13px] font-bold flex-shrink-0" style={{ color: mediaBota.colores.tinte }}>{t('Ver →')}</span>
             </div>
           ) : (
             <div className="card flex items-center gap-3 py-3">
@@ -912,7 +921,7 @@ export default function Home() {
                 <p className="text-gray-400 text-[13px]">{textoBota}</p>
                 <FechaNoche fecha={fechaBota} />
               </div>
-              <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Ver →</span>
+              <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">{t('Ver →')}</span>
             </div>
           )}
         </button>
@@ -928,10 +937,10 @@ export default function Home() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sp-gray font-bold text-[15px]">Ladies Night</p>
-              <p className="text-gray-400 text-[13px]">Jueves 7:00 y 8:30 · sólo mujeres</p>
+              <p className="text-gray-400 text-[13px]">{t('Jueves 7:00 y 8:30 · sólo mujeres')}</p>
               <FechaNoche fecha={fechaLadies} />
             </div>
-            <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Ver →</span>
+            <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">{t('Ver →')}</span>
           </div>
         </button>
 
@@ -945,10 +954,10 @@ export default function Home() {
               🎁
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sp-gray font-bold text-[15px]">Promos para ti</p>
-              <p className="text-gray-400 text-[13px]">Reclamalas y usalas en la caja</p>
+              <p className="text-sp-gray font-bold text-[15px]">{t('Promos para ti')}</p>
+              <p className="text-gray-400 text-[13px]">{t('Reclamalas y usalas en la caja')}</p>
             </div>
-            <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">Ver →</span>
+            <span className="text-[13px] font-bold text-sp-green-dark flex-shrink-0">{t('Ver →')}</span>
           </div>
         </button>
       </div>

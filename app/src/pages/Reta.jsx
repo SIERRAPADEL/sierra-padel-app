@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
+import { t, locale } from '../i18n';
 
 // La pantalla de LA reta (German, 13-ago): horario, cancha, participantes con sus stats al
 // lado del nombre, armar parejas, capturar los sets, y si ya hay ganador una decoracion
@@ -20,8 +21,8 @@ const fmtFechaLarga = (iso) => {
   if (!iso) return '';
   const hoy = new Date().toLocaleDateString('sv-SE');
   const d = new Date(iso + 'T12:00');
-  const txt = capitaliza(d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }));
-  return String(iso).slice(0, 10) === hoy ? `Hoy · ${txt}` : txt;
+  const txt = capitaliza(d.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' }));
+  return String(iso).slice(0, 10) === hoy ? t('Hoy · {fecha}', { fecha: txt }) : txt;
 };
 // Para el marcador se usan nombres de pila: dos nombres completos por lado no caben en un
 // telefono y se cortaban con "...", que en una foto para redes se ve descuidado.
@@ -80,7 +81,7 @@ export function Ganador({ d }) {
           </p>
         </div>
         <p className="text-white/70 text-[14px] font-semibold mt-3">
-          {fmtFechaLarga(d.fecha)} · Cancha {d.cancha}
+          {fmtFechaLarga(d.fecha)} · {t('Cancha {n}', { n: d.cancha })}
         </p>
 
         {/* LAS DOS FORMAS DE JUGAR UNA RETA, y no se leen igual:
@@ -99,10 +100,10 @@ export function Ganador({ d }) {
                       {MAY(x.nombre)}
                     </p>
                   ))
-                : <p className="text-white font-black text-[34px] leading-[1.15]">EMPATE</p>}
+                : <p className="text-white font-black text-[34px] leading-[1.15]">{t('EMPATE')}</p>}
             </div>
             <p className="text-white/60 text-[15px] font-bold mt-2 tracking-[.2em]">
-              {p.ganador ? 'GANADORES' : 'EMPATADOS'}
+              {p.ganador ? t('GANADORES') : t('EMPATADOS')}
             </p>
 
             {/* Tablero de dos renglones: pareja, sus games por set, y sets ganados */}
@@ -138,39 +139,39 @@ export function Ganador({ d }) {
               <>
                 <p className="text-[72px] leading-none mt-8">🏆</p>
                 <p className="text-white font-black text-[38px] leading-[1.15] mt-4 px-1">{MAY(campeon.nombre)}</p>
-                <p className="text-white/60 text-[15px] font-bold mt-2 tracking-[.2em]">CAMPEÓN</p>
+                <p className="text-white/60 text-[15px] font-bold mt-2 tracking-[.2em]">{t('CAMPEÓN')}</p>
               </>
             ) : (
               <>
                 <p className="text-[64px] leading-none mt-8">🤝</p>
                 <div className="mt-4 px-1">
                   {(r.empatados || []).length
-                    ? r.empatados.map(t => (
-                        <p key={t.cliente_id} className="text-white font-black text-[30px] leading-[1.15]">
-                          {MAY(pila(t.nombre))}
+                    ? r.empatados.map(e => (
+                        <p key={e.cliente_id} className="text-white font-black text-[30px] leading-[1.15]">
+                          {MAY(pila(e.nombre))}
                         </p>
                       ))
-                    : <p className="text-white font-black text-[30px] leading-[1.15]">EMPATE</p>}
+                    : <p className="text-white font-black text-[30px] leading-[1.15]">{t('EMPATE')}</p>}
                 </div>
-                <p className="text-white/60 text-[15px] font-bold mt-2 tracking-[.2em]">EMPATADOS</p>
+                <p className="text-white/60 text-[15px] font-bold mt-2 tracking-[.2em]">{t('EMPATADOS')}</p>
               </>
             )}
 
             {/* La tabla individual: es lo que hace que se presuma */}
             <div className="mt-9 rounded-3xl bg-black/25 px-4 py-3 text-left">
-              {tabla.map(t => {
-                const esCampeon = campeon && t.cliente_id === campeon.cliente_id;
+              {tabla.map(f => {
+                const esCampeon = campeon && f.cliente_id === campeon.cliente_id;
                 return (
-                  <div key={t.cliente_id} className={`flex items-center gap-3 py-2.5 ${esCampeon ? '' : 'opacity-75'}`}>
-                    <span className="text-white/40 font-black tabular-nums w-6 text-[18px] shrink-0">{t.pos}</span>
+                  <div key={f.cliente_id} className={`flex items-center gap-3 py-2.5 ${esCampeon ? '' : 'opacity-75'}`}>
+                    <span className="text-white/40 font-black tabular-nums w-6 text-[18px] shrink-0">{f.pos}</span>
                     <span className="text-white font-bold text-[20px] flex-1 min-w-0 truncate leading-tight">
-                      {MAY(pila(t.nombre))}
+                      {MAY(pila(f.nombre))}
                     </span>
                     <span className="text-white font-black tabular-nums text-[22px] shrink-0">
-                      {t.ganados}<span className="text-white/40">-{t.perdidos}</span>
+                      {f.ganados}<span className="text-white/40">-{f.perdidos}</span>
                     </span>
                     <span className="text-white/50 font-bold tabular-nums text-[16px] w-12 text-right shrink-0">
-                      {t.dif_games > 0 ? '+' : ''}{t.dif_games}
+                      {f.dif_games > 0 ? '+' : ''}{f.dif_games}
                     </span>
                   </div>
                 );
@@ -211,10 +212,10 @@ export default function Reta() {
     setCargando(true);
     apiFetch(`/reta/${token}/detalle`)
       .then(r => {
-        if (!r.ok) { setError(r.error || 'No se pudo abrir la reta.'); return; }
+        if (!r.ok) { setError(r.error || t('No se pudo abrir la reta.')); return; }
         setD(r.data);
       })
-      .catch(() => setError('No se pudo abrir la reta.'))
+      .catch(() => setError(t('No se pudo abrir la reta.')))
       .finally(() => setCargando(false));
   }, [apiFetch, token]);
 
@@ -331,8 +332,8 @@ export default function Reta() {
     })) };
     const r = await apiFetch(`/historial/reta/${d.reservacion_id}`, { method: 'POST', body: JSON.stringify(body) });
     setGuardando(false);
-    if (r.ok) { setMsg({ ok: true, text: '¡Marcador guardado!' }); cargar(); }
-    else setMsg({ ok: false, text: r.error || 'No se pudo guardar el marcador' });
+    if (r.ok) { setMsg({ ok: true, text: t('¡Marcador guardado!') }); cargar(); }
+    else setMsg({ ok: false, text: r.error || t('No se pudo guardar el marcador') });
   }
 
   if (cargando) {
@@ -346,9 +347,9 @@ export default function Reta() {
     return (
       <div className="page safe-bottom px-5 pt-20 text-center">
         <p className="text-4xl mb-3">🎾</p>
-        <p className="text-gray-500 font-medium">{error || 'Reta no encontrada'}</p>
+        <p className="text-gray-500 font-medium">{error || t('Reta no encontrada')}</p>
         <button onClick={() => navigate('/retas')} className="mt-5 text-sp-green-dark font-bold">
-          Ver retas abiertas →
+          {t('Ver retas abiertas →')}
         </button>
       </div>
     );
@@ -363,7 +364,7 @@ export default function Reta() {
       <div className="relative">
         <button
           onClick={() => navigate(-1)}
-          aria-label="Atrás"
+          aria-label={t('Atrás')}
           className="absolute z-10 flex items-center justify-center rounded-full bg-black/25 text-white active:scale-90 transition-transform"
           style={{ top: 'calc(env(safe-area-inset-top) + 12px)', left: 12, width: 38, height: 38 }}
         >
@@ -375,7 +376,7 @@ export default function Reta() {
         {/* Debajo del pliegue, fuera de la foto: es informacion de tramite. */}
         {d.resultado.estado === 'propuesto' && (
           <p className="text-[12px] text-gray-400 text-center py-4 px-6 leading-snug bg-sp-gray-light">
-            Marcador recién capturado — los que jugaron pueden objetarlo si algo no cuadra.
+            {t('Marcador recién capturado — los que jugaron pueden objetarlo si algo no cuadra.')}
           </p>
         )}
       </div>
@@ -390,7 +391,7 @@ export default function Reta() {
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Atrás
+          {t('Atrás')}
         </button>
         <p className="text-white/70 text-[13px] font-semibold">{fmtFechaLarga(d.fecha)}</p>
         <p className="text-white font-black text-[26px] leading-tight tabular-nums">
@@ -398,7 +399,7 @@ export default function Reta() {
         </p>
         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
           <span className="text-[12px] font-black px-2.5 py-1 rounded-full bg-white/20 text-white">
-            Cancha {d.cancha}
+            {t('Cancha {n}', { n: d.cancha })}
           </span>
           {d.nivel_objetivo && (
             <span className="text-[12px] font-bold px-2.5 py-1 rounded-full bg-white/15 text-white/90">
@@ -406,7 +407,7 @@ export default function Reta() {
             </span>
           )}
           <span className="text-[12px] font-bold px-2.5 py-1 rounded-full bg-white/15 text-white/90">
-            {d.jugadores.length}/{d.cupo} jugadores
+            {t('{n}/{cupo} jugadores', { n: d.jugadores.length, cupo: d.cupo })}
           </span>
         </div>
       </div>
@@ -418,16 +419,16 @@ export default function Reta() {
           <div className="rounded-2xl px-3 py-3 flex items-center gap-3 text-[13.5px] leading-relaxed"
                style={{ background: '#151515', color: '#F1E9DD' }}>
             {/* Logo oficial que mandó German (19-oct). */}
-            <img src="/todo-o-nada.webp" alt="Todo o Nada · El que pierde paga" width="84" height="99"
+            <img src="/todo-o-nada.webp" alt={t('Todo o Nada · El que pierde paga')} width="84" height="99"
                  className="w-[84px] h-auto shrink-0" />
             <div className="min-w-0">
-              <p className="font-black text-[15px]" style={{ color: '#8DC63F' }}>Martes de Todo o Nada</p>
+              <p className="font-black text-[15px]" style={{ color: '#8DC63F' }}>{t('Martes de Todo o Nada')}</p>
               {/* Una idea por renglón (German 19-oct: «cada oración como un bullet»). */}
               <ul className="mt-1 list-disc pl-4 space-y-1">
                 {String(d.todo_o_nada.texto || '').split(/\.\s+/).filter(Boolean).map((o, i) => (
                   <li key={i}>{o.replace(/\.$/, '')}.</li>
                 ))}
-                <li className="font-bold">Armen parejas fijas y capturen el marcador al terminar.</li>
+                <li className="font-bold">{t('Armen parejas fijas y capturen el marcador al terminar.')}</li>
               </ul>
             </div>
           </div>
@@ -443,11 +444,11 @@ export default function Reta() {
 
         {puedeCapturar && (
           <div className="card">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Marcador</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">{t('Marcador')}</p>
 
             {!combinaciones ? (
               <p className="text-[13px] text-gray-400 text-center py-3">
-                Se necesitan los 4 jugadores apuntados para capturar el marcador.
+                {t('Se necesitan los 4 jugadores apuntados para capturar el marcador.')}
               </p>
             ) : (
               <>
@@ -489,7 +490,7 @@ export default function Reta() {
                     )}
                     <div className="flex items-center gap-2">
                       <span className="text-[13px] font-bold text-gray-400 w-10 shrink-0">
-                        {rotar ? `#${i + 1}` : `Set ${i + 1}`}
+                        {rotar ? `#${i + 1}` : t('Set {n}', { n: i + 1 })}
                       </span>
                       {[{ c: 'var(--sp-green)', g: 'ga' }, { c: '#3B6FD4', g: 'gb' }].map(({ c, g }) => (
                         // min-w-0 + w-full: un <input> no se encoge bajo su ancho propio
@@ -516,7 +517,7 @@ export default function Reta() {
                   onClick={agregarJuego}
                   className="w-full border-2 border-dashed border-gray-200 text-gray-500 font-bold py-3.5 rounded-xl text-[15px] active:scale-95 transition-transform mt-1"
                 >
-                  + Otro set
+                  {t('+ Otro set')}
                 </button>
 
                 {/* El checkbox: apagado por default, que es el caso normal */}
@@ -527,8 +528,8 @@ export default function Reta() {
                     className="w-5 h-5 accent-sp-green shrink-0"
                   />
                   <span className="text-[14px] text-sp-gray font-semibold">
-                    Rotamos parejas
-                    <span className="text-gray-400 font-normal"> · cada set con distinto compañero</span>
+                    {t('Rotamos parejas')}
+                    <span className="text-gray-400 font-normal"> · {t('cada set con distinto compañero')}</span>
                   </span>
                 </label>
               </>
@@ -541,20 +542,20 @@ export default function Reta() {
                   disabled={!juegosOk || guardando}
                   className={`btn-green mt-4 disabled:opacity-40 ${confirmar ? 'bg-red-500' : ''}`}
                 >
-                  {guardando ? 'Guardando…' : confirmar ? '⚠️ Sí, terminar la reta' : '🏁 Terminar reta'}
+                  {guardando ? t('Guardando…') : confirmar ? t('⚠️ Sí, terminar la reta') : t('🏁 Terminar reta')}
                 </button>
                 {confirmar ? (
                   <div className="mt-2">
                     <p className="text-[12px] text-red-500 text-center font-semibold">
-                      Se guardan {juegosLlenos.length} set(s) y ya no se puede cambiar aquí.
+                      {t('Se guardan {n} set(s) y ya no se puede cambiar aquí.', { n: juegosLlenos.length })}
                     </p>
                     <button onClick={() => setConfirmar(false)} className="w-full text-gray-400 text-[13px] font-bold py-2">
-                      Mejor no, sigo editando
+                      {t('Mejor no, sigo editando')}
                     </button>
                   </div>
                 ) : (
                   <p className="text-[11px] text-gray-400 text-center mt-2">
-                    Termínala cuando ya no vayan a jugar más. Después los rivales pueden objetarlo.
+                    {t('Termínala cuando ya no vayan a jugar más. Después los rivales pueden objetarlo.')}
                   </p>
                 )}
               </>

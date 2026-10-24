@@ -1,12 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BACKEND, UBICACIONES, PARA_LLEVAR } from '../lib/constants';
+import { BACKEND, UBICACIONES, PARA_LLEVAR, nombreUbicacion } from '../lib/constants';
+import { t } from '../i18n';
 
-const CAT_LABEL = {
-  bebidas:    'Bebidas',
-  snacks:     'Snacks',
-  accesorios: 'Accesorios',
-};
+// Función (no objeto) para que t() corra al pintar, en el idioma vigente.
+function catLabel(cat) {
+  if (cat === 'bebidas') return t('Bebidas');
+  if (cat === 'snacks') return t('Snacks');
+  if (cat === 'accesorios') return t('Accesorios');
+  return cat;
+}
+
+// Pinta un texto traducido que lleva un nodo JSX en medio ({llave} → nodo).
+function conNodo(texto, llave, nodo) {
+  const [a, b = ''] = String(texto).split(`{${llave}}`);
+  return <>{a}{nodo}{b}</>;
+}
 
 export default function Pedir() {
   const { user } = useAuth();
@@ -53,16 +62,16 @@ export default function Pedir() {
   // Minutos que se le prometen al cliente: manda el MÁS LENTO del carrito. Un café con
   // unos tacos no está listo en 5 minutos, y prometer de menos es peor que no prometer.
   function estimadoMin() {
-    const t = (horario && horario.tiempos) || { cocina: 20, barra: 5, tienda: 5, default: 5 };
+    const tiempos = (horario && horario.tiempos) || { cocina: 20, barra: 5, tienda: 5, default: 5 };
     const idx = menuPorId();
     let max = 0;
     for (const [k, cant] of Object.entries(carrito)) {
       if (!cant || cant <= 0) continue;
       const it = idx[idDe(k)];
-      const m = (it && t[it.area] != null) ? t[it.area] : t.default;
+      const m = (it && tiempos[it.area] != null) ? tiempos[it.area] : tiempos.default;
       if (m > max) max = m;
     }
-    return max || t.default;
+    return max || tiempos.default;
   }
 
   // Si el cliente ya tiene cuenta abierta, el sistema sabe dónde está: la ubicación
@@ -110,11 +119,11 @@ export default function Pedir() {
   // Presentación del estado del pedido para el cliente (amigable, texto grande).
   function vistaEstado(estado, motivo) {
     switch (estado) {
-      case 'preparando': return { icon: '👨‍🍳', tint: 'var(--sp-green-dark)', label: 'Pedido aceptado', titulo: '¡Tu pedido fue aceptado!', sub: 'Lo estan preparando.' };
-      case 'listo':      return { icon: '🛎️', tint: 'var(--sp-green-dark)', label: 'Pedido listo', titulo: '¡Tu pedido esta listo!', sub: 'En un momento te lo llevan.' };
-      case 'entregado':  return { icon: '✅', tint: 'var(--sp-green-dark)', label: 'Entregado', titulo: '¡Entregado!', sub: '¡Buen provecho!' };
-      case 'cancelado':  return { icon: '❌', tint: '#e5484d', label: 'Pedido rechazado', titulo: 'Tu pedido fue rechazado', sub: motivo || 'El encargado no pudo tomar tu pedido. Acercate al bar si tienes dudas.' };
-      default:           return { icon: '⏳', tint: '#b58a00', label: 'Pedido enviado', titulo: 'Pedido enviado', sub: 'Esperando que el encargado lo confirme…' };
+      case 'preparando': return { icon: '👨‍🍳', tint: 'var(--sp-green-dark)', label: t('Pedido aceptado'), titulo: t('¡Tu pedido fue aceptado!'), sub: t('Lo estan preparando.') };
+      case 'listo':      return { icon: '🛎️', tint: 'var(--sp-green-dark)', label: t('Pedido listo'), titulo: t('¡Tu pedido esta listo!'), sub: t('En un momento te lo llevan.') };
+      case 'entregado':  return { icon: '✅', tint: 'var(--sp-green-dark)', label: t('Entregado'), titulo: t('¡Entregado!'), sub: t('¡Buen provecho!') };
+      case 'cancelado':  return { icon: '❌', tint: '#e5484d', label: t('Pedido rechazado'), titulo: t('Tu pedido fue rechazado'), sub: motivo || t('El encargado no pudo tomar tu pedido. Acercate al bar si tienes dudas.') };
+      default:           return { icon: '⏳', tint: '#b58a00', label: t('Pedido enviado'), titulo: t('Pedido enviado'), sub: t('Esperando que el encargado lo confirme…') };
     }
   }
 
@@ -333,7 +342,7 @@ export default function Pedir() {
   // (los cortes reales van de las 23:13 a las 02:14). Así que el texto lo pone el servidor
   // —"cerró a las 10:45 pm" o "ya cerró la caja"— y aquí sólo se muestra. Componerlo con una
   // hora fija diría mentiras la mitad de las noches.
-  function motivoCierre(area) { return horario?.areas?.[area]?.motivo_cierre || 'ya cerró'; }
+  function motivoCierre(area) { return horario?.areas?.[area]?.motivo_cierre || t('ya cerró'); }
   function vuelveTxt(area) { return horario?.areas?.[area]?.vuelve_txt || ''; }
   // Productos YA en el carrito cuyo área cerró: hay que sacarlos antes de mandar.
   function itemsCerrados() {
@@ -410,7 +419,7 @@ export default function Pedir() {
       setElecciones({});
       setNotas('');
     } catch (e) {
-      setErrorEnvio(e.message || 'Error al enviar pedido. Intenta de nuevo.');
+      setErrorEnvio(e.message || t('Error al enviar pedido. Intenta de nuevo.'));
     }
     setEnviando(false);
   }
@@ -423,10 +432,10 @@ export default function Pedir() {
     const enCurso   = !['entregado', 'cancelado'].includes(estActual);
     // Pasos visuales del avance (no aplica si fue rechazado)
     const PASOS = [
-      { k: 'pendiente',  t: 'Enviado' },
-      { k: 'preparando', t: 'Aceptado' },
-      { k: 'listo',      t: 'Listo' },
-      { k: 'entregado',  t: 'Entregado' },
+      { k: 'pendiente',  txt: t('Enviado') },
+      { k: 'preparando', txt: t('Aceptado') },
+      { k: 'listo',      txt: t('Listo') },
+      { k: 'entregado',  txt: t('Entregado') },
     ];
     const idxActual = PASOS.findIndex(p => p.k === estActual);
     return (
@@ -442,14 +451,16 @@ export default function Pedir() {
           </p>
           <p className="text-gray-500 text-sm mb-6">
             {pedidoOk.ubicacion === PARA_LLEVAR
-              ? <>Lo recoges en: <strong className="text-sp-gray">la barra del club</strong></>
-              : <>Ubicacion: <strong className="text-sp-gray">{pedidoOk.ubicacion}</strong></>}
+              ? conNodo(t('Lo recoges en: {lugar}'), 'lugar', <strong className="text-sp-gray">{t('la barra del club')}</strong>)
+              : conNodo(t('Ubicacion: {lugar}'), 'lugar', <strong className="text-sp-gray">{nombreUbicacion(pedidoOk.ubicacion)}</strong>)}
           </p>
           {/* El estimado viene del servidor, que lo calcula contra el área REAL de cada
               producto: es el dato bueno, no el que adivinó el carrito. */}
           {!rechazado && pedidoOk.listo_en_min && (
             <p className="text-[15px] font-bold mb-6" style={{ color: 'var(--sp-green-dark)' }}>
-              ⏱️ {pedidoOk.ubicacion === PARA_LLEVAR ? 'Pasa por él en' : 'Listo en'} ~{pedidoOk.listo_en_min} min
+              ⏱️ {pedidoOk.ubicacion === PARA_LLEVAR
+                ? t('Pasa por él en ~{n} min', { n: pedidoOk.listo_en_min })
+                : t('Listo en ~{n} min', { n: pedidoOk.listo_en_min })}
             </p>
           )}
 
@@ -462,7 +473,7 @@ export default function Pedir() {
                   <div key={p.k} style={{ display: 'flex', alignItems: 'center', flex: i < PASOS.length - 1 ? 1 : '0 0 auto' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                       <div style={{ width: 14, height: 14, borderRadius: 99, background: hecho ? 'var(--sp-green)' : '#e5e7eb', flex: '0 0 auto' }} />
-                      <span style={{ fontSize: 11, fontWeight: 700, color: hecho ? 'var(--sp-green-dark)' : '#9ca3af', whiteSpace: 'nowrap' }}>{p.t}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: hecho ? 'var(--sp-green-dark)' : '#9ca3af', whiteSpace: 'nowrap' }}>{p.txt}</span>
                     </div>
                     {i < PASOS.length - 1 && (
                       <div style={{ flex: 1, height: 2, background: i < idxActual ? 'var(--sp-green)' : '#e5e7eb', margin: '0 4px', marginBottom: 16 }} />
@@ -474,7 +485,7 @@ export default function Pedir() {
           )}
 
           {enCurso && (
-            <p className="text-gray-400 text-[13px] mb-5">Actualizando en vivo…</p>
+            <p className="text-gray-400 text-[13px] mb-5">{t('Actualizando en vivo…')}</p>
           )}
 
           <div className="card text-left mb-6" style={{ opacity: rechazado ? 0.6 : 1 }}>
@@ -485,7 +496,7 @@ export default function Pedir() {
               </div>
             ))}
             <div className="flex justify-between pt-3 font-black text-sp-green-dark text-base">
-              <span>Total</span>
+              <span>{t('Total')}</span>
               <span>${parseFloat(pedidoOk.total).toFixed(0)}</span>
             </div>
           </div>
@@ -495,7 +506,7 @@ export default function Pedir() {
               rechazado ? 'bg-sp-green text-white' : 'bg-white border border-gray-200 text-sp-gray'
             }`}
           >
-            {rechazado ? 'Intentar de nuevo' : 'Hacer otro pedido'}
+            {rechazado ? t('Intentar de nuevo') : t('Hacer otro pedido')}
           </button>
         </div>
       </div>
@@ -516,7 +527,7 @@ export default function Pedir() {
       {/* HEADER */}
       <div className="sticky top-0 z-10 bg-sp-green px-4 pt-[env(safe-area-inset-top)] pb-3">
         <div className="flex items-center justify-between pt-3 mb-3">
-          <p className="text-white font-black text-lg">Pedir al bar</p>
+          <p className="text-white font-black text-lg">{t('Pedir al bar')}</p>
           {/* El contador era un adorno. Ahora ABRE EL CARRITO: es la única forma de ver lo
               que llevas y corregirlo sin ir a buscar el producto por todo el menú. */}
           {numItems() > 0 && (
@@ -525,7 +536,7 @@ export default function Pedir() {
               className="bg-black/25 rounded-full px-3.5 py-1.5 text-white text-[13px] font-black flex items-center gap-1.5 active:scale-95 transition-transform"
             >
               🛒 {numItems()} · ${totalCarrito().toFixed(0)}
-              <span className="text-[11px] font-bold opacity-80">Ver</span>
+              <span className="text-[11px] font-bold opacity-80">{t('Ver')}</span>
             </button>
           )}
         </div>
@@ -538,12 +549,12 @@ export default function Pedir() {
           style={{ background: 'white', color: ubicacion ? '#575757' : '#9ca3af' }}
         >
           <span>
-            {esLlevar ? '🥡' : '📍'} {ubicacion || '¿Dónde estás?'}
+            {esLlevar ? '🥡' : '📍'} {ubicacion ? nombreUbicacion(ubicacion) : t('¿Dónde estás?')}
             {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
-              <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}> · tu cuenta abierta</span>
+              <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}> · {t('tu cuenta abierta')}</span>
             )}
           </span>
-          <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
+          <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}>{ubicacion ? t('Cambiar') : t('Elegir')}</span>
         </button>
 
         {/* Buscador por nombre (todo el menú) */}
@@ -552,7 +563,7 @@ export default function Pedir() {
             type="text"
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
-            placeholder="🔎 Buscar... (ej. corona, tacos, café)"
+            placeholder={t('🔎 Buscar... (ej. corona, tacos, café)')}
             className="w-full rounded-xl px-3.5 py-3 text-[15px] font-semibold outline-none"
             style={{ background: 'white', border: 'none', color: '#575757' }}
           />
@@ -575,7 +586,7 @@ export default function Pedir() {
                   catActiva === cat ? 'bg-white text-sp-green-dark' : 'bg-black/20 text-white'
                 }`}
               >
-                {CAT_LABEL[cat] || cat}
+                {catLabel(cat)}
               </button>
             ))}
           </div>
@@ -590,7 +601,7 @@ export default function Pedir() {
           <div className="card mb-4" style={{ borderColor: '#d5e8a8' }}>
             <div className="flex items-center gap-2 mb-3">
               <span style={{ fontSize: 22 }}>⭐</span>
-              <h2 className="text-sp-gray font-black text-lg">Lo de siempre</h2>
+              <h2 className="text-sp-gray font-black text-lg">{t('Lo de siempre')}</h2>
             </div>
 
             {ultDisp > 0 && (
@@ -599,15 +610,15 @@ export default function Pedir() {
                 className="w-full flex items-center justify-between gap-2.5 px-4 py-3.5 rounded-xl bg-sp-green text-white font-black text-base active:scale-[0.98] transition-transform"
                 style={{ marginBottom: frecVivos.length > 0 ? 14 : 0 }}
               >
-                <span>🔁 Repetir mi último pedido</span>
-                <span className="text-[13px] font-bold opacity-90">{ultDisp} {ultDisp === 1 ? 'producto' : 'productos'}</span>
+                <span>{t('🔁 Repetir mi último pedido')}</span>
+                <span className="text-[13px] font-bold opacity-90">{ultDisp === 1 ? t('{n} producto', { n: ultDisp }) : t('{n} productos', { n: ultDisp })}</span>
               </button>
             )}
 
             {frecVivos.length > 0 && (
               <>
                 <p className="text-sp-gray text-[15px] leading-snug mb-2.5">
-                  ¿Te pido tu <strong className="text-sp-green-dark">{frecVivos[0].nombre}</strong>? Toca para agregar.
+                  {conNodo(t('¿Te pido tu {producto}? Toca para agregar.'), 'producto', <strong className="text-sp-green-dark">{frecVivos[0].nombre}</strong>)}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {frecVivos.map(m => {
@@ -643,7 +654,7 @@ export default function Pedir() {
           <div className="text-center py-14">
             <div style={{ fontSize: 36, marginBottom: 10 }}>{enBusqueda ? '🔎' : '🍽'}</div>
             <p className="text-gray-400 font-bold text-sm">
-              {enBusqueda ? `Sin resultados para "${busqueda.trim()}"` : 'Sin productos disponibles'}
+              {enBusqueda ? t('Sin resultados para "{q}"', { q: busqueda.trim() }) : t('Sin productos disponibles')}
             </p>
           </div>
         )}
@@ -672,12 +683,15 @@ export default function Pedir() {
                     </p>
                     {cerrado && (
                       <p className="text-[12px] font-bold mt-0.5" style={{ color: '#9a3412' }}>
-                        ⏰ {item.area === 'cocina' ? 'Cocina cerrada' : item.area === 'barra' ? 'Barra cerrada' : 'Tienda cerrada'} · vuelve {vuelveTxt(item.area)}
+                        ⏰ {t('{area} · vuelve {cuando}', {
+                          area: item.area === 'cocina' ? t('Cocina cerrada') : item.area === 'barra' ? t('Barra cerrada') : t('Tienda cerrada'),
+                          cuando: vuelveTxt(item.area),
+                        })}
                       </p>
                     )}
                   </div>
                   {cerrado ? (
-                    <span className="text-[12px] font-bold text-gray-400 flex-shrink-0">Cerrado</span>
+                    <span className="text-[12px] font-bold text-gray-400 flex-shrink-0">{t('Cerrado')}</span>
                   ) : cant === 0 ? (
                     <button
                       onClick={() => agregarItem(item)}
@@ -709,7 +723,7 @@ export default function Pedir() {
           <textarea
             value={notas}
             onChange={e => setNotas(e.target.value)}
-            placeholder="Notas especiales... (opcional)"
+            placeholder={t('Notas especiales... (opcional)')}
             rows={1}
             className="w-full bg-gray-50 border border-gray-200 rounded-xl text-sp-gray text-sm px-3 py-2.5 mb-2.5 resize-none outline-none focus:border-sp-green"
           />
@@ -719,7 +733,9 @@ export default function Pedir() {
             disabled={enviando}
             className="w-full py-3.5 rounded-xl font-black text-[15px] flex items-center justify-center gap-2 bg-sp-green text-white disabled:opacity-60"
           >
-            {enviando ? 'Enviando...' : `Pedir ${numItems()} ${numItems() === 1 ? 'item' : 'items'} · $${totalCarrito().toFixed(0)}`}
+            {enviando ? t('Enviando...')
+              : numItems() === 1 ? t('Pedir {n} item · ${total}', { n: numItems(), total: totalCarrito().toFixed(0) })
+              : t('Pedir {n} items · ${total}', { n: numItems(), total: totalCarrito().toFixed(0) })}
           </button>
         </div>
       )}
@@ -737,9 +753,9 @@ export default function Pedir() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sp-gray font-black text-lg">🛒 Tu pedido</p>
+              <p className="text-sp-gray font-black text-lg">{t('🛒 Tu pedido')}</p>
               {numItems() > 0 && (
-                <button onClick={vaciarCarrito} className="text-[13px] font-bold text-gray-400">Vaciar</button>
+                <button onClick={vaciarCarrito} className="text-[13px] font-bold text-gray-400">{t('Vaciar')}</button>
               )}
             </div>
             {/* EDITABLE. Antes esto era una lista de sólo lectura: si te equivocaste de
@@ -748,7 +764,7 @@ export default function Pedir() {
                 sus −/+ y su 🗑, que es lo que se busca cuando ya te diste cuenta del error. */}
             <div className="rounded-xl bg-gray-50 px-3.5 py-2.5 mb-3">
               {itemsCarrito().length === 0 && (
-                <p className="text-gray-400 text-[14px] text-center py-3">Tu carrito está vacío.</p>
+                <p className="text-gray-400 text-[14px] text-center py-3">{t('Tu carrito está vacío.')}</p>
               )}
               {itemsCarrito().map(it => {
                 const cerrado = areaCerrada(it.area);
@@ -765,25 +781,28 @@ export default function Pedir() {
                       <button onClick={() => cambiarCantidad(it.llave, -1)} className="w-8 h-8 rounded-full bg-white border border-gray-200 text-sp-gray text-lg font-black flex items-center justify-center">−</button>
                       <span className="text-sp-gray text-[15px] font-black min-w-[18px] text-center">{it.cantidad}</span>
                       <button onClick={() => cambiarCantidad(it.llave, 1)} className="w-8 h-8 rounded-full bg-sp-green text-white text-lg font-black flex items-center justify-center">+</button>
-                      <button onClick={() => quitarDelCarrito(it.llave)} className="ml-1 px-2.5 h-8 rounded-full bg-white border border-gray-200 text-[13px] font-bold text-gray-500">🗑 Quitar</button>
+                      <button onClick={() => quitarDelCarrito(it.llave)} className="ml-1 px-2.5 h-8 rounded-full bg-white border border-gray-200 text-[13px] font-bold text-gray-500">{t('🗑 Quitar')}</button>
                       <span className="flex-1" />
-                      <span className="text-gray-400 text-[12px]">${it.precio} c/u</span>
+                      <span className="text-gray-400 text-[12px]">{t('${precio} c/u', { precio: it.precio })}</span>
                     </div>
                     {cerrado && (
                       <p className="text-[12px] font-bold mt-1" style={{ color: '#9a3412' }}>
-                        ⏰ {it.area === 'cocina' ? 'La cocina' : it.area === 'barra' ? 'La barra' : 'La tienda'} {motivoCierre(it.area)} — quítalo para poder mandar el pedido
+                        ⏰ {t('{area} {motivo} — quítalo para poder mandar el pedido', {
+                          area: it.area === 'cocina' ? t('La cocina') : it.area === 'barra' ? t('La barra') : t('La tienda'),
+                          motivo: motivoCierre(it.area),
+                        })}
                       </p>
                     )}
                   </div>
                 );
               })}
               <div className="flex justify-between pt-2 mt-1 border-t border-gray-200 font-black text-sp-green-dark">
-                <span>Total</span><span>${totalCarrito().toFixed(0)}</span>
+                <span>{t('Total')}</span><span>${totalCarrito().toFixed(0)}</span>
               </div>
               {/* Lo que se le promete al cliente. Manda el producto más lento del carrito. */}
               <div className="flex justify-between pt-1.5 text-[13px] text-gray-500">
-                <span>Listo en aprox.</span>
-                <span className="font-bold text-sp-gray">{estimadoMin()} min</span>
+                <span>{t('Listo en aprox.')}</span>
+                <span className="font-bold text-sp-gray">{t('{n} min', { n: estimadoMin() })}</span>
               </div>
             </div>
             <button
@@ -791,12 +810,12 @@ export default function Pedir() {
               className="w-full rounded-xl px-3.5 py-3 mb-3 text-left flex items-center justify-between bg-gray-50 border border-gray-200"
             >
               <span className="text-[15px] font-bold text-sp-gray">
-                {esLlevar ? '🥡' : '📍'} {ubicacion || 'Falta decir dónde estás'}
+                {esLlevar ? '🥡' : '📍'} {ubicacion ? nombreUbicacion(ubicacion) : t('Falta decir dónde estás')}
                 {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
-                  <span className="text-[12px] text-sp-green-dark"> · tu cuenta abierta</span>
+                  <span className="text-[12px] text-sp-green-dark"> · {t('tu cuenta abierta')}</span>
                 )}
               </span>
-              <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}>{ubicacion ? 'Cambiar' : 'Elegir'}</span>
+              <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}>{ubicacion ? t('Cambiar') : t('Elegir')}</span>
             </button>
             {notas && <p className="text-gray-400 text-[13px] mb-3">📝 {notas}</p>}
             {/* Fuera de horario: se avisa y se apaga el botón. El reloj del celular NO
@@ -808,23 +827,23 @@ export default function Pedir() {
                 justo la que vende. */}
             {horario && !horario.abierto && (
               <div className="rounded-xl px-3.5 py-3 mb-3 border" style={{ background: '#fff7ed', borderColor: '#fed7aa' }}>
-                <p className="text-[14px] font-bold" style={{ color: '#9a3412' }}>🌙 Cerrado por ahora</p>
+                <p className="text-[14px] font-bold" style={{ color: '#9a3412' }}>{t('🌙 Cerrado por ahora')}</p>
                 <p className="text-[13px] mt-0.5" style={{ color: '#9a3412' }}>
-                  Vuelve a abrir cuando abra el club. Si ya estás aquí, pídelo en la barra.
+                  {t('Vuelve a abrir cuando abra el club. Si ya estás aquí, pídelo en la barra.')}
                 </p>
               </div>
             )}
             {horario && horario.abierto && cerradosEnCarrito.length > 0 && (
               <div className="rounded-xl px-3.5 py-3 mb-3 border" style={{ background: '#fff7ed', borderColor: '#fed7aa' }}>
-                <p className="text-[14px] font-bold" style={{ color: '#9a3412' }}>⏰ Hay algo que ya no se puede pedir</p>
+                <p className="text-[14px] font-bold" style={{ color: '#9a3412' }}>{t('⏰ Hay algo que ya no se puede pedir')}</p>
                 <p className="text-[13px] mt-0.5 mb-2" style={{ color: '#9a3412' }}>
-                  {cerradosEnCarrito.map(i => i.nombre).join(', ')}. Lo demás sí se puede.
+                  {t('{lista}. Lo demás sí se puede.', { lista: cerradosEnCarrito.map(i => i.nombre).join(', ') })}
                 </p>
                 <button
                   onClick={() => cerradosEnCarrito.forEach(i => quitarDelCarrito(i.llave))}
                   className="w-full py-2.5 rounded-xl font-black text-[14px] bg-white border"
                   style={{ borderColor: '#fed7aa', color: '#9a3412' }}
-                >Quitarlos y seguir</button>
+                >{t('Quitarlos y seguir')}</button>
               </div>
             )}
             <button
@@ -834,15 +853,15 @@ export default function Pedir() {
                 (!ubicacion || numItems() === 0 || (horario && !horario.abierto) || cerradosEnCarrito.length > 0) ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'
               }`}
             >
-              {enviando ? 'Enviando...'
-                : numItems() === 0 ? 'Agrega algo al carrito'
-                : (horario && !horario.abierto) ? `Cerrado por ahora`
-                : cerradosEnCarrito.length > 0 ? 'Quita lo que ya cerró'
-                : !ubicacion ? 'Elige tu ubicación primero'
-                : '✅ Confirmar pedido'}
+              {enviando ? t('Enviando...')
+                : numItems() === 0 ? t('Agrega algo al carrito')
+                : (horario && !horario.abierto) ? t('Cerrado por ahora')
+                : cerradosEnCarrito.length > 0 ? t('Quita lo que ya cerró')
+                : !ubicacion ? t('Elige tu ubicación primero')
+                : t('✅ Confirmar pedido')}
             </button>
             <button onClick={() => setConfirmando(false)} className="w-full text-center text-gray-400 text-sm font-semibold mt-3">
-              Volver
+              {t('Volver')}
             </button>
           </div>
         </div>
@@ -856,7 +875,7 @@ export default function Pedir() {
         const faltan = faltanEnEleccion(eligiendo);
         const extra = it.complementos.reduce((s, g) => s + g.opciones
           .filter(o => (eligiendo.sel[g.id] || []).includes(o.id))
-          .reduce((t, o) => t + (Number(o.precio_extra) || 0), 0), 0);
+          .reduce((acc, o) => acc + (Number(o.precio_extra) || 0), 0), 0);
         return (
           <div className="fixed inset-0 z-[70] flex items-end" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setEligiendo(null)}>
             <div className="w-full bg-white rounded-t-3xl px-4 pt-5 pb-8" onClick={e => e.stopPropagation()}
@@ -866,8 +885,10 @@ export default function Pedir() {
               {it.complementos.map(g => {
                 const elegidas = eligiendo.sel[g.id] || [];
                 const pide = g.min >= 1
-                  ? (g.max <= 1 ? 'Elige 1 · obligatorio' : `Elige ${g.min === g.max ? g.max : `de ${g.min} a ${g.max}`} · obligatorio`)
-                  : `Opcional · hasta ${g.max}`;
+                  ? (g.max <= 1 ? t('Elige 1 · obligatorio')
+                    : g.min === g.max ? t('Elige {n} · obligatorio', { n: g.max })
+                    : t('Elige de {min} a {max} · obligatorio', { min: g.min, max: g.max }))
+                  : t('Opcional · hasta {max}', { max: g.max });
                 return (
                   <div key={g.id} className="mb-4">
                     <div className="flex items-baseline justify-between mb-2">
@@ -891,7 +912,7 @@ export default function Pedir() {
               })}
               {/* Cuántas piezas con ESTA elección: «4 tacos de maíz» de un jalón. */}
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sp-gray font-black text-[16px]">Cantidad</p>
+                <p className="text-sp-gray font-black text-[16px]">{t('Cantidad')}</p>
                 <div className="flex items-center gap-3">
                   <button onClick={() => setEligiendo(p => ({ ...p, cant: Math.max(1, (p.cant || 1) - 1) }))}
                     className="w-10 h-10 rounded-full bg-gray-100 text-sp-gray text-xl font-black flex items-center justify-center">−</button>
@@ -902,10 +923,10 @@ export default function Pedir() {
               </div>
               <button onClick={confirmarEleccion} disabled={faltan.length > 0}
                 className={`w-full py-3.5 rounded-xl font-black text-[15px] ${faltan.length ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'}`}>
-                {faltan.length ? `Elige ${faltan.map(g => g.nombre.toLowerCase()).join(' y ')}`
-                  : `Agregar ${eligiendo.cant || 1} · $${(it.precio + extra) * (eligiendo.cant || 1)}`}
+                {faltan.length ? t('Elige {que}', { que: faltan.map(g => g.nombre.toLowerCase()).join(t(' y ')) })
+                  : t('Agregar {n} · ${total}', { n: eligiendo.cant || 1, total: (it.precio + extra) * (eligiendo.cant || 1) })}
               </button>
-              <button onClick={() => setEligiendo(null)} className="w-full text-center text-gray-400 text-sm font-semibold mt-3">Cancelar</button>
+              <button onClick={() => setEligiendo(null)} className="w-full text-center text-gray-400 text-sm font-semibold mt-3">{t('Cancelar')}</button>
             </div>
           </div>
         );
@@ -923,8 +944,8 @@ export default function Pedir() {
             style={{ maxWidth: 448, margin: '0 auto' }}
             onClick={e => e.stopPropagation()}
           >
-            <p className="text-sp-gray font-black text-lg text-center mb-1">📍 ¿Dónde estás?</p>
-            <p className="text-gray-400 text-[13px] text-center mb-4">Te lo llevamos a tu lugar, o lo preparamos para llevar</p>
+            <p className="text-sp-gray font-black text-lg text-center mb-1">{t('📍 ¿Dónde estás?')}</p>
+            <p className="text-gray-400 text-[13px] text-center mb-4">{t('Te lo llevamos a tu lugar, o lo preparamos para llevar')}</p>
 
             {/* Va PRIMERO y de ancho completo: si se mezclara en la parrilla quedaría
                 escondido entre las canchas y nadie lo encontraría. */}
@@ -934,13 +955,13 @@ export default function Pedir() {
                 ubicacion === PARA_LLEVAR ? 'bg-sp-green text-white border-sp-green' : 'bg-white text-sp-gray border-gray-200'
               }`}
             >
-              🥡 {PARA_LLEVAR}
+              🥡 {nombreUbicacion(PARA_LLEVAR)}
               <span className={`block text-[12px] font-semibold ${ubicacion === PARA_LLEVAR ? 'text-white/80' : 'text-gray-400'}`}>
-                Paso por él — no hace falta que esté en el club
+                {t('Paso por él — no hace falta que esté en el club')}
               </span>
             </button>
 
-            <p className="text-gray-400 text-[12px] text-center mb-2.5">o te lo llevamos a…</p>
+            <p className="text-gray-400 text-[12px] text-center mb-2.5">{t('o te lo llevamos a…')}</p>
             <div className="grid grid-cols-2 gap-2.5">
               {UBICACIONES.map(u => (
                 <button
@@ -950,12 +971,12 @@ export default function Pedir() {
                     ubicacion === u ? 'bg-sp-green text-white border-sp-green' : 'bg-white text-sp-gray border-gray-200'
                   }`}
                 >
-                  {u}
+                  {nombreUbicacion(u)}
                 </button>
               ))}
             </div>
             <button onClick={() => setPickUbi(false)} className="w-full text-center text-gray-400 text-sm font-semibold mt-4">
-              Cancelar
+              {t('Cancelar')}
             </button>
           </div>
         </div>

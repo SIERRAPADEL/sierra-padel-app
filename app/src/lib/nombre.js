@@ -9,13 +9,15 @@ export function soloLetras(s) {
   return String(s || '').replace(/[^A-Za-zÀ-ÖØ-öø-ÿÑñÜü' .\-]/g, '').replace(/\s{2,}/g, ' ');
 }
 
+import { t } from '../i18n';
+
 // Devuelve el texto del error, o '' si está bien.
 export function errorNombre(s) {
   const v = String(s || '').replace(/\s+/g, ' ').trim();
-  if (!v) return 'Escribe tu nombre.';
-  if (/\d/.test(v)) return 'Tu nombre no puede llevar números. Escribe tu nombre y apellido.';
-  if (!/^[A-Za-zÀ-ÖØ-öø-ÿÑñÜü' .\-]+$/.test(v)) return 'Tu nombre sólo puede llevar letras.';
-  if ((v.match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g) || []).length < 2) return 'Escribe tu nombre completo.';
+  if (!v) return t('Escribe tu nombre.');
+  if (/\d/.test(v)) return t('Tu nombre no puede llevar números. Escribe tu nombre y apellido.');
+  if (!/^[A-Za-zÀ-ÖØ-öø-ÿÑñÜü' .\-]+$/.test(v)) return t('Tu nombre sólo puede llevar letras.');
+  if ((v.match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g) || []).length < 2) return t('Escribe tu nombre completo.');
   return '';
 }
 

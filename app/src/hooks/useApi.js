@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { t } from '../i18n';
 
 const BASE = 'https://sierra-padel-backend-production-a55f.up.railway.app/api';
 
@@ -25,16 +26,16 @@ export function useApi() {
         localStorage.removeItem('sp_token');
         localStorage.removeItem('sp_user');
         if (typeof window !== 'undefined') window.location.reload();
-        return { ok: false, error: 'Tu sesión expiró. Inicia sesión de nuevo.' };
+        return { ok: false, error: t('Tu sesión expiró. Inicia sesión de nuevo.') };
       }
       const text = await res.text();
       try {
         return JSON.parse(text);
       } catch {
-        return { ok: false, error: `Error del servidor (${res.status})` };
+        return { ok: false, error: t('Error del servidor ({status})', { status: res.status }) };
       }
     } catch {
-      return { ok: false, error: 'Sin conexion. Verifica tu internet.' };
+      return { ok: false, error: t('Sin conexion. Verifica tu internet.') };
     }
   }, []);
 

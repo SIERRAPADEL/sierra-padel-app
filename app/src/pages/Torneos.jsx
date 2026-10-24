@@ -3,15 +3,16 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { isPushSupported, usePushSubscription } from '../components/NotificationSetup';
+import { t, locale } from '../i18n';
 
 // ──────────────────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────────────────
+// «5 Oct 2026» — el mes sale de Intl con el idioma de la app (antes era una lista en español).
 function fmtFecha(str) {
   if (!str) return '';
-  const [y, m, d] = str.slice(0, 10).split('-');
-  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
+  const [y, m, d] = str.slice(0, 10).split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 // Media del torneo (thumbnail + patrocinador). Supabase devuelve la relación como
@@ -60,17 +61,17 @@ function Convocatoria({ torneo }) {
     <div className="mx-4 mb-4">
       <button type="button" onClick={() => setAbierta(a => !a)} className="block w-full text-left">
         <div className="relative rounded-2xl overflow-hidden shadow-sm" style={abierta ? undefined : { maxHeight: 340 }}>
-          <img src={url} alt={'Convocatoria ' + (torneo?.nombre || '')} onError={() => setFalló(true)} className="block w-full" />
+          <img src={url} alt={t('Convocatoria {nombre}', { nombre: torneo?.nombre || '' })} onError={() => setFalló(true)} className="block w-full" />
           {!abierta && (
             <div className="absolute inset-x-0 bottom-0 h-24 flex items-end justify-center pb-3"
                  style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 100%)' }}>
-              <span className="text-white font-bold text-[13px] bg-black/40 rounded-full px-3 py-1">Ver convocatoria completa ▾</span>
+              <span className="text-white font-bold text-[13px] bg-black/40 rounded-full px-3 py-1">{t('Ver convocatoria completa')} ▾</span>
             </div>
           )}
         </div>
       </button>
       {abierta && (
-        <button type="button" onClick={() => setAbierta(false)} className="w-full text-center text-[12px] text-gray-400 mt-1.5">Ocultar convocatoria ▴</button>
+        <button type="button" onClick={() => setAbierta(false)} className="w-full text-center text-[12px] text-gray-400 mt-1.5">{t('Ocultar convocatoria')} ▴</button>
       )}
     </div>
   );
@@ -83,9 +84,9 @@ function SponsorBanner({ torneo }) {
   if (!url && !nombre) return null;
   return (
     <div className="mx-4 mb-4 rounded-2xl border border-gray-100 bg-white px-4 py-3 flex items-center gap-3 shadow-sm">
-      <span className="text-[10px] font-black tracking-widest text-gray-400 flex-shrink-0">PATROCINA</span>
+      <span className="text-[10px] font-black tracking-widest text-gray-400 flex-shrink-0">{t('PATROCINA')}</span>
       {url
-        ? <img src={url} alt={nombre || 'Patrocinador'} loading="lazy"
+        ? <img src={url} alt={nombre || t('Patrocinador')} loading="lazy"
                onError={(e) => { e.currentTarget.style.display = 'none'; }}
                className="h-9 max-w-[60%] object-contain" />
         : <span className="font-black text-sp-gray text-[15px] truncate">{nombre}</span>}
@@ -95,11 +96,11 @@ function SponsorBanner({ torneo }) {
 
 function EstadoBadge({ estado }) {
   const map = {
-    inscripciones:         { label: 'Inscripciones',  cls: 'bg-green-100 text-green-700' },
-    draw_generado:         { label: 'Draw listo',     cls: 'bg-blue-100 text-blue-700' },
-    calendario_publicado:  { label: 'Calendario',     cls: 'bg-purple-100 text-purple-600' },
-    en_curso:              { label: 'En curso',       cls: 'bg-orange-100 text-orange-600' },
-    finalizado:            { label: 'Finalizado',     cls: 'bg-gray-100 text-gray-500' },
+    inscripciones:         { label: t('Inscripciones'),  cls: 'bg-green-100 text-green-700' },
+    draw_generado:         { label: t('Draw listo'),     cls: 'bg-blue-100 text-blue-700' },
+    calendario_publicado:  { label: t('Calendario'),     cls: 'bg-purple-100 text-purple-600' },
+    en_curso:              { label: t('En curso'),       cls: 'bg-orange-100 text-orange-600' },
+    finalizado:            { label: t('Finalizado'),     cls: 'bg-gray-100 text-gray-500' },
   };
   const e = map[estado] || { label: estado, cls: 'bg-gray-100 text-gray-500' };
   return <span className={`text-xs font-bold px-2 py-1 rounded-lg ${e.cls}`}>{e.label}</span>;
@@ -113,7 +114,7 @@ function Spinner() {
   );
 }
 
-function BackBtn({ onClick, label = 'Atras' }) {
+function BackBtn({ onClick, label = t('Atrás') }) {
   return (
     <button onClick={onClick} className="flex items-center gap-1 text-white/80 text-sm mb-2 -ml-1">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -125,7 +126,7 @@ function BackBtn({ onClick, label = 'Atras' }) {
 }
 
 function pairName(insc) {
-  if (!insc) return 'TBD';
+  if (!insc) return t('Por definir');
   const n1 = insc.jugador1?.nombre?.split(' ')[0] || '?';
   const n2 = insc.jugador2?.nombre?.split(' ')[0] || '?';
   return `${n1} / ${n2}`;
@@ -213,8 +214,8 @@ function CircuitoRankingView({ apiFetch }) {
   if (!cats || !cats.length) return (
     <div className="card text-center py-12 mx-4">
       <p className="text-3xl mb-3">📊</p>
-      <p className="text-gray-500 font-medium">Aún no hay puntos en el ranking</p>
-      <p className="text-gray-400 text-sm mt-1">Se irá llenando con cada resultado</p>
+      <p className="text-gray-500 font-medium">{t('Aún no hay puntos en el ranking')}</p>
+      <p className="text-gray-400 text-sm mt-1">{t('Se irá llenando con cada resultado')}</p>
     </div>
   );
 
@@ -241,7 +242,7 @@ function CircuitoRankingView({ apiFetch }) {
       {/* Nota Masters */}
       <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800">
         <span>🎾</span>
-        <span>Clasifican al <b>Masters</b> los primeros <b>{c.cupos}</b> de cada categoría.</span>
+        <span>{t('Clasifican al Masters los primeros {n} de cada categoría.', { n: c.cupos })}</span>
       </div>
 
       {/* Tabla */}
@@ -250,8 +251,8 @@ function CircuitoRankingView({ apiFetch }) {
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
               <th className="text-left text-xs text-gray-400 font-semibold px-4 py-2 w-8">#</th>
-              <th className="text-left text-xs text-gray-400 font-semibold px-2 py-2">Jugador</th>
-              <th className="text-right text-xs text-gray-400 font-semibold px-4 py-2">Pts</th>
+              <th className="text-left text-xs text-gray-400 font-semibold px-2 py-2">{t('Jugador')}</th>
+              <th className="text-right text-xs text-gray-400 font-semibold px-4 py-2">{t('Pts')}</th>
             </tr>
           </thead>
           <tbody>
@@ -260,7 +261,7 @@ function CircuitoRankingView({ apiFetch }) {
                 {i === c.cupos && c.jugadores.length > c.cupos && (
                   <tr>
                     <td colSpan={3} className="bg-amber-50 text-amber-700 text-[11px] font-bold uppercase tracking-wide px-4 py-1.5 border-y border-dashed border-amber-300">
-                      🎾 Línea Masters (top {c.cupos})
+                      🎾 {t('Línea Masters (top {n})', { n: c.cupos })}
                     </td>
                   </tr>
                 )}
@@ -271,10 +272,10 @@ function CircuitoRankingView({ apiFetch }) {
                   <td className="px-2 py-3">
                     <p className="font-semibold text-sp-gray">{p.nombre}</p>
                     <p className="text-xs text-gray-400">
-                      {p.partidos_ganados}G de {p.partidos_jugados}
+                      {t('{g}G de {j}', { g: p.partidos_ganados, j: p.partidos_jugados })}
                       {p.clasifica
-                        ? <span className="text-amber-600 font-bold"> · Clasifica</span>
-                        : (p.pts_para_clasificar > 0 ? <span> · a {p.pts_para_clasificar} pts</span> : '')}
+                        ? <span className="text-amber-600 font-bold"> · {t('Clasifica')}</span>
+                        : (p.pts_para_clasificar > 0 ? <span> · {t('a {n} pts', { n: p.pts_para_clasificar })}</span> : '')}
                     </p>
                   </td>
                   <td className={`px-4 py-3 text-right font-black text-base ${p.clasifica ? 'text-amber-500' : 'text-sp-green'}`}>
@@ -347,7 +348,7 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
 
       {/* Sub-tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-2xl p-1">
-        {[['grupos','Grupos'],['partidos','Partidos']].map(([v,label]) => (
+        {[['grupos', t('Grupos')], ['partidos', t('Partidos')]].map(([v,label]) => (
           <button
             key={v}
             onClick={() => setSubTab(v)}
@@ -367,7 +368,7 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
         <>
           {grupos.length === 0 && (
             <div className="card text-center py-10">
-              <p className="text-gray-400 text-sm">Sin grupos publicados aun</p>
+              <p className="text-gray-400 text-sm">{t('Sin grupos publicados aún')}</p>
             </div>
           )}
           {grupos.map(g => (
@@ -378,11 +379,11 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-50">
-                    <th className="text-left text-xs text-gray-400 px-4 py-1.5">Pareja</th>
-                    <th className="text-center text-xs text-gray-400 px-2 py-1.5">PJ</th>
-                    <th className="text-center text-xs text-gray-400 px-2 py-1.5">PG</th>
-                    <th className="text-center text-xs text-gray-400 px-2 py-1.5">PP</th>
-                    <th className="text-center text-xs text-gray-400 px-2 py-1.5">Pts</th>
+                    <th className="text-left text-xs text-gray-400 px-4 py-1.5">{t('Pareja')}</th>
+                    <th className="text-center text-xs text-gray-400 px-2 py-1.5">{t('PJ')}</th>
+                    <th className="text-center text-xs text-gray-400 px-2 py-1.5">{t('PG')}</th>
+                    <th className="text-center text-xs text-gray-400 px-2 py-1.5">{t('PP')}</th>
+                    <th className="text-center text-xs text-gray-400 px-2 py-1.5">{t('Pts')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -419,13 +420,13 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
         <>
           {partidos.length === 0 && (
             <div className="card text-center py-10">
-              <p className="text-gray-400 text-sm">Sin partidos publicados aun</p>
+              <p className="text-gray-400 text-sm">{t('Sin partidos publicados aún')}</p>
             </div>
           )}
           {(() => {
             const fases = {};
             partidos.forEach(p => {
-              const fase = p.fase || 'Grupo';
+              const fase = p.fase || t('Grupo');
               if (!fases[fase]) fases[fase] = [];
               fases[fase].push(p);
             });
@@ -439,7 +440,7 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
                       key={p.id}
                       className={`card mb-2 ${mio ? 'border border-sp-green/30 bg-sp-green-light' : ''}`}
                     >
-                      {mio && <p className="text-xs text-sp-green font-bold mb-1">⭐ Tu partido</p>}
+                      {mio && <p className="text-xs text-sp-green font-bold mb-1">⭐ {t('Tu partido')}</p>}
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex-1 text-sm font-semibold text-sp-gray">{pairName(p.inscripcion1)}</div>
                         <div className="text-xs text-gray-400 font-bold px-2">
@@ -452,7 +453,7 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
                       </div>
                       {(p.fecha || p.hora || p.cancha) && (
                         <p className="text-xs text-gray-400 mt-1.5">
-                          {[p.fecha ? fmtFecha(p.fecha) : null, p.hora, p.cancha ? `Cancha ${p.cancha}` : null]
+                          {[p.fecha ? fmtFecha(p.fecha) : null, p.hora, p.cancha ? t('Cancha {n}', { n: p.cancha }) : null]
                             .filter(Boolean).join(' · ')}
                         </p>
                       )}
@@ -514,7 +515,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
     setAvisosError('');
     const ok = await subscribe();
     if (ok) setAvisosListos(true);
-    else setAvisosError('No se pudieron activar. Puedes hacerlo después desde la portada.');
+    else setAvisosError(t('No se pudieron activar. Puedes hacerlo después desde la portada.'));
   }
 
   // El torneo exige aceptar reglamento solo si está configurado (versión + URL/texto).
@@ -522,7 +523,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
 
   async function buscarPareja() {
     const digits = tel2.replace(/[^0-9]/g, '');
-    if (digits.length < 10) { setBusError('Ingresa 10 digitos'); return; }
+    if (digits.length < 10) { setBusError(t('Ingresa 10 dígitos')); return; }
     setBusError('');
     setBuscando(true);
     setPareja(null);
@@ -566,7 +567,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
     if (d?.ok) {
       setSuccess(true);
     } else {
-      setError(d?.error || 'No se pudo completar la inscripcion');
+      setError(d?.error || t('No se pudo completar la inscripción'));
     }
   }
 
@@ -581,13 +582,13 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
           </svg>
         </div>
         <div>
-          <p className="text-xl font-black text-sp-gray">¡Inscripcion enviada!</p>
+          <p className="text-xl font-black text-sp-gray">{t('¡Inscripción enviada!')}</p>
           <p className="text-gray-500 mt-1 text-sm">{torneo.nombre}</p>
           {catSelObj && <p className="text-gray-400 text-sm">{catSelObj.categoria}</p>}
         </div>
         <div className="bg-sp-green-light rounded-2xl px-5 py-4 text-sm text-sp-green-dark font-medium w-full max-w-xs space-y-1">
-          <p>📲 Tu pareja recibio una notificacion por WhatsApp.</p>
-          <p>💳 Acude al club para confirmar el pago y asegurar tu lugar.</p>
+          <p>📲 {t('Tu pareja recibió una notificación por WhatsApp.')}</p>
+          <p>💳 {t('Acude al club para confirmar el pago y asegurar tu lugar.')}</p>
         </div>
 
         {/* EL MOMENTO de pedir el permiso: acaba de inscribirse y quiere saber a qué hora
@@ -595,26 +596,25 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
             El navegador exige un gesto propio, por eso es un botón y no algo automático. */}
         {puedeAvisos && quiereAvisos && !avisosListos && (
           <div className="bg-white border-2 border-sp-green rounded-2xl px-5 py-4 w-full max-w-xs space-y-3">
-            <p className="text-sm text-sp-gray font-bold">🔔 Falta un paso</p>
+            <p className="text-sm text-sp-gray font-bold">🔔 {t('Falta un paso')}</p>
             <p className="text-xs text-gray-500">
-              Toca el botón y acepta para que te avisemos a qué hora juegas. Sin esto no te
-              llega nada al teléfono.
+              {t('Toca el botón y acepta para que te avisemos a qué hora juegas. Sin esto no te llega nada al teléfono.')}
             </p>
             <button className="btn-green w-full" onClick={activarAvisos} disabled={subscribing}>
-              {subscribing ? 'Activando…' : 'Activar avisos'}
+              {subscribing ? t('Activando…') : t('Activar avisos')}
             </button>
             {avisosError && <p className="text-xs text-red-500">{avisosError}</p>}
           </div>
         )}
         {avisosListos && (
           <div className="bg-sp-green-light rounded-2xl px-5 py-3 w-full max-w-xs">
-            <p className="text-sm text-sp-green-dark font-bold">🔔 Avisos activados</p>
-            <p className="text-xs text-sp-green-dark/80">Te avisamos a qué hora juegas.</p>
+            <p className="text-sm text-sp-green-dark font-bold">🔔 {t('Avisos activados')}</p>
+            <p className="text-xs text-sp-green-dark/80">{t('Te avisamos a qué hora juegas.')}</p>
           </div>
         )}
 
         <button className="btn-green w-full max-w-xs" onClick={onDone}>
-          Ver torneos
+          {t('Ver torneos')}
         </button>
       </div>
     );
@@ -638,12 +638,12 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
       {/* ── Step 1: Categoria ── */}
       {step === 1 && (
         <>
-          <p className="text-sm font-bold text-sp-gray">Selecciona tu categoria</p>
+          <p className="text-sm font-bold text-sp-gray">{t('Selecciona tu categoría')}</p>
           {cats.length === 0 && (
             <div className="card text-center py-8">
               <p className="text-3xl mb-3">🏆</p>
-              <p className="text-gray-500 font-medium">Sin inscripciones abiertas</p>
-              <p className="text-gray-400 text-sm mt-1">Este torneo no tiene categorias disponibles en este momento</p>
+              <p className="text-gray-500 font-medium">{t('Sin inscripciones abiertas')}</p>
+              <p className="text-gray-400 text-sm mt-1">{t('Este torneo no tiene categorías disponibles en este momento')}</p>
             </div>
           )}
           {cats.map(c => (
@@ -670,7 +670,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
           ))}
           {catSel && (
             <button className="btn-green" onClick={() => setStep(2)}>
-              Continuar
+              {t('Continuar')}
             </button>
           )}
         </>
@@ -679,15 +679,15 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
       {/* ── Step 2: Pareja ── */}
       {step === 2 && (
         <>
-          <button onClick={() => { setStep(1); setPareja(null); setTel2(''); }} className="text-sm text-sp-green font-semibold self-start">← Cambiar categoria</button>
-          <p className="text-sm font-bold text-sp-gray">Busca a tu pareja</p>
-          <p className="text-xs text-gray-400">Escribe el numero de WhatsApp de tu pareja. Al completar los 10 digitos la buscamos solos.</p>
+          <button onClick={() => { setStep(1); setPareja(null); setTel2(''); }} className="text-sm text-sp-green font-semibold self-start">← {t('Cambiar categoría')}</button>
+          <p className="text-sm font-bold text-sp-gray">{t('Busca a tu pareja')}</p>
+          <p className="text-xs text-gray-400">{t('Escribe el número de WhatsApp de tu pareja. Al completar los 10 dígitos la buscamos solos.')}</p>
 
           <div className="card flex flex-col gap-3">
             <input
               type="tel"
               inputMode="numeric"
-              placeholder="Ej. 6641234567"
+              placeholder={t('Ej. 6641234567')}
               value={tel2}
               onChange={e => { setTel2(e.target.value.replace(/[^0-9]/g, '').slice(0,10)); setPareja(null); setBusError(''); }}
               className="input-field"
@@ -699,18 +699,18 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
               onClick={buscarPareja}
               disabled={buscando || tel2.replace(/[^0-9]/g,'').length < 10}
             >
-              {buscando ? 'Buscando…' : 'Buscar de nuevo'}
+              {buscando ? t('Buscando…') : t('Buscar de nuevo')}
             </button>
           </div>
 
           {pareja && !pareja.esNuevo && (
             <div className="card border border-sp-green/30 bg-sp-green-light">
-              <p className="text-xs text-sp-green font-bold mb-1">✓ Jugador encontrado</p>
+              <p className="text-xs text-sp-green font-bold mb-1">✓ {t('Jugador encontrado')}</p>
               <p className="font-bold text-sp-gray">{pareja.nombre}</p>
               <p className="text-xs text-gray-500">{pareja.telefono}</p>
               <div className="mt-3 bg-white/60 rounded-xl px-3 py-2">
                 <p className="text-xs text-sp-green-dark font-medium">
-                  🔔 Tu pareja recibira una notificacion por WhatsApp al confirmar la inscripcion.
+                  🔔 {t('Tu pareja recibirá una notificación por WhatsApp al confirmar la inscripción.')}
                 </p>
               </div>
             </div>
@@ -718,11 +718,11 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
 
           {pareja && pareja.esNuevo && (
             <div className="card border border-yellow-200 bg-yellow-50">
-              <p className="text-xs text-yellow-700 font-bold mb-2">Jugador no registrado</p>
-              <p className="text-xs text-yellow-600 mb-3">Ingresa el nombre completo de tu pareja para crear su perfil.</p>
+              <p className="text-xs text-yellow-700 font-bold mb-2">{t('Jugador no registrado')}</p>
+              <p className="text-xs text-yellow-600 mb-3">{t('Ingresa el nombre completo de tu pareja para crear su perfil.')}</p>
               <input
                 type="text"
-                placeholder="Nombre completo"
+                placeholder={t('Nombre completo')}
                 value={nombre2}
                 onChange={e => setNombre2(e.target.value)}
                 className="input-field"
@@ -730,7 +730,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
               {nombre2.trim().length > 0 && (
                 <div className="mt-2 bg-white/60 rounded-xl px-3 py-2">
                   <p className="text-xs text-yellow-700 font-medium">
-                    🔔 Se enviara una notificacion de WhatsApp a ese numero.
+                    🔔 {t('Se enviará una notificación de WhatsApp a ese número.')}
                   </p>
                 </div>
               )}
@@ -739,7 +739,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
 
           {pareja && (pareja.esNuevo ? nombre2.trim().length > 2 : true) && (
             <button className="btn-green" onClick={() => setStep(3)}>
-              Continuar
+              {t('Continuar')}
             </button>
           )}
         </>
@@ -748,12 +748,12 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
       {/* ── Step 3: Confirmar ── */}
       {step === 3 && (
         <>
-          <button onClick={() => { setStep(2); setError(''); }} className="text-sm text-sp-green font-semibold self-start">← Cambiar pareja</button>
-          <p className="text-sm font-bold text-sp-gray">Confirmar inscripcion</p>
+          <button onClick={() => { setStep(2); setError(''); }} className="text-sm text-sp-green font-semibold self-start">← {t('Cambiar pareja')}</button>
+          <p className="text-sm font-bold text-sp-gray">{t('Confirmar inscripción')}</p>
 
           <div className="card space-y-3">
             <div>
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Torneo</p>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{t('Torneo')}</p>
               <p className="font-bold text-sp-gray mt-0.5">{torneo.nombre}</p>
               {(torneo.fecha_inicio || torneo.fecha_fin) && (
                 <p className="text-xs text-gray-500">
@@ -762,20 +762,20 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
               )}
             </div>
             <div className="border-t border-gray-100 pt-3">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Categoria</p>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{t('Categoría')}</p>
               <p className="font-bold text-sp-gray mt-0.5">{catSelObj?.categoria || '—'}</p>
             </div>
             <div className="border-t border-gray-100 pt-3">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Pareja</p>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{t('Pareja')}</p>
               <p className="font-bold text-sp-gray mt-0.5">{nombre2 || pareja?.nombre}</p>
               <p className="text-xs text-gray-400">{pareja?.telefono}</p>
             </div>
           </div>
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-2xl px-4 py-3">
-            <p className="text-xs text-yellow-700 font-semibold">💳 Pago requerido en el club</p>
+            <p className="text-xs text-yellow-700 font-semibold">💳 {t('Pago requerido en el club')}</p>
             <p className="text-xs text-yellow-600 mt-1">
-              Tu inscripcion quedara pendiente hasta confirmar el pago presencialmente. Tu lugar no estara asegurado hasta completar el pago.
+              {t('Tu inscripción quedará pendiente hasta confirmar el pago presencialmente. Tu lugar no estará asegurado hasta completar el pago.')}
             </p>
           </div>
 
@@ -788,11 +788,11 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
                 className="mt-0.5"
               />
               <span className="text-xs text-gray-600">
-                Acepto el reglamento del torneo
+                {t('Acepto el reglamento del torneo')}
                 {torneo.reglamento_version ? ` (v${torneo.reglamento_version})` : ''}.{' '}
                 {torneo.reglamento_url && (
                   <a href={torneo.reglamento_url} target="_blank" rel="noopener noreferrer" className="text-sp-green font-semibold underline">
-                    Ver reglamento
+                    {t('Ver reglamento')}
                   </a>
                 )}
               </span>
@@ -810,8 +810,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
                 className="mt-0.5"
               />
               <span className="text-xs text-sp-green-dark">
-                <b>Avísame por notificación</b> a qué hora juego, si mi pareja confirma y cuándo
-                salen los resultados.
+                {t('Avísame por notificación a qué hora juego, si mi pareja confirma y cuándo salen los resultados.')}
               </span>
             </label>
           )}
@@ -823,7 +822,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
           )}
 
           <button className="btn-green" onClick={handleInscribir} disabled={loading || (reglamentoActivo && !aceptoReglamento)}>
-            {loading ? 'Enviando…' : 'Confirmar inscripcion'}
+            {loading ? t('Enviando…') : t('Confirmar inscripción')}
           </button>
         </>
       )}
@@ -906,10 +905,10 @@ export default function Torneos() {
   }
 
   const headerLabel = view === 'inscripcion'
-    ? (torneoSel?.nombre || 'Inscripcion')
+    ? (torneoSel?.nombre || t('Inscripción'))
     : view === 'detalle'
-      ? (torneoSel?.nombre || 'Resultados')
-      : 'Torneos';
+      ? (torneoSel?.nombre || t('Resultados'))
+      : t('Torneos');
 
   return (
     <div className="page safe-bottom">
@@ -919,7 +918,7 @@ export default function Torneos() {
         <p className="text-white font-black text-lg pt-3 mb-3">{headerLabel}</p>
         {!view && (
           <div className="flex gap-1">
-            {[['proximos','Próximos'],['pasados','Pasados'],['ranking','Ranking']].map(([v,label]) => (
+            {[['proximos', t('Próximos')], ['pasados', t('Pasados')], ['ranking', t('Ranking')]].map(([v,label]) => (
               <button
                 key={v}
                 onClick={() => setMainTab(v)}
@@ -958,54 +957,54 @@ export default function Torneos() {
           {loading && <Spinner />}
           {!loading && linkNoHay && (
             <div className="card text-center py-4 border border-amber-200 bg-amber-50">
-              <p className="text-sm font-semibold text-amber-700">Ese torneo ya no está disponible.</p>
-              <p className="text-xs text-amber-600 mt-0.5">Aquí están los que siguen abiertos.</p>
+              <p className="text-sm font-semibold text-amber-700">{t('Ese torneo ya no está disponible.')}</p>
+              <p className="text-xs text-amber-600 mt-0.5">{t('Aquí están los que siguen abiertos.')}</p>
             </div>
           )}
           {!loading && (mainTab === 'proximos' ? proximos : pasados).length === 0 && (
             <div className="card text-center py-12">
               <p className="text-3xl mb-3">🏆</p>
               <p className="text-gray-500 font-medium">
-                {mainTab === 'proximos' ? 'Sin torneos por ahora' : 'Aún no hay torneos pasados'}
+                {mainTab === 'proximos' ? t('Sin torneos por ahora') : t('Aún no hay torneos pasados')}
               </p>
               <p className="text-gray-400 text-sm mt-1">
-                {mainTab === 'proximos' ? 'Pronto habra novedades' : 'Aquí quedará el historial'}
+                {mainTab === 'proximos' ? t('Pronto habrá novedades') : t('Aquí quedará el historial')}
               </p>
             </div>
           )}
-          {!loading && (mainTab === 'proximos' ? proximos : pasados).map(t => (
-            <div key={t.id} className="card">
+          {!loading && (mainTab === 'proximos' ? proximos : pasados).map(tor => (
+            <div key={tor.id} className="card">
               <div className="flex justify-between items-start mb-2 gap-3">
-                <TorneoThumb torneo={t} />
+                <TorneoThumb torneo={tor} />
                 <div className="flex-1 min-w-0 pr-1">
-                  <p className="font-black text-sp-gray text-base leading-tight">{t.nombre}</p>
-                  {(t.fecha_inicio || t.fecha_fin) && (
+                  <p className="font-black text-sp-gray text-base leading-tight">{tor.nombre}</p>
+                  {(tor.fecha_inicio || tor.fecha_fin) && (
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {fmtFecha(t.fecha_inicio)}
-                      {t.fecha_fin && t.fecha_fin !== t.fecha_inicio ? ` – ${fmtFecha(t.fecha_fin)}` : ''}
+                      {fmtFecha(tor.fecha_inicio)}
+                      {tor.fecha_fin && tor.fecha_fin !== tor.fecha_inicio ? ` – ${fmtFecha(tor.fecha_fin)}` : ''}
                     </p>
                   )}
                 </div>
-                <EstadoBadge estado={esPasado(t) ? 'finalizado' : torneoEstado(t)} />
+                <EstadoBadge estado={esPasado(tor) ? 'finalizado' : torneoEstado(tor)} />
               </div>
-              {t.descripcion && (
-                <p className="text-sm text-gray-500 mb-3">{t.descripcion}</p>
+              {tor.descripcion && (
+                <p className="text-sm text-gray-500 mb-3">{tor.descripcion}</p>
               )}
               <div className="flex gap-2">
-                {['draw_generado','calendario_publicado','en_curso','finalizado'].includes(torneoEstado(t)) && (
+                {['draw_generado','calendario_publicado','en_curso','finalizado'].includes(torneoEstado(tor)) && (
                   <button
                     className="flex-1 py-2 rounded-xl text-sm font-semibold border border-sp-green text-sp-green"
-                    onClick={() => { setTorneoSel(t); setView('detalle'); }}
+                    onClick={() => { setTorneoSel(tor); setView('detalle'); }}
                   >
-                    Ver partidos
+                    {t('Ver partidos')}
                   </button>
                 )}
-                {torneoEstado(t) === 'inscripciones' && (
+                {torneoEstado(tor) === 'inscripciones' && (
                   <button
                     className="flex-1 btn-green py-2 text-sm"
-                    onClick={() => { setTorneoSel(t); setView('inscripcion'); }}
+                    onClick={() => { setTorneoSel(tor); setView('inscripcion'); }}
                   >
-                    Inscribirme
+                    {t('Inscribirme')}
                   </button>
                 )}
               </div>
@@ -1018,8 +1017,8 @@ export default function Torneos() {
       {!view && mainTab === 'ranking' && (
         <div className="py-4 overflow-y-auto">
           <div className="px-4 mb-1">
-            <p className="text-lg font-black text-sp-gray leading-tight">Ranking del Circuito 2026</p>
-            <p className="text-xs text-gray-400">Puntos por partidos ganados, donas y fase alcanzada.</p>
+            <p className="text-lg font-black text-sp-gray leading-tight">{t('Ranking del Circuito 2026')}</p>
+            <p className="text-xs text-gray-400">{t('Puntos por partidos ganados, donas y fase alcanzada.')}</p>
           </div>
           <CircuitoRankingView apiFetch={apiFetch} />
         </div>

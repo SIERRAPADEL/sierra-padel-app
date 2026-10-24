@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BACKEND, UBICACIONES } from '../lib/constants';
+import { BACKEND, UBICACIONES, nombreUbicacion } from '../lib/constants';
 import PrenderAvisos from './PrenderAvisos';
+import { t } from '../i18n';
 
 /**
  * EL ESCAPARATE — un banner rotativo con las promociones del día, arriba en Home.
@@ -47,9 +48,9 @@ export default function PromoExpressBanner() {
 
   const cargar = useCallback(async () => {
     try {
-      const t = token();
+      const tk = token();
       const r = await fetch(`${BACKEND}/api/promos-express/escaparate`, {
-        headers: t ? { Authorization: `Bearer ${t}` } : {},
+        headers: tk ? { Authorization: `Bearer ${tk}` } : {},
       });
       const d = await r.json();
       if (d.ok) setItems(d.data || []);
@@ -105,23 +106,24 @@ export default function PromoExpressBanner() {
     setReclamando(true);
     setErrorMsg('');
     try {
-      const t = token();
+      const tk = token();
       const url = it.origen === 'beneficio'
         ? `${BACKEND}/api/beneficios/app/reclamar/${it.id}`
         : `${BACKEND}/api/promos-express/${it.id}/reclamar`;
       const r = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+        headers: { 'Content-Type': 'application/json', ...(tk ? { Authorization: `Bearer ${tk}` } : {}) },
         body: JSON.stringify({ ...(pideUbicacion(it) ? { ubicacion } : {}), ...(extra || {}) }),
       });
       const d = await r.json();
       // Promo de una sola rama (German, 24-sep: «promo mujeres»): si su nivel no dice si es
       // mujer u hombre, el servidor pregunta. Se contesta UNA vez y queda en su ficha.
       if (!d.ok && d.pide_sexo && !extra) {
-        const quien = d.solo_sexo === 'H' ? 'hombres' : 'mujeres';
-        const es = window.confirm(`Esta promo es exclusiva para ${quien}.\n\n¿Eres ${d.solo_sexo === 'H' ? 'hombre' : 'mujer'}?`);
+        const soloH = d.solo_sexo === 'H';
+        const exclusiva = soloH ? t('Esta promo es exclusiva para hombres.') : t('Esta promo es exclusiva para mujeres.');
+        const es = window.confirm(exclusiva + '\n\n' + (soloH ? t('¿Eres hombre?') : t('¿Eres mujer?')));
         if (es) return reclamar(it, { sexo: d.solo_sexo });
-        setErrorMsg(d.error || `Esta promo es exclusiva para ${quien}.`);
+        setErrorMsg(d.error || exclusiva);
         setReclamando(false);
         return;
       }
@@ -147,10 +149,10 @@ export default function PromoExpressBanner() {
         // con su candado y su botón, en vez de dejarle un texto rojo que no dice qué hacer.
         cargar();
       } else {
-        setErrorMsg(d.error || 'No se pudo reclamar la promo');
+        setErrorMsg(d.error || t('No se pudo reclamar la promo'));
       }
     } catch {
-      setErrorMsg('Error de conexión. Intenta de nuevo.');
+      setErrorMsg(t('Error de conexión. Intenta de nuevo.'));
     }
     setReclamando(false);
     setUbicacion('');
@@ -161,23 +163,23 @@ export default function PromoExpressBanner() {
     const esBen = reclamado.beneficio;
     return (
       <div style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))', border: '1px solid var(--sp-on-dark)', borderRadius: 18, padding: 16 }}>
-        <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--sp-on-dark)' }}>Promo reclamada</p>
+        <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--sp-on-dark)' }}>{t('Promo reclamada')}</p>
         {esBen ? (<>
           <p style={{ color: 'white', fontWeight: 900, fontSize: 18 }}>{reclamado.titulo}</p>
           <p className="text-sm mt-1" style={{ color: '#c4c4d8' }}>
-            Se aplica sola en la caja cuando el cajero te identifique.
+            {t('Se aplica sola en la caja cuando el cajero te identifique.')}
           </p>
         </>) : (<>
           <div style={{ background: 'rgb(var(--sp-on-dark-rgb) / .1)', border: '1px solid rgb(var(--sp-on-dark-rgb) / .3)', borderRadius: 12, padding: 14, textAlign: 'center', marginBottom: 10 }}>
             <p style={{ fontSize: 30, fontWeight: 900, letterSpacing: '0.15em', color: 'var(--sp-on-dark)' }}>{reclamado.codigo}</p>
             <p className="text-sm mt-1" style={{ color: '#c4c4d8' }}>
-              {reclamado.tipo === '2' ? 'Úsalo al reservar tu cancha' : 'Tu pedido ya llegó a caja'}
+              {reclamado.tipo === '2' ? t('Úsalo al reservar tu cancha') : t('Tu pedido ya llegó a caja')}
             </p>
           </div>
           {reclamado.tipo !== '2' && (
             <button onClick={() => navigate('/pedir')}
               style={{ width: '100%', padding: 11, background: 'rgb(var(--sp-on-dark-rgb) / .12)', border: '1px solid rgb(var(--sp-on-dark-rgb) / .35)', color: 'var(--sp-on-dark)', borderRadius: 10, fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
-              Hacer otro pedido →
+              {t('Hacer otro pedido →')}
             </button>
           )}
         </>)}
@@ -218,11 +220,11 @@ export default function PromoExpressBanner() {
                onClick={e => e.stopPropagation()}>
           <div className="overflow-y-auto overscroll-contain px-5 pt-5">
             <p className="text-xs font-bold uppercase tracking-wider text-sp-green mb-1">
-              {abierta.origen === 'club' ? 'Hoy en el club'
-                : abierta.origen === 'beneficio' ? 'Para ti'
-                : abierta.origen === 'botanero' ? 'Liga del viernes'
-                : abierta.origen === 'reta_club' ? 'Canchas abiertas'
-                : 'Promo del día'}
+              {abierta.origen === 'club' ? t('Hoy en el club')
+                : abierta.origen === 'beneficio' ? t('Para ti')
+                : abierta.origen === 'botanero' ? t('Liga del viernes')
+                : abierta.origen === 'reta_club' ? t('Canchas abiertas')
+                : t('Promo del día')}
             </p>
             <p className="text-2xl font-black text-sp-gray leading-tight" style={{ textWrap: 'balance' }}>
               {abierta.titulo}
@@ -235,20 +237,20 @@ export default function PromoExpressBanner() {
             {abierta.hora_desde && (
               <p className="text-sm text-gray-500 mt-2 font-semibold">
                 🎾 {abierta.hora_hasta
-                  ? `Para jugar de ${String(abierta.hora_desde).slice(0, 5)} a ${String(abierta.hora_hasta).slice(0, 5)}`
-                  : `Para jugar desde las ${String(abierta.hora_desde).slice(0, 5)}`}
+                  ? t('Para jugar de {desde} a {hasta}', { desde: String(abierta.hora_desde).slice(0, 5), hasta: String(abierta.hora_hasta).slice(0, 5) })
+                  : t('Para jugar desde las {desde}', { desde: String(abierta.hora_desde).slice(0, 5) })}
               </p>
             )}
             {abierta.precio_preferencial != null && (
               <p className="text-sm text-sp-green mt-1 font-bold">
                 {/* Paquete: el total anunciado (cancha + bote), no sólo la cancha. */}
-                Precio de la promo: ${Math.round(Number(abierta.precio_anunciado ?? abierta.precio_preferencial))}
+                {t('Precio de la promo: ${precio}', { precio: Math.round(Number(abierta.precio_anunciado ?? abierta.precio_preferencial)) })}
               </p>
             )}
 
             {esLink(abierta) ? null : abierta.bloqueada ? (
               <div className="mt-4">
-                <PrenderAvisos compacto motivo={`Préndelas y reclama: ${abierta.titulo}.`} />
+                <PrenderAvisos compacto motivo={t('Préndelas y reclama: {titulo}.', { titulo: abierta.titulo })} />
               </div>
             ) : abierta.origen === 'club' ? (
               // 🔑 «No reclamable» NO siempre quiere decir «ya cerró». Las promos diarias
@@ -256,28 +258,28 @@ export default function PromoExpressBanner() {
               // las aplica solo al cobrar. Decirle "ya cerró" a alguien que todavía puede
               // venir por su hamburguesa es correr al cliente con una mentira.
               <p className="text-sm text-gray-600 mt-4 font-semibold">
-                {abierta.nota || 'Se aplica sola al pagar en el club'}
+                {abierta.nota || t('Se aplica sola al pagar en el club')}
                 {(abierta.hora_desde || abierta.hora_hasta) && (
                   <span className="block text-gray-400 font-medium mt-1">
-                    De {String(abierta.hora_desde || '').slice(0, 5)} a {String(abierta.hora_hasta || '').slice(0, 5)}
+                    {t('De {desde} a {hasta}', { desde: String(abierta.hora_desde || '').slice(0, 5), hasta: String(abierta.hora_hasta || '').slice(0, 5) })}
                   </span>
                 )}
               </p>
             ) : !abierta.reclamable ? (
               <p className="text-sm text-gray-500 mt-4 font-semibold">
-                Ya cerró el plazo de esta promo. Prende las notificaciones y te avisamos la próxima.
+                {t('Ya cerró el plazo de esta promo. Prende las notificaciones y te avisamos la próxima.')}
               </p>
             ) : pideUbicacion(abierta) ? (<>
               {/* Sólo las promos de PEDIDO se entregan en una mesa. Preguntarle "¿dónde
                   estás?" a quien va a rentar cancha es fricción justo al convertir, y el
                   dato no se usa para nada. */}
-              <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mt-4 mb-2">¿Dónde estás?</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mt-4 mb-2">{t('¿Dónde estás?')}</p>
               <div className="grid grid-cols-2 gap-2">
                 {UBICACIONES.map(u => (
                   <button key={u} onClick={() => setUbicacion(u)}
                     className={`py-2.5 px-2 rounded-xl text-sm font-bold transition-colors ${
                       ubicacion === u ? 'bg-sp-green text-white' : 'bg-gray-100 text-gray-500'}`}>
-                    {u}
+                    {nombreUbicacion(u)}
                   </button>
                 ))}
               </div>
@@ -293,7 +295,7 @@ export default function PromoExpressBanner() {
               <button
                 onClick={() => { const u = abierta.url; setAbierta(null); navigate(u); }}
                 className="w-full py-3.5 rounded-xl font-black text-[15px] bg-sp-green text-white">
-                {abierta.cta || 'Ver más →'}
+                {abierta.cta || t('Ver más →')}
               </button>
             )}
             {!esLink(abierta) && !abierta.bloqueada && abierta.reclamable && (
@@ -302,14 +304,14 @@ export default function PromoExpressBanner() {
                 disabled={reclamando || (pideUbicacion(abierta) && !ubicacion)}
                 className={`w-full py-3.5 rounded-xl font-black text-[15px] ${
                   (!pideUbicacion(abierta) || ubicacion) ? 'bg-sp-green text-white' : 'bg-gray-100 text-gray-300'}`}>
-                {reclamando ? 'Procesando…'
-                  : (pideUbicacion(abierta) && !ubicacion) ? 'Selecciona ubicación'
-                  : (abierta.cta || 'Reclamar')}
+                {reclamando ? t('Procesando…')
+                  : (pideUbicacion(abierta) && !ubicacion) ? t('Selecciona ubicación')
+                  : (abierta.cta || t('Reclamar'))}
               </button>
             )}
             <button onClick={() => { setAbierta(null); setUbicacion(''); }}
               className="w-full py-3 rounded-xl bg-gray-100 text-gray-500 font-bold text-sm">
-              Cerrar
+              {t('Cerrar')}
             </button>
           </div>
           </div>
@@ -329,11 +331,11 @@ export default function PromoExpressBanner() {
       >
         <div className="flex items-center justify-between gap-3">
           <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--sp-on-dark)' }}>
-            {it.origen === 'beneficio' ? '🎁 Para ti'
-              : it.origen === 'botanero' ? '🍻 Liga del viernes'
-              : it.origen === 'reta_club' ? '🎾 Canchas abiertas'
-              : it.origen === 'club' ? '🍔 Hoy en el club'
-              : '⚡ Promo del día'}
+            {it.origen === 'beneficio' ? '🎁 ' + t('Para ti')
+              : it.origen === 'botanero' ? '🍻 ' + t('Liga del viernes')
+              : it.origen === 'reta_club' ? '🎾 ' + t('Canchas abiertas')
+              : it.origen === 'club' ? '🍔 ' + t('Hoy en el club')
+              : '⚡ ' + t('Promo del día')}
           </p>
           {segs !== null && (
             <p style={{ fontSize: 15, fontWeight: 900, color: urge ? '#f97316' : 'var(--sp-on-dark)', fontVariantNumeric: 'tabular-nums' }}>
@@ -348,11 +350,11 @@ export default function PromoExpressBanner() {
 
         {/* Una sola línea, y sólo cuando dice algo que el título no. */}
         <p className="text-[13px] font-bold mt-2" style={{ color: it.bloqueada ? '#fbbf24' : 'var(--sp-on-dark)' }}>
-          {esLink(it) ? (it.cta || 'Ver más →')
-            : it.bloqueada ? '🔔 Prende tus notificaciones'
-            : it.reclamable ? 'Ver promo →'
-            : it.origen === 'club' ? 'Ver detalle →'
-            : 'Ya cerró · ver detalle'}
+          {esLink(it) ? (it.cta || t('Ver más →'))
+            : it.bloqueada ? '🔔 ' + t('Prende tus notificaciones')
+            : it.reclamable ? t('Ver promo →')
+            : it.origen === 'club' ? t('Ver detalle →')
+            : t('Ya cerró · ver detalle')}
         </p>
 
         {/* Puntos: sin esto nadie sabe que hay más de una promo esperando. */}

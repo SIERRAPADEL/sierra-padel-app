@@ -4,6 +4,8 @@ import { destinoTrasEntrar } from '../lib/destino';
 import { useAuth } from '../context/AuthContext';
 import Isotipo from '../components/Isotipo';
 import PinInput from '../components/PinInput';
+import SelectorIdioma from '../components/SelectorIdioma';
+import { t } from '../i18n';
 
 const API = 'https://sierra-padel-backend-production-a55f.up.railway.app/api';
 
@@ -39,7 +41,7 @@ export default function Login() {
   function handleTelefono(e) {
     e.preventDefault();
     const digits = telefono.replace(/[^0-9]/g, '');
-    if (digits.length < 10) return setError('Ingresa tu numero de 10 digitos');
+    if (digits.length < 10) return setError(t('Ingresa tu numero de 10 digitos'));
     setError('');
     // Lo que sabíamos del número ANTERIOR no vale para éste.
     setSinCuenta(false);
@@ -55,14 +57,14 @@ export default function Login() {
     e?.preventDefault?.();
     const pinFinal = pinDirecto || pin;
     if (loading) return;
-    if (pinFinal.length < 4) return setError('Ingresa tu PIN de 4 digitos');
+    if (pinFinal.length < 4) return setError(t('Ingresa tu PIN de 4 digitos'));
     setLoading(true);
     setError('');
     try {
       await login(telefono, pinFinal);
       navigate(destinoTrasEntrar(window.location.search));
     } catch (err) {
-      setError(err.message || 'PIN incorrecto. Verifica e intenta de nuevo.');
+      setError(err.message || t('PIN incorrecto. Verifica e intenta de nuevo.'));
       setPin('');
     } finally {
       setLoading(false);
@@ -86,7 +88,7 @@ export default function Login() {
         // toca es registrarse, y ahí él elige su PIN. Se le abre la puerta, no se le deja
         // leyendo un texto que suena a falla del sistema.
         setSinCuenta(!!data.sin_cuenta);
-        throw new Error(data.error || 'No se pudo enviar el codigo. Intenta de nuevo.');
+        throw new Error(data.error || t('No se pudo enviar el codigo. Intenta de nuevo.'));
       }
       setSinCuenta(false);
       setStep(4);
@@ -100,8 +102,8 @@ export default function Login() {
   // ── Step 4: verificar OTP + establecer nuevo PIN ──────────────────────────
   async function handleVerifyOtp(e) {
     e.preventDefault();
-    if (otp.replace(/[^0-9]/g, '').length < 6) return setError('Ingresa el codigo de 6 digitos que recibiste');
-    if (nuevoPin.length < 4) return setError('Ingresa tu nuevo PIN de 4 digitos');
+    if (otp.replace(/[^0-9]/g, '').length < 6) return setError(t('Ingresa el codigo de 6 digitos que recibiste'));
+    if (nuevoPin.length < 4) return setError(t('Ingresa tu nuevo PIN de 4 digitos'));
     setLoading(true);
     setError('');
     try {
@@ -111,7 +113,7 @@ export default function Login() {
         body: JSON.stringify({ telefono, otp: otp.trim(), nuevo_pin: nuevoPin }),
       });
       const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'El codigo es incorrecto o ya expiro. Solicita uno nuevo.');
+      if (!data.ok) throw new Error(data.error || t('El codigo es incorrecto o ya expiro. Solicita uno nuevo.'));
       adoptarSesion(data.data.token, data.data.cliente);
       navigate(destinoTrasEntrar(window.location.search));
     } catch (err) {
@@ -131,7 +133,11 @@ export default function Login() {
 
   // ── UI ────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-full bg-sp-green flex flex-col items-center justify-center px-6 gap-8">
+    <div className="relative min-h-full bg-sp-green flex flex-col items-center justify-center px-6 gap-8">
+      {/* 🌐 Idioma ANTES de entrar: quien no lee español puede cambiarlo aquí mismo. */}
+      <div className="absolute right-4" style={{ top: 'calc(env(safe-area-inset-top) + 12px)' }}>
+        <SelectorIdioma compacto />
+      </div>
       <Isotipo className="w-16 h-16" />
 
       {/* ── STEP 1: Telefono ── */}
@@ -139,12 +145,12 @@ export default function Login() {
         <form onSubmit={handleTelefono} className="w-full max-w-xs flex flex-col gap-4">
           <div className="text-center">
             <p className="text-white font-black text-2xl">Sierra Padel</p>
-            <p className="text-white/70 text-sm mt-1">Ingresa tu numero de WhatsApp</p>
+            <p className="text-white/70 text-sm mt-1">{t('Ingresa tu numero de WhatsApp')}</p>
           </div>
           <input
             type="tel"
             inputMode="numeric"
-            placeholder="10 digitos (ej. 6641234567)"
+            placeholder={t('10 digitos (ej. 6641234567)')}
             value={telefono}
             onChange={e => { setTelefono(e.target.value.replace(/[^0-9]/g, '').slice(0, 10)); setError(''); }}
             className="input-field text-center text-lg tracking-widest"
@@ -157,11 +163,11 @@ export default function Login() {
             className="w-full py-3 rounded-2xl bg-white text-sp-green font-black text-base"
             disabled={telefono.replace(/[^0-9]/g, '').length < 10}
           >
-            Continuar
+            {t('Continuar')}
           </button>
           <p className="text-white/50 text-xs text-center">
-            ¿No tienes cuenta?{' '}
-            <Link to={`/registro${window.location.search}`} className="text-white font-semibold underline">Registrate aqui</Link>
+            {t('¿No tienes cuenta?')}{' '}
+            <Link to={`/registro${window.location.search}`} className="text-white font-semibold underline">{t('Registrate aqui')}</Link>
           </p>
         </form>
       )}
@@ -170,7 +176,7 @@ export default function Login() {
       {step === 2 && (
         <div className="w-full max-w-xs flex flex-col gap-5">
           <div className="text-center">
-            <p className="text-white font-black text-xl">Ingresa tu PIN</p>
+            <p className="text-white font-black text-xl">{t('Ingresa tu PIN')}</p>
             <p className="text-white/60 text-sm mt-1">{telefono}</p>
           </div>
           {aviso && !error && (
@@ -184,7 +190,7 @@ export default function Login() {
               className="w-full py-3 rounded-2xl bg-white text-sp-green font-black text-base"
               disabled={pin.length < 4 || loading}
             >
-              {loading ? 'Verificando…' : 'Entrar'}
+              {loading ? t('Verificando…') : t('Entrar')}
             </button>
           </form>
           <div className="flex flex-col items-center gap-2">
@@ -192,13 +198,13 @@ export default function Login() {
               onClick={() => { setStep(3); setError(''); setSinCuenta(false); }}
               className="text-white/60 text-sm underline"
             >
-              Olvide mi PIN
+              {t('Olvide mi PIN')}
             </button>
             <button
               onClick={() => { setStep(1); setPin(''); setError(''); setSinCuenta(false); setAviso(''); }}
               className="text-white/40 text-xs"
             >
-              Cambiar numero
+              {t('Cambiar numero')}
             </button>
           </div>
         </div>
@@ -208,9 +214,9 @@ export default function Login() {
       {step === 3 && (
         <div className="w-full max-w-xs flex flex-col gap-5">
           <div className="text-center">
-            <p className="text-white font-black text-xl">Recuperar PIN</p>
+            <p className="text-white font-black text-xl">{t('Recuperar PIN')}</p>
             <p className="text-white/60 text-sm mt-1">
-              Te enviaremos un codigo de 6 digitos por WhatsApp al {telefono}
+              {t('Te enviaremos un codigo de 6 digitos por WhatsApp al {telefono}', { telefono })}
             </p>
           </div>
 
@@ -224,7 +230,7 @@ export default function Login() {
               onClick={() => navigate(`/registro${window.location.search}`, { state: { telefono } })}
               className="w-full py-3 rounded-2xl bg-white text-sp-green font-black text-base"
             >
-              Crear mi cuenta
+              {t('Crear mi cuenta')}
             </button>
           ) : (
             <button
@@ -232,24 +238,24 @@ export default function Login() {
               className="w-full py-3 rounded-2xl bg-white text-sp-green font-black text-base"
               disabled={loading}
             >
-              {loading ? 'Enviando codigo…' : 'Enviarme el codigo'}
+              {loading ? t('Enviando codigo…') : t('Enviarme el codigo')}
             </button>
           )}
 
           <p className="text-white/40 text-xs text-center">
-            ¿Problemas para recibirlo?{' '}
+            {t('¿Problemas para recibirlo?')}{' '}
             <a
               href={`https://wa.me/${WA_BOT_NUMBER}?text=Hola`}
               target="_blank"
               rel="noreferrer"
               className="text-white/70 underline"
             >
-              Escribenos por WhatsApp
+              {t('Escribenos por WhatsApp')}
             </a>
           </p>
 
           <button onClick={volverAlPin} className="text-white/40 text-xs text-center">
-            ← Volver a ingresar PIN
+            ← {t('Volver a ingresar PIN')}
           </button>
         </div>
       )}
@@ -258,15 +264,15 @@ export default function Login() {
       {step === 4 && (
         <form onSubmit={handleVerifyOtp} className="w-full max-w-xs flex flex-col gap-5">
           <div className="text-center">
-            <p className="text-white font-black text-xl">Codigo enviado ✓</p>
+            <p className="text-white font-black text-xl">{t('Codigo enviado')} ✓</p>
             <p className="text-white/60 text-sm mt-1">
-              Revisa tu WhatsApp en el numero {telefono}
+              {t('Revisa tu WhatsApp en el numero {telefono}', { telefono })}
             </p>
           </div>
 
           <div className="flex flex-col gap-3">
             <div>
-              <p className="text-white/80 text-xs font-semibold mb-2 ml-1">Codigo de 6 digitos</p>
+              <p className="text-white/80 text-xs font-semibold mb-2 ml-1">{t('Codigo de 6 digitos')}</p>
               <input
                 type="tel"
                 inputMode="numeric"
@@ -279,7 +285,7 @@ export default function Login() {
               />
             </div>
             <div>
-              <p className="text-white/80 text-xs font-semibold mb-2 ml-1">Nuevo PIN de 4 digitos</p>
+              <p className="text-white/80 text-xs font-semibold mb-2 ml-1">{t('Nuevo PIN de 4 digitos')}</p>
               <PinInput value={nuevoPin} onChange={setNuevoPin} />
             </div>
           </div>
@@ -291,7 +297,7 @@ export default function Login() {
             className="w-full py-3 rounded-2xl bg-white text-sp-green font-black text-base"
             disabled={otp.length < 6 || nuevoPin.length < 4 || loading}
           >
-            {loading ? 'Verificando…' : 'Cambiar PIN y entrar'}
+            {loading ? t('Verificando…') : t('Cambiar PIN y entrar')}
           </button>
 
           <button
@@ -299,7 +305,7 @@ export default function Login() {
             onClick={() => { setStep(3); setOtp(''); setError(''); }}
             className="text-white/50 text-xs text-center underline"
           >
-            No recibi el codigo — volver a solicitar
+            {t('No recibi el codigo — volver a solicitar')}
           </button>
         </form>
       )}

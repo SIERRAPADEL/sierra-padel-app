@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { t } from '../i18n';
 
 /**
  * 🥩 LA JORNADA PATROCINADA — piezas del diseño de la diseñadora (German, 26-sep-2026: «te
@@ -57,14 +58,14 @@ export function Arco({ texto, color = CREMA, size = 17, ancho = 300, curva = 16,
 /** Leyenda en arco + logo grande y centrado. Sin mascota: así lo dibujó la diseñadora. */
 export function PatrocinioArco({ m, jornada, ancho = '64%', className = '' }) {
   if (!m) return null;
-  const leyenda = m.leyenda || `PATROCINADOR JORNADA ${jornada ?? ''}`.trim();
+  const leyenda = m.leyenda || t('PATROCINADOR JORNADA {n}', { n: jornada ?? '' }).trim();
   return (
     <div className={`text-center ${className}`}>
       <div className="mx-auto" style={{ width: '84%' }}>
         <Arco texto={leyenda} />
       </div>
       {m.sponsor_url
-        ? <img src={m.sponsor_url} alt={m.sponsor_nombre || 'Patrocinador'} loading="lazy"
+        ? <img src={m.sponsor_url} alt={m.sponsor_nombre || t('Patrocinador')} loading="lazy"
                onError={(e) => { e.currentTarget.style.display = 'none'; }}
                className="block mx-auto -mt-1 object-contain" style={{ width: ancho, maxWidth: 360 }} />
         : <p className="text-white font-black text-[22px]" style={{ fontFamily: KANIT }}>{m.sponsor_nombre}</p>}

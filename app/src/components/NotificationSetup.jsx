@@ -17,6 +17,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
+import { t } from '../i18n';
 
 // Clave publica VAPID (definida en .env como VITE_VAPID_PUBLIC_KEY)
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
@@ -80,7 +81,7 @@ function usePushSubscription(apiFetch) {
       });
 
       if (!result.ok) {
-        setError(result.error || 'No se pudo guardar la suscripcion.');
+        setError(result.error || t('No se pudo guardar la suscripcion.'));
         return false;
       }
 
@@ -92,7 +93,7 @@ function usePushSubscription(apiFetch) {
       if (err.name === 'NotAllowedError') {
         setError('denied');
       } else {
-        setError(err.message || 'Error al activar notificaciones.');
+        setError(err.message || t('Error al activar notificaciones.'));
       }
       return false;
     } finally {
@@ -141,10 +142,10 @@ function PermissionCard({ onAllow, onDismiss, loading, error }) {
         </div>
         <div>
           <div style={{ fontWeight: 700, fontSize: 15, color: '#111', lineHeight: 1.3 }}>
-            Activa las notificaciones
+            {t('Activa las notificaciones')}
           </div>
           <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-            Para no perderte nada de Sierra Padel
+            {t('Para no perderte nada de Sierra Padel')}
           </div>
         </div>
       </div>
@@ -159,9 +160,9 @@ function PermissionCard({ onAllow, onDismiss, loading, error }) {
         }}
       >
         {[
-          { icon: '📅', text: 'Confirmacion de reservas al instante' },
-          { icon: '🏆', text: 'Actualizaciones de tus torneos' },
-          { icon: '⭐', text: 'Puntos acumulados y promociones' },
+          { icon: '📅', text: t('Confirmacion de reservas al instante') },
+          { icon: '🏆', text: t('Actualizaciones de tus torneos') },
+          { icon: '⭐', text: t('Puntos acumulados y promociones') },
         ].map(({ icon, text }) => (
           <div
             key={text}
@@ -208,7 +209,7 @@ function PermissionCard({ onAllow, onDismiss, loading, error }) {
           transition: 'background 0.2s',
         }}
       >
-        {loading ? 'Activando...' : 'Activar notificaciones'}
+        {loading ? t('Activando...') : t('Activar notificaciones')}
       </button>
       <button
         onClick={onDismiss}
@@ -227,7 +228,7 @@ function PermissionCard({ onAllow, onDismiss, loading, error }) {
           marginTop: 4,
         }}
       >
-        Ahora no
+        {t('Ahora no')}
       </button>
     </div>
   );

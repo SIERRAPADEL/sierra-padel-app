@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { fondoPatro, PatrocinioArco, claseClaro, varsClaro } from '../components/PatrocinioJornada';
+import { t, locale } from '../i18n';
 
 /**
  * Una LIGA ESCALERA vista por el jugador: de qué se trata, quién va, y el botón
@@ -87,15 +88,15 @@ export default function LigaEscalera() {
       });
       if (r?.codigo === 'FALTA_SEXO') { setPreguntaRama(true); return; }
       setPreguntaRama(false);
-      if (!r?.ok) { setAviso({ malo: true, txt: r?.error || 'No se pudo. Intenta de nuevo.' }); return; }
+      if (!r?.ok) { setAviso({ malo: true, txt: r?.error || t('No se pudo. Intenta de nuevo.') }); return; }
       if (r.data?.aviso_cobro) {
-        setAviso({ txt: 'Ya estás dentro. Pasa a recepción para dejar registrada tu inscripción.' });
+        setAviso({ txt: t('Ya estás dentro. Pasa a recepción para dejar registrada tu inscripción.') });
       } else {
-        setAviso({ txt: r.ya_estaba ? 'Ya estabas inscrito.' : '¡Listo, ya estás dentro!' });
+        setAviso({ txt: r.ya_estaba ? t('Ya estabas inscrito.') : t('¡Listo, ya estás dentro!') });
       }
       cargar();
     } catch (e) {
-      setAviso({ malo: true, txt: 'No se pudo completar. Intenta de nuevo.' });
+      setAviso({ malo: true, txt: t('No se pudo completar. Intenta de nuevo.') });
     } finally {
       setApuntando(false);
     }
@@ -113,23 +114,23 @@ export default function LigaEscalera() {
     .sort((a, b) => b.numero - a.numero);
 
   const fechaBonita = com?.fecha_inicio
-    ? new Date(com.fecha_inicio + 'T12:00:00').toLocaleDateString('es-MX',
+    ? new Date(com.fecha_inicio + 'T12:00:00').toLocaleDateString(locale(),
         { weekday: 'long', day: 'numeric', month: 'long' })
     : null;
 
   if (cargando) {
     return <div className="page safe-bottom">
-      <div className="card py-10 text-center text-gray-400 text-sm">Cargando…</div>
+      <div className="card py-10 text-center text-gray-400 text-sm">{t('Cargando…')}</div>
     </div>;
   }
 
   if (!liga) {
     return <div className="page safe-bottom p-4">
       <div className="card p-6 text-center">
-        <p className="font-bold text-sp-gray">Esta liga ya no está abierta</p>
-        <p className="text-gray-500 text-[13px] mt-1">Puede que las inscripciones hayan cerrado.</p>
+        <p className="font-bold text-sp-gray">{t('Esta liga ya no está abierta')}</p>
+        <p className="text-gray-500 text-[13px] mt-1">{t('Puede que las inscripciones hayan cerrado.')}</p>
         <button onClick={() => navigate('/ligas')} className="mt-4 text-sp-green-dark font-bold text-[14px]">
-          Ver las demás ligas →
+          {t('Ver las demás ligas')} →
         </button>
       </div>
     </div>;
@@ -147,15 +148,15 @@ export default function LigaEscalera() {
     <div className={`page safe-bottom${pc ? ' tema-patro' + claseClaro(pc) : ''}`}
          style={pc ? { background: fondoPatro(pc), '--patro-a': pc.a, '--patro-tinte': pc.tinte, ...varsClaro(pc) } : undefined}>
       <div className="px-5 pt-[env(safe-area-inset-top)] pb-4" style={{ background: pc ? 'transparent' : rama.fondo }}>
-        <button onClick={() => navigate('/ligas')} className="text-white/80 text-[13px] pt-3">← Ligas</button>
+        <button onClick={() => navigate('/ligas')} className="text-white/80 text-[13px] pt-3">← {t('Ligas')}</button>
         <p className="text-white font-black text-xl mt-1">{liga.nombre}</p>
         <p className="text-[12px] font-bold mt-0.5" style={{ color: rama.sub }}>
-          {liga.categoria === 'Femenil' ? 'Sólo para mujeres'
-            : liga.categoria === 'Varonil' ? 'Sólo para hombres' : 'Abierta a todos'}
+          {liga.categoria === 'Femenil' ? t('Sólo para mujeres')
+            : liga.categoria === 'Varonil' ? t('Sólo para hombres') : t('Abierta a todos')}
         </p>
         {fechaBonita && (
           <p className="text-white/85 text-[13px] mt-0.5 capitalize">
-            Arranca el {fechaBonita} · {liga.n_jornadas} jornadas
+            {t('Arranca el {fecha} · {n} jornadas', { fecha: fechaBonita, n: liga.n_jornadas })}
           </p>
         )}
         {pc && <PatrocinioArco m={liga.patrocinio} jornada={liga.patrocinio.jornada} ancho="56%" className="mt-3" />}
@@ -172,22 +173,22 @@ export default function LigaEscalera() {
         {/* Mi situación — lo primero que quiere ver quien ya entró */}
         {mi?.inscrito && (
           <div className="card p-4" style={pc ? undefined : { background: '#F2F8E9' }}>
-            <p className="text-[12px] font-bold uppercase tracking-wide text-sp-green-dark">Ya estás dentro</p>
+            <p className="text-[12px] font-bold uppercase tracking-wide text-sp-green-dark">{t('Ya estás dentro')}</p>
             <div className="flex items-baseline gap-3 mt-1">
               <p className="text-3xl font-black text-sp-green-dark">#{mi.posicion}</p>
-              <p className="text-[14px] text-sp-gray font-bold">Bloque {mi.bloque}</p>
+              <p className="text-[14px] text-sp-gray font-bold">{t('Bloque {n}', { n: mi.bloque })}</p>
             </div>
             {mi.jornadas_jugadas > 0 && (
               <p className="text-gray-500 text-[13px] mt-1">
-                {mi.jornadas_jugadas} {mi.jornadas_jugadas === 1 ? 'jornada jugada' : 'jornadas jugadas'} ·
-                {' '}{mi.sets_ganados} sets ganados
+                {mi.jornadas_jugadas === 1 ? t('1 jornada jugada') : t('{n} jornadas jugadas', { n: mi.jornadas_jugadas })} ·
+                {' '}{t('{n} sets ganados', { n: mi.sets_ganados })}
               </p>
             )}
             {mi.adeudo && (
               <p className={`text-[13px] mt-2 font-bold ${mi.adeudo.pagado ? 'text-green-700' : 'text-amber-700'}`}>
                 {mi.adeudo.pagado
-                  ? '✓ Inscripción pagada'
-                  : `Falta pagar $${Number(mi.adeudo.saldo).toLocaleString('es-MX')} — te la cobran en el club`}
+                  ? t('✓ Inscripción pagada')
+                  : t('Falta pagar ${monto} — te la cobran en el club', { monto: Number(mi.adeudo.saldo).toLocaleString('es-MX') })}
               </p>
             )}
           </div>
@@ -195,19 +196,19 @@ export default function LigaEscalera() {
 
         {/* Cómo funciona — es el gancho, va antes que el precio */}
         <div className="card p-4">
-          <p className="font-black text-sp-gray text-[15px]">Cómo funciona</p>
+          <p className="font-black text-sp-gray text-[15px]">{t('Cómo funciona')}</p>
           <ol className="mt-2 flex flex-col gap-2">
             {[
-              ['Te acomodan por nivel', `En bloques de ${liga.tam_bloque}. Empiezas donde va tu juego.`],
-              ['Juegas 3 sets cada jornada', 'Uno con cada quien de tu bloque: te toca de compañero con todos.'],
-              [`Subes o bajas hasta ${liga.sube_n}`, 'Los puntos deciden. Ganas, subes de bloque; te toca contra mejores.'],
-            ].map(([t, d], i) => (
+              [t('Te acomodan por nivel'), t('En bloques de {n}. Empiezas donde va tu juego.', { n: liga.tam_bloque })],
+              [t('Juegas 3 sets cada jornada'), t('Uno con cada quien de tu bloque: te toca de compañero con todos.')],
+              [t('Subes o bajas hasta {n}', { n: liga.sube_n }), t('Los puntos deciden. Ganas, subes de bloque; te toca contra mejores.')],
+            ].map(([tit, d], i) => (
               <li key={i} className="flex gap-3">
                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-sp-green text-white text-[12px] font-black grid place-items-center">
                   {i + 1}
                 </span>
                 <span className="flex-1">
-                  <span className="block text-sp-gray font-bold text-[14px]">{t}</span>
+                  <span className="block text-sp-gray font-bold text-[14px]">{tit}</span>
                   <span className="block text-gray-500 text-[13px] leading-snug">{d}</span>
                 </span>
               </li>
@@ -218,7 +219,7 @@ export default function LigaEscalera() {
         {/* Premios */}
         {bolsa > 0 && (
           <div className="card p-4">
-            <p className="text-[12px] font-bold uppercase tracking-wide text-gray-400">En premios</p>
+            <p className="text-[12px] font-bold uppercase tracking-wide text-gray-400">{t('En premios')}</p>
             <p className="text-3xl font-black text-amber-600 mt-0.5">
               ${bolsa.toLocaleString('es-MX')}
             </p>
@@ -230,8 +231,7 @@ export default function LigaEscalera() {
             ))}
             {minPremios > 0 && (
               <p className="text-gray-400 text-[12px] mt-2 leading-snug">
-                Aplica a partir de {minPremios} participantes. Si somos menos se ajusta a
-                proporción; si somos más, sube.
+                {t('Aplica a partir de {n} participantes. Si somos menos se ajusta a proporción; si somos más, sube.', { n: minPremios })}
               </p>
             )}
           </div>
@@ -243,7 +243,7 @@ export default function LigaEscalera() {
             tienen bloques armados: una jornada sin bloques no tiene nada que enseñar. */}
         {jornadasConJuego.length > 0 && (
           <div className="card p-4">
-            <p className="font-black text-sp-gray text-[15px]">Jornadas</p>
+            <p className="font-black text-sp-gray text-[15px]">{t('Jornadas')}</p>
             <div className="mt-2 flex flex-col">
               {jornadasConJuego.map((j) => {
                 const bloques = j.bloques_jornada || [];
@@ -258,16 +258,16 @@ export default function LigaEscalera() {
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sp-gray text-[14px] font-bold truncate">
-                        Jornada {j.numero}
-                        {j.estado === 'finalizada' ? ' · cerrada' : ''}
+                        {t('Jornada {n}', { n: j.numero })}
+                        {j.estado === 'finalizada' ? ' · ' + t('cerrada') : ''}
                       </p>
                       <p className="text-gray-400 text-[12px]">
-                        {j.fecha ? new Date(j.fecha + 'T12:00').toLocaleDateString('es-MX',
-                          { day: 'numeric', month: 'short' }) : 'Sin fecha'}
+                        {j.fecha ? new Date(j.fecha + 'T12:00').toLocaleDateString(locale(),
+                          { day: 'numeric', month: 'short' }) : t('Sin fecha')}
                         {' · '}
                         {conResultado > 0
-                          ? `${conResultado} de ${bloques.length} con resultado`
-                          : `${bloques.length} bloque${bloques.length === 1 ? '' : 's'}`}
+                          ? t('{a} de {b} con resultado', { a: conResultado, b: bloques.length })
+                          : bloques.length === 1 ? t('1 bloque') : t('{n} bloques', { n: bloques.length })}
                       </p>
                     </div>
                     <span className="text-gray-300 text-[18px] shrink-0">›</span>
@@ -281,12 +281,12 @@ export default function LigaEscalera() {
         {/* Quiénes van */}
         <div className="card p-4">
           <div className="flex items-baseline justify-between">
-            <p className="font-black text-sp-gray text-[15px]">Quiénes van</p>
-            <p className="text-gray-400 text-[13px]">{inscritos} inscritos</p>
+            <p className="font-black text-sp-gray text-[15px]">{t('Quiénes van')}</p>
+            <p className="text-gray-400 text-[13px]">{t('{n} inscritos', { n: inscritos })}</p>
           </div>
           {tabla.length === 0 ? (
             <p className="text-gray-400 text-[13px] mt-2">
-              Todavía nadie. {mi?.inscrito ? '' : 'Puedes ser el primero.'}
+              {t('Todavía nadie.')} {mi?.inscrito ? '' : t('Puedes ser el primero.')}
             </p>
           ) : (
             <div className="mt-2 flex flex-col">
@@ -297,15 +297,15 @@ export default function LigaEscalera() {
                     {j.posicion_actual ?? i + 1}
                   </span>
                   <span className="flex-1 text-sp-gray text-[14px] truncate">
-                    {j.jugadores?.nombre || j.nombre || 'Jugador'}
+                    {j.jugadores?.nombre || j.nombre || t('Jugador')}
                   </span>
                   <span className="text-gray-400 text-[12px]">
-                    Bloque {j.bloque_actual ?? Math.ceil((i + 1) / liga.tam_bloque)}
+                    {t('Bloque {n}', { n: j.bloque_actual ?? Math.ceil((i + 1) / liga.tam_bloque) })}
                   </span>
                 </div>
               ))}
               {tabla.length > 12 && (
-                <p className="text-gray-400 text-[12px] mt-2">y {tabla.length - 12} más</p>
+                <p className="text-gray-400 text-[12px] mt-2">{t('y {n} más', { n: tabla.length - 12 })}</p>
               )}
             </div>
           )}
@@ -316,14 +316,13 @@ export default function LigaEscalera() {
           <div className="card p-4">
             {precio > 0 && (
               <>
-                <p className="text-[12px] font-bold uppercase tracking-wide text-gray-400">Inscripción</p>
+                <p className="text-[12px] font-bold uppercase tracking-wide text-gray-400">{t('Inscripción')}</p>
                 <p className="text-3xl font-black text-sp-gray">
                   ${Number(precio).toLocaleString('es-MX')}
                 </p>
                 {com?.precio_inscripcion_tarde > Number(precio) && (
                   <p className="text-amber-700 text-[13px] font-bold mt-0.5">
-                    Sube a ${Number(com.precio_inscripcion_tarde).toLocaleString('es-MX')} después
-                    de la primera jornada
+                    {t('Sube a ${monto} después de la primera jornada', { monto: Number(com.precio_inscripcion_tarde).toLocaleString('es-MX') })}
                   </p>
                 )}
               </>
@@ -335,35 +334,36 @@ export default function LigaEscalera() {
                          active:scale-[0.98] transition-transform disabled:opacity-60"
               style={{ background: rama.fondo }}
             >
-              {apuntando ? 'Apuntándote…' : 'Apuntarme a la liga'}
+              {apuntando ? t('Apuntándote…') : t('Apuntarme a la liga')}
             </button>
 
             {preguntaRama && (
               <div className="mt-3 rounded-xl border-2 p-4" style={{ borderColor: rama.fondo }}>
-                <p className="font-black text-[15px] text-sp-gray">¿En qué rama juegas?</p>
+                <p className="font-black text-[15px] text-sp-gray">{t('¿En qué rama juegas?')}</p>
                 <p className="text-gray-500 text-[13px] mt-0.5 leading-snug">
-                  Te lo preguntamos una sola vez. Esta liga es{' '}
-                  {liga.categoria === 'Femenil' ? 'sólo para mujeres' : 'sólo para hombres'}.
+                  {liga.categoria === 'Femenil'
+                    ? t('Te lo preguntamos una sola vez. Esta liga es sólo para mujeres.')
+                    : t('Te lo preguntamos una sola vez. Esta liga es sólo para hombres.')}
                 </p>
                 <div className="flex gap-2 mt-3">
                   <button type="button" disabled={apuntando} onClick={() => apuntarme('H')}
                           className="flex-1 py-3 rounded-xl font-black text-white
                                      active:scale-[0.98] transition-transform disabled:opacity-60"
                           style={{ background: '#1a7d1a' }}>
-                    Varonil
+                    {t('Varonil')}
                   </button>
                   <button type="button" disabled={apuntando} onClick={() => apuntarme('M')}
                           className="flex-1 py-3 rounded-xl font-black text-white
                                      active:scale-[0.98] transition-transform disabled:opacity-60"
                           style={{ background: '#be185d' }}>
-                    Femenil
+                    {t('Femenil')}
                   </button>
                 </div>
               </div>
             )}
             <p className="text-gray-400 text-[12px] text-center mt-2 leading-snug">
-              Se aparta tu lugar al momento.{precio > 0
-                ? ' No se cobra nada ahora: te la cobran cuando llegues al club.' : ''}
+              {t('Se aparta tu lugar al momento.')}{precio > 0
+                ? ' ' + t('No se cobra nada ahora: te la cobran cuando llegues al club.') : ''}
             </p>
           </div>
         )}

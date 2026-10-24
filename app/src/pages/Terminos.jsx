@@ -1,10 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import Isotipo from '../components/Isotipo';
+import { t } from '../i18n';
 
 // Términos y condiciones de uso de la app. Versión 1.0 (borrador aprobable por el club).
 // Si cambian de fondo, subir la versión y volver a pedir aceptación en el registro.
 export const TERMINOS_VERSION = '1.0';
 
+// Los textos son LLAVES en español: se traducen al pintar con t() (nunca aquí, a nivel de
+// módulo, o se quedarían en el idioma con el que abrió la app).
 const SECCIONES = [
   {
     t: '1. Qué es esta app',
@@ -53,13 +56,13 @@ export default function Terminos() {
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 4l-4 4 4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          Volver
+          {t('Volver')}
         </button>
         <div className="flex items-center gap-3">
           <Isotipo size={28} color="white" />
           <div>
-            <p className="text-white font-black text-lg leading-tight">Términos y condiciones</p>
-            <p className="text-white/50 text-xs">Sierra Pádel · Versión {TERMINOS_VERSION}</p>
+            <p className="text-white font-black text-lg leading-tight">{t('Términos y condiciones')}</p>
+            <p className="text-white/50 text-xs">{t('Sierra Pádel · Versión {version}', { version: TERMINOS_VERSION })}</p>
           </div>
         </div>
       </div>
@@ -67,8 +70,8 @@ export default function Terminos() {
       <div className="px-4 py-5 flex flex-col gap-3">
         {SECCIONES.map(s => (
           <div key={s.t} className="card">
-            <p className="font-bold text-sp-gray text-[15px] mb-1">{s.t}</p>
-            <p className="text-gray-500 text-sm leading-relaxed">{s.c}</p>
+            <p className="font-bold text-sp-gray text-[15px] mb-1">{t(s.t)}</p>
+            <p className="text-gray-500 text-sm leading-relaxed">{t(s.c)}</p>
           </div>
         ))}
       </div>

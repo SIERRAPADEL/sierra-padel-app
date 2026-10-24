@@ -1,28 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
+import { t, locale } from '../i18n';
 
 // ── Mis Reservas ─────────────────────────────────────────────────────────────
 
 function fmtFecha(iso) {
   if (!iso) return '';
-  return new Date(iso + 'T12:00').toLocaleDateString('es-MX', {
+  return new Date(iso + 'T12:00').toLocaleDateString(locale(), {
     weekday: 'short', day: 'numeric', month: 'short',
   });
 }
 
+// Pinta un texto traducido que lleva un nodo JSX en medio ({llave} → nodo), para que el
+// orden de las palabras lo decida la traducción y no el código.
+function conNodo(texto, llave, nodo) {
+  const [a, b = ''] = String(texto).split(`{${llave}}`);
+  return <>{a}{nodo}{b}</>;
+}
+
 function EstadoPill({ estado, source }) {
   if (source === 'pre' || estado === 'pendiente') {
-    return <span className="text-xs font-bold px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full">Pendiente</span>;
+    return <span className="text-xs font-bold px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full">{t('Pendiente')}</span>;
   }
   if (estado === 'confirmada') {
-    return <span className="text-xs font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded-full">Confirmada</span>;
+    return <span className="text-xs font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded-full">{t('Confirmada')}</span>;
   }
   if (estado === 'cancelada') {
-    return <span className="text-xs font-bold px-2 py-0.5 bg-red-100 text-red-400 rounded-full">Cancelada</span>;
+    return <span className="text-xs font-bold px-2 py-0.5 bg-red-100 text-red-400 rounded-full">{t('Cancelada')}</span>;
   }
   if (estado === 'no-show') {
-    return <span className="text-xs font-bold px-2 py-0.5 bg-gray-100 text-gray-400 rounded-full">No-show</span>;
+    return <span className="text-xs font-bold px-2 py-0.5 bg-gray-100 text-gray-400 rounded-full">{t('No-show')}</span>;
   }
   return <span className="text-xs font-bold px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">{estado}</span>;
 }
@@ -30,7 +38,9 @@ function EstadoPill({ estado, source }) {
 // Comparte el link de la reta por WhatsApp (o el share nativo del teléfono).
 function invitarReta(r) {
   const link  = `${window.location.origin}/unirse/${r.join_token}`;
-  const texto = `🎾 ¡Únete a mi reta en Sierra Padel!\n📅 ${fmtFecha(r.fecha)} · ${String(r.hora_inicio || '').slice(0, 5)} hrs · Cancha ${r.cancha}\nApúntate aquí: ${link}`;
+  const texto = t('🎾 ¡Únete a mi reta en Sierra Padel!\n📅 {fecha} · {hora} hrs · Cancha {cancha}\nApúntate aquí: {link}', {
+    fecha: fmtFecha(r.fecha), hora: String(r.hora_inicio || '').slice(0, 5), cancha: r.cancha, link,
+  });
   if (navigator.share) {
     navigator.share({ text: texto }).catch(() => {});
   } else {
@@ -47,14 +57,14 @@ function RosterReta({ r, onInvitar }) {
     <div className="mt-3 pt-3 border-t border-gray-50">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">
-          Jugadores {jugadores.length}/{cupo}
+          {t('Jugadores {n}/{cupo}', { n: jugadores.length, cupo })}
         </p>
         {r.join_token && libres > 0 && (
           <button
             onClick={onInvitar}
             className="text-[13px] font-bold text-white bg-[#25D366] px-3 py-1.5 rounded-full active:scale-95 transition-transform"
           >
-            Invitar por WhatsApp
+            {t('Invitar por WhatsApp')}
           </button>
         )}
       </div>
@@ -66,18 +76,18 @@ function RosterReta({ r, onInvitar }) {
               j.yo ? 'bg-sp-green text-white' : 'bg-sp-green-light text-sp-green-dark'
             }`}
           >
-            {j.yo ? 'Tú' : String(j.nombre || 'Jugador').split(' ')[0]}
+            {j.yo ? t('Tú') : String(j.nombre || t('Jugador')).split(' ')[0]}
           </span>
         ))}
         {Array.from({ length: libres }).map((_, i) => (
           <span key={`l-${i}`} className="px-2.5 py-1 border border-dashed border-gray-300 text-gray-300 rounded-full text-xs">
-            Libre
+            {t('Libre')}
           </span>
         ))}
       </div>
       {libres > 0 && (
         <p className="text-xs text-gray-400 mt-1.5">
-          Ya estás apuntado. Invita a los que faltan: check-in más rápido y cada quien su cuenta.
+          {t('Ya estás apuntado. Invita a los que faltan: check-in más rápido y cada quien su cuenta.')}
         </p>
       )}
     </div>
@@ -102,10 +112,10 @@ function RetaControls({ r, apiFetch, onChanged, setMsg }) {
     setBusy(false);
     setEligiendo(false);
     if (d.ok) {
-      setMsg({ ok: true, text: '📣 Tu reta quedó anunciada. Avisamos a los jugadores compatibles.' });
+      setMsg({ ok: true, text: t('📣 Tu reta quedó anunciada. Avisamos a los jugadores compatibles.') });
       onChanged();
     } else {
-      setMsg({ ok: false, text: d.error || 'No se pudo anunciar la reta.' });
+      setMsg({ ok: false, text: d.error || t('No se pudo anunciar la reta.') });
     }
   }
 
@@ -115,14 +125,14 @@ function RetaControls({ r, apiFetch, onChanged, setMsg }) {
     setMsg(null);
     const d = await apiFetch(`/reta/reserva-propia/${r.id}/cerrar`, { method: 'POST' });
     setBusy(false);
-    if (d.ok) { setMsg({ ok: true, text: 'Tu reta ya no se anuncia.' }); onChanged(); }
-    else setMsg({ ok: false, text: d.error || 'No se pudo. Intenta de nuevo.' });
+    if (d.ok) { setMsg({ ok: true, text: t('Tu reta ya no se anuncia.') }); onChanged(); }
+    else setMsg({ ok: false, text: d.error || t('No se pudo. Intenta de nuevo.') });
   }
 
   if (r.reta?.estado === 'completa') {
     return (
       <div className="mt-2 bg-sp-green-light rounded-xl px-3 py-2">
-        <p className="text-xs text-sp-green-dark font-bold">✅ ¡Reta completa! Nos vemos en la cancha.</p>
+        <p className="text-xs text-sp-green-dark font-bold">{t('✅ ¡Reta completa! Nos vemos en la cancha.')}</p>
       </div>
     );
   }
@@ -131,10 +141,10 @@ function RetaControls({ r, apiFetch, onChanged, setMsg }) {
     return (
       <div className="mt-2 flex items-center justify-between gap-2 bg-sp-green-light rounded-xl px-3 py-2">
         <p className="text-xs text-sp-green-dark font-bold">
-          📣 Anunciada en retas · {r.reta.nivel_objetivo ? `${r.reta.nivel_objetivo} (±1)` : 'abierta a todos'}
+          {t('📣 Anunciada en retas · {a_quien}', { a_quien: r.reta.nivel_objetivo ? `${r.reta.nivel_objetivo} (±1)` : t('abierta a todos') })}
         </p>
         <button onClick={cerrar} disabled={busy} className="text-xs text-gray-400 underline flex-shrink-0">
-          {busy ? '…' : 'Dejar de anunciar'}
+          {busy ? '…' : t('Dejar de anunciar')}
         </button>
       </div>
     );
@@ -143,21 +153,21 @@ function RetaControls({ r, apiFetch, onChanged, setMsg }) {
   if (eligiendo) {
     return (
       <div className="mt-2 flex flex-col gap-2">
-        <p className="text-xs text-gray-400 font-semibold">¿A quién avisamos?</p>
+        <p className="text-xs text-gray-400 font-semibold">{t('¿A quién avisamos?')}</p>
         <div className="flex gap-2">
           <button
             onClick={() => abrir('mi')}
             disabled={busy}
             className="flex-1 py-2 rounded-xl text-xs font-bold bg-sp-green text-white disabled:opacity-50"
           >
-            🎯 De mi nivel (±1)
+            {t('🎯 De mi nivel (±1)')}
           </button>
           <button
             onClick={() => abrir('todos')}
             disabled={busy}
             className="flex-1 py-2 rounded-xl text-xs font-bold bg-white text-sp-gray border border-gray-200 disabled:opacity-50"
           >
-            🌎 Abierta a todos
+            {t('🌎 Abierta a todos')}
           </button>
           <button onClick={() => setEligiendo(false)} className="px-2 text-xs text-gray-400">✕</button>
         </div>
@@ -170,7 +180,7 @@ function RetaControls({ r, apiFetch, onChanged, setMsg }) {
       onClick={() => setEligiendo(true)}
       className="mt-2 w-full py-2 rounded-xl text-xs font-bold bg-sp-gray text-white active:scale-[0.98] transition-transform"
     >
-      📣 Buscar jugadores (anunciar reta)
+      {t('📣 Buscar jugadores (anunciar reta)')}
     </button>
   );
 }
@@ -204,10 +214,10 @@ function MisReservas({ apiFetch }) {
     setCancelBusy(false);
     setCancelando(null);
     if (d.ok) {
-      setCancelMsg({ ok: true, text: r._source === 'pre' ? 'Solicitud cancelada.' : 'Reserva cancelada.' });
+      setCancelMsg({ ok: true, text: r._source === 'pre' ? t('Solicitud cancelada.') : t('Reserva cancelada.') });
       load();
     } else {
-      setCancelMsg({ ok: false, text: d.error || 'No se pudo cancelar. Intenta de nuevo.' });
+      setCancelMsg({ ok: false, text: d.error || t('No se pudo cancelar. Intenta de nuevo.') });
     }
   }
 
@@ -233,7 +243,7 @@ function MisReservas({ apiFetch }) {
     <div className="flex flex-col gap-3">
       {/* Tabs */}
       <div className="flex gap-1">
-        {[['proximas','Proximas'],['historial','Historial']].map(([v, label]) => (
+        {[['proximas', t('Proximas')], ['historial', t('Historial')]].map(([v, label]) => (
           <button
             key={v}
             onClick={() => setTab(v)}
@@ -257,8 +267,8 @@ function MisReservas({ apiFetch }) {
           {proximas.length === 0 && (
             <div className="card text-center py-12">
               <p className="text-3xl mb-3">🎾</p>
-              <p className="text-gray-500 font-medium">Sin reservas proximas</p>
-              <p className="text-gray-400 text-sm mt-1">Haz tu primera solicitud arriba</p>
+              <p className="text-gray-500 font-medium">{t('Sin reservas proximas')}</p>
+              <p className="text-gray-400 text-sm mt-1">{t('Haz tu primera solicitud arriba')}</p>
             </div>
           )}
           {proximas.map(r => {
@@ -269,8 +279,8 @@ function MisReservas({ apiFetch }) {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-black text-sp-gray">
-                      {r.tipo === 'renta' ? `Cancha ${r.cancha}` :
-                       r.tipo === 'clase' ? `Clase con ${r.instructor}` : r.tipo}
+                      {r.tipo === 'renta' ? t('Cancha {n}', { n: r.cancha }) :
+                       r.tipo === 'clase' ? t('Clase con {coach}', { coach: r.instructor }) : r.tipo}
                     </p>
                     <p className="text-sm text-gray-500 mt-0.5 capitalize">
                       {fmtFecha(r.fecha)} · {String(r.hora_inicio || '').slice(0, 5)}
@@ -282,7 +292,7 @@ function MisReservas({ apiFetch }) {
 
                 {r._source === 'pre' && (
                   <p className="text-xs text-yellow-600 mt-2 bg-yellow-50 rounded-lg px-3 py-1.5">
-                    ⏳ Esperando confirmacion del club
+                    {t('⏳ Esperando confirmacion del club')}
                   </p>
                 )}
 
@@ -302,13 +312,13 @@ function MisReservas({ apiFetch }) {
                           disabled={cancelBusy}
                           className="flex-1 py-2 rounded-xl text-xs font-bold bg-red-50 text-red-500 border border-red-200"
                         >
-                          {cancelBusy ? 'Cancelando…' : 'Si, cancelar'}
+                          {cancelBusy ? t('Cancelando…') : t('Si, cancelar')}
                         </button>
                         <button
                           onClick={() => setCancelando(null)}
                           className="flex-1 py-2 rounded-xl text-xs font-bold bg-gray-50 text-gray-500 border border-gray-200"
                         >
-                          No, conservar
+                          {t('No, conservar')}
                         </button>
                       </div>
                     ) : (
@@ -316,7 +326,7 @@ function MisReservas({ apiFetch }) {
                         onClick={() => { setCancelando(`${r._source}-${r.id}`); setCancelMsg(null); }}
                         className="text-xs text-gray-400 underline"
                       >
-                        {r._source === 'pre' ? 'Cancelar solicitud' : 'Cancelar reserva'}
+                        {r._source === 'pre' ? t('Cancelar solicitud') : t('Cancelar reserva')}
                       </button>
                     )}
                   </div>
@@ -325,7 +335,7 @@ function MisReservas({ apiFetch }) {
             );
           })}
           <p className="text-xs text-gray-400 text-center px-4">
-            Las reservas confirmadas se pueden cancelar hasta 4 horas antes. Con menos tiempo, escríbenos por WhatsApp.
+            {t('Las reservas confirmadas se pueden cancelar hasta 4 horas antes. Con menos tiempo, escríbenos por WhatsApp.')}
           </p>
         </>
       )}
@@ -334,7 +344,7 @@ function MisReservas({ apiFetch }) {
         <>
           {historial.length === 0 && (
             <div className="card text-center py-10">
-              <p className="text-gray-400 text-sm">Sin historial de reservas</p>
+              <p className="text-gray-400 text-sm">{t('Sin historial de reservas')}</p>
             </div>
           )}
           {historial.map(r => (
@@ -342,8 +352,8 @@ function MisReservas({ apiFetch }) {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="font-semibold text-sp-gray">
-                    {r.tipo === 'renta' ? `Cancha ${r.cancha}` :
-                     r.tipo === 'clase' ? `Clase con ${r.instructor}` : r.tipo}
+                    {r.tipo === 'renta' ? t('Cancha {n}', { n: r.cancha }) :
+                     r.tipo === 'clase' ? t('Clase con {coach}', { coach: r.instructor }) : r.tipo}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 capitalize">
                     {fmtFecha(r.fecha)} · {String(r.hora_inicio || '').slice(0, 5)}
@@ -360,7 +370,7 @@ function MisReservas({ apiFetch }) {
         onClick={load}
         className="text-sp-green text-sm font-semibold text-center py-2"
       >
-        Actualizar
+        {t('Actualizar')}
       </button>
     </div>
   );
@@ -399,7 +409,7 @@ function proximoMartes() {
 }
 
 function formatDate(iso) {
-  return new Date(iso + 'T12:00').toLocaleDateString('es-MX', {
+  return new Date(iso + 'T12:00').toLocaleDateString(locale(), {
     weekday: 'long', day: 'numeric', month: 'long',
   });
 }
@@ -532,9 +542,9 @@ export default function Reservar() {
       });
       setLoading(false);
       if (d.ok) {
-        setDone({ fecha, hora, detalle: `Canchas ${canchas2[0]} y ${canchas2[1]} · la cancha ${canchas2[1]} va por la casa 🎂`,
+        setDone({ fecha, hora, detalle: t('Canchas {a} y {b} · la cancha {b} va por la casa 🎂', { a: canchas2[0], b: canchas2[1] }),
           promo: null, primera: null });
-      } else setError(d.error || 'No se pudo enviar la solicitud');
+      } else setError(d.error || t('No se pudo enviar la solicitud'));
       return;
     }
     const body = tipo === 'cancha'
@@ -561,12 +571,12 @@ export default function Reservar() {
       setDone({
         fecha:   tipo === 'cancha' ? fecha      : fechaClase,
         hora:    tipo === 'cancha' ? hora       : horaSel,
-        detalle: tipo === 'cancha' ? `Cancha ${cancha}` : `Clase con ${coachSel}`,
+        detalle: tipo === 'cancha' ? t('Cancha {n}', { n: cancha }) : t('Clase con {coach}', { coach: coachSel }),
         promo:   tienePromo ? { codigo: promoCodigo, precio: promoPrecio, titulo: promoTitulo } : null,
         primera: esPrimera ? { precio: Number(data.data.promo_precio) || 200, bote: boteInfo } : null,
       });
     } else {
-      setError(data.error || 'No se pudo enviar la solicitud');
+      setError(data.error || t('No se pudo enviar la solicitud'));
     }
   }
 
@@ -594,34 +604,35 @@ export default function Reservar() {
           </svg>
         </div>
         <div className="text-center">
-          <p className="text-xl font-black text-sp-gray">Solicitud enviada</p>
+          <p className="text-xl font-black text-sp-gray">{t('Solicitud enviada')}</p>
           <p className="text-gray-500 mt-1 text-sm font-medium">{done.detalle}</p>
           <p className="text-gray-400 text-sm capitalize">{formatDate(done.fecha)} · {done.hora}</p>
         </div>
         <div className="bg-sp-green-light rounded-2xl px-5 py-4 text-center w-full max-w-xs">
           <p className="text-sp-green-dark text-sm font-medium">
-            Tu solicitud llego al panel del club. Te avisaremos en cuanto quede confirmada — al confirmarse podras invitar a tus jugadores.
+            {t('Tu solicitud llego al panel del club. Te avisaremos en cuanto quede confirmada — al confirmarse podras invitar a tus jugadores.')}
           </p>
         </div>
         {done.promo && (
           <div style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))', border: '1px solid var(--sp-on-dark)', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--sp-on-dark)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Promo Express aplicada</p>
+            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--sp-on-dark)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>{t('Promo Express aplicada')}</p>
             <p style={{ fontSize: 22, fontWeight: 900, letterSpacing: '0.12em', color: 'var(--sp-on-dark)' }}>{done.promo.codigo}</p>
-            {done.promo.precio && <p style={{ fontSize: 13, color: '#9090a8', marginTop: 4 }}>Precio preferencial: <strong style={{ color: '#eeeef5' }}>${done.promo.precio}</strong></p>}
-            <p style={{ fontSize: 11, color: '#5e5e78', marginTop: 4 }}>El encargado vera este codigo al revisar la reserva</p>
+            {done.promo.precio && <p style={{ fontSize: 13, color: '#9090a8', marginTop: 4 }}>{t('Precio preferencial:')} <strong style={{ color: '#eeeef5' }}>${done.promo.precio}</strong></p>}
+            <p style={{ fontSize: 11, color: '#5e5e78', marginTop: 4 }}>{t('El encargado vera este codigo al revisar la reserva')}</p>
           </div>
         )}
         {done.primera && (
           <div style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))', border: '1px solid var(--sp-on-dark)', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--sp-on-dark)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>🎉 Promo de bienvenida aplicada</p>
-            <p style={{ fontSize: 22, fontWeight: 900, color: 'var(--sp-on-dark)' }}>Renta a ${done.primera.precio}</p>
+            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--sp-on-dark)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>{t('🎉 Promo de bienvenida aplicada')}</p>
+            <p style={{ fontSize: 22, fontWeight: 900, color: 'var(--sp-on-dark)' }}>{t('Renta a ${precio}', { precio: done.primera.precio })}</p>
             <p style={{ fontSize: 12, color: '#9090a8', marginTop: 4 }}>
-              Comprando 1 <strong style={{ color: '#eeeef5' }}>bote de pelotas Sierra Padel{done.primera.bote?.precio ? ` ($${done.primera.bote.precio})` : ''}</strong> al llegar al club.
-              {done.primera.bote?.precio ? ` Total a pagar: $${done.primera.precio + done.primera.bote.precio}.` : ''} Cancha completa · 90 min. Sin el bote, la promo no aplica.
+              {conNodo(t('Comprando 1 {bote} al llegar al club.'), 'bote',
+                <strong style={{ color: '#eeeef5' }}>{t('bote de pelotas Sierra Padel')}{done.primera.bote?.precio ? ` ($${done.primera.bote.precio})` : ''}</strong>)}
+              {done.primera.bote?.precio ? ' ' + t('Total a pagar: ${total}.', { total: done.primera.precio + done.primera.bote.precio }) : ''} {t('Cancha completa · 90 min. Sin el bote, la promo no aplica.')}
             </p>
           </div>
         )}
-        <button className="btn-green w-full max-w-xs" onClick={reset}>Nueva solicitud</button>
+        <button className="btn-green w-full max-w-xs" onClick={reset}>{t('Nueva solicitud')}</button>
       </div>
     );
   }
@@ -630,20 +641,20 @@ export default function Reservar() {
   return (
     <div className="page safe-bottom">
       <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-0">
-        <p className="text-white font-black text-lg pt-3 mb-3">Reservar</p>
+        <p className="text-white font-black text-lg pt-3 mb-3">{t('Reservar')}</p>
         {/* Banner promo express tipo 2 */}
         {tienePromo && (
           <div style={{ background: 'rgba(0,0,0,.25)', borderRadius: 12, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 20 }}>⚡</span>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 12, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{promoTitulo || 'Promo Express activa'}</p>
-              {promoPrecio && <p style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginTop: 2 }}>Precio preferencial: <strong>${promoPrecio}</strong> · Codigo: {promoCodigo}</p>}
+              <p style={{ fontSize: 12, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{promoTitulo || t('Promo Express activa')}</p>
+              {promoPrecio && <p style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginTop: 2 }}>{t('Precio preferencial:')} <strong>${promoPrecio}</strong> · {t('Codigo: {codigo}', { codigo: promoCodigo })}</p>}
             </div>
           </div>
         )}
         {/* Main tabs */}
         <div className="flex gap-1">
-          {[['nueva','Nueva reserva'],['mis','Mis reservas']].map(([v,label]) => (
+          {[['nueva', t('Nueva reserva')], ['mis', t('Mis reservas')]].map(([v,label]) => (
             <button
               key={v}
               onClick={() => { setMainTab(v); setDone(null); }}
@@ -667,7 +678,7 @@ export default function Reservar() {
 
         {/* Tipo tabs */}
         <div className="flex gap-1 bg-gray-100 rounded-2xl p-1">
-          {[['cancha', '🎾 Cancha'], ['clase', '🏫 Clase']].map(([val, label]) => (
+          {[['cancha', t('🎾 Cancha')], ['clase', t('🏫 Clase')]].map(([val, label]) => (
             <button
               key={val}
               onClick={() => switchTipo(val)}
@@ -686,30 +697,32 @@ export default function Reservar() {
             {esTodoONada && (
               <div className="rounded-2xl px-3 py-3 flex items-center gap-3 text-[13.5px] leading-relaxed"
                    style={{ background: '#151515', color: '#F1E9DD' }}>
-                <img src="/todo-o-nada.webp" alt="Todo o Nada · El que pierde paga" width="84" height="99"
+                <img src="/todo-o-nada.webp" alt={t('Todo o Nada · El que pierde paga')} width="84" height="99"
                      className="w-[84px] h-auto shrink-0" />
                 <div className="min-w-0">
-                  <p className="font-black text-[15px]" style={{ color: '#8DC63F' }}>Martes de Todo o Nada</p>
+                  <p className="font-black text-[15px]" style={{ color: '#8DC63F' }}>{t('Martes de Todo o Nada')}</p>
                   <ul className="mt-1 list-disc pl-4 space-y-1">
-                    <li>Renta $600 desde las 8:30 pm.</li>
-                    <li>La pareja que gana no paga y la que pierde paga $300 cada quien.</li>
-                    <li className="font-bold">Para aplicar la promo, capturen el resultado en la app.</li>
+                    <li>{t('Renta $600 desde las 8:30 pm.')}</li>
+                    <li>{t('La pareja que gana no paga y la que pierde paga $300 cada quien.')}</li>
+                    <li className="font-bold">{t('Para aplicar la promo, capturen el resultado en la app.')}</li>
                   </ul>
                 </div>
               </div>
             )}
             {esCumple && (
               <div className="card border-0" style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))' }}>
-                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--sp-on-dark)' }}>🎂 Tu promo de cumpleaños</p>
-                <p style={{ color: 'white', fontWeight: 900, fontSize: 18, marginTop: 4 }}>Reserva 2 canchas: la 2ª va por la casa</p>
+                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--sp-on-dark)' }}>{t('🎂 Tu promo de cumpleaños')}</p>
+                <p style={{ color: 'white', fontWeight: 900, fontSize: 18, marginTop: 4 }}>{t('Reserva 2 canchas: la 2ª va por la casa')}</p>
                 <p className="text-sm mt-1" style={{ color: '#c4c4d8' }}>
-                  Elige el día{cumpleDesde && cumpleHasta ? ` (del ${formatDate(cumpleDesde)} al ${formatDate(cumpleHasta)})` : ''}, la hora y marca <b style={{ color: 'white' }}>dos canchas</b>.
-                  Pagas una a precio normal y la otra es gratis. Caben 8.
+                  {conNodo(t('Elige el día{rango}, la hora y marca {dos}.', {
+                    rango: cumpleDesde && cumpleHasta ? t(' (del {desde} al {hasta})', { desde: formatDate(cumpleDesde), hasta: formatDate(cumpleHasta) }) : '',
+                  }), 'dos', <b style={{ color: 'white' }}>{t('dos canchas')}</b>)}
+                  {' '}{t('Pagas una a precio normal y la otra es gratis. Caben 8.')}
                 </p>
               </div>
             )}
             <div className="card">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">Fecha</p>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">{t('Fecha')}</p>
               <input
                 type="date"
                 className="input-field"
@@ -721,9 +734,9 @@ export default function Reservar() {
             </div>
 
             <div className="card">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">Horario · renta 90 min</p>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">{t('Horario · renta 90 min')}</p>
               {gridHoras.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">Ya no hay horarios para hoy</p>
+                <p className="text-sm text-gray-400 text-center py-4">{t('Ya no hay horarios para hoy')}</p>
               ) : (
                 <div className="grid grid-cols-4 gap-2">
                   {gridHoras.map(({ hora: h, libres }) => {
@@ -752,14 +765,14 @@ export default function Reservar() {
             {hora && (
               <div className="card">
                 <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">
-                  {esCumple ? `Canchas disponibles · marca 2 (${canchas2.length}/2)` : 'Canchas disponibles'}
+                  {esCumple ? t('Canchas disponibles · marca 2 ({n}/2)', { n: canchas2.length }) : t('Canchas disponibles')}
                 </p>
                 {loadingCanchas ? (
                   <div className="flex justify-center py-6">
                     <div className="w-6 h-6 border-4 border-sp-green border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : canchasDisp && canchasDisp.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">Sin canchas disponibles para este horario</p>
+                  <p className="text-sm text-gray-400 text-center py-4">{t('Sin canchas disponibles para este horario')}</p>
                 ) : (
                   <div className="grid grid-cols-3 gap-2">
                     {(canchasDisp || []).map(c => (
@@ -773,7 +786,7 @@ export default function Reservar() {
                             : 'bg-white text-sp-gray border-gray-200'
                         }`}
                       >
-                        Cancha {c}
+                        {t('Cancha {n}', { n: c })}
                       </button>
                     ))}
                   </div>
@@ -785,15 +798,15 @@ export default function Reservar() {
 
             {puedeConfirmarCancha && (
               <div className="card bg-sp-green-light border-0">
-                <p className="text-xs text-sp-green-dark font-semibold uppercase tracking-wide mb-2">Resumen</p>
+                <p className="text-xs text-sp-green-dark font-semibold uppercase tracking-wide mb-2">{t('Resumen')}</p>
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-black text-sp-gray text-base">
-                      {esCumple ? `Canchas ${canchas2[0]} y ${canchas2[1]}` : `Cancha ${cancha}`}
+                      {esCumple ? t('Canchas {a} y {b}', { a: canchas2[0], b: canchas2[1] }) : t('Cancha {n}', { n: cancha })}
                     </p>
                     {esCumple && (
                       <p className="text-xs text-sp-green-dark font-semibold mt-0.5">
-                        Cancha {canchas2[0]}: precio normal{tarifa?.precio != null ? ` $${tarifa.precio}` : ''} · Cancha {canchas2[1]}: $0 🎂
+                        {t('Cancha {a}: precio normal{precio} · Cancha {b}: $0 🎂', { a: canchas2[0], b: canchas2[1], precio: tarifa?.precio != null ? ` $${tarifa.precio}` : '' })}
                       </p>
                     )}
                     <p className="text-sm text-gray-500 capitalize">{formatDate(fecha)} · {hora} · 90 min</p>
@@ -801,36 +814,36 @@ export default function Reservar() {
                   {tarifa?.precio != null && (
                     <div className="text-right">
                       <p className="font-black text-sp-green-dark text-xl">${tarifa.precio}</p>
-                      <p className="text-[10px] text-gray-400">precio de lista</p>
+                      <p className="text-[10px] text-gray-400">{t('precio de lista')}</p>
                     </div>
                   )}
                 </div>
                 {tienePromo && promoPrecio && (
-                  <p className="text-xs text-sp-green-dark mt-1 font-semibold">⚡ Con tu promo: ${promoPrecio}</p>
+                  <p className="text-xs text-sp-green-dark mt-1 font-semibold">{t('⚡ Con tu promo: ${precio}', { precio: promoPrecio })}</p>
                 )}
                 {!tienePromo && !esCumple && primera?.elegible && (
                   <div className="mt-2 bg-white/70 rounded-xl px-3 py-2">
                     <p className="text-xs text-sp-green-dark font-bold">
-                      🎉 Tienes tu primera renta a ${primera.precio || 200} comprando 1 bote de pelotas Sierra Padel{primera.bote?.precio ? ` ($${primera.bote.precio})` : ''}
+                      {t('🎉 Tienes tu primera renta a ${precio} comprando 1 bote de pelotas Sierra Padel', { precio: primera.precio || 200 })}{primera.bote?.precio ? ` ($${primera.bote.precio})` : ''}
                     </p>
-                    <div className="flex gap-2 mt-2" role="radiogroup" aria-label="¿Usar tu primera renta?">
+                    <div className="flex gap-2 mt-2" role="radiogroup" aria-label={t('¿Usar tu primera renta?')}>
                       <button type="button" role="radio" aria-checked={usarPrimera}
                         onClick={() => setUsarPrimera(true)}
                         className={`flex-1 text-xs font-bold rounded-lg px-2 py-2 border ${usarPrimera ? 'bg-sp-green text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}>
-                        Usarla ahora (${primera.precio || 200})
+                        {t('Usarla ahora (${precio})', { precio: primera.precio || 200 })}
                       </button>
                       <button type="button" role="radio" aria-checked={!usarPrimera}
                         onClick={() => setUsarPrimera(false)}
                         className={`flex-1 text-xs font-bold rounded-lg px-2 py-2 border ${!usarPrimera ? 'bg-sp-green text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}>
-                        Precio normal, la guardo
+                        {t('Precio normal, la guardo')}
                       </button>
                     </div>
                     <p className="text-[11px] text-gray-500 mt-1.5">
                       {usarPrimera
-                        ? <>Cancha completa · 90 min. El bote se paga al llegar al club
-                            {primera.bote?.precio ? ` — total: $${(primera.precio || 200) + primera.bote.precio} ($${primera.precio || 200} cancha + $${primera.bote.precio} bote)` : ''}.
-                            Válida una sola vez y solo para quien hace la reservación.</>
-                        : <>Esta cancha va a precio normal y tu primera renta a ${primera.precio || 200} se queda para otro día. Elige esto si vas a usar otra promo, como tu 2x1 de cumpleaños.</>}
+                        ? (primera.bote?.precio
+                            ? t('Cancha completa · 90 min. El bote se paga al llegar al club — total: ${total} (${cancha} cancha + ${bote} bote). Válida una sola vez y solo para quien hace la reservación.', { total: (primera.precio || 200) + primera.bote.precio, cancha: primera.precio || 200, bote: primera.bote.precio })
+                            : t('Cancha completa · 90 min. El bote se paga al llegar al club. Válida una sola vez y solo para quien hace la reservación.'))
+                        : t('Esta cancha va a precio normal y tu primera renta a ${precio} se queda para otro día. Elige esto si vas a usar otra promo, como tu 2x1 de cumpleaños.', { precio: primera.precio || 200 })}
                     </p>
                   </div>
                 )}
@@ -839,7 +852,7 @@ export default function Reservar() {
                   onClick={handleConfirmar}
                   disabled={loading}
                 >
-                  {loading ? 'Enviando...' : 'Confirmar solicitud'}
+                  {loading ? t('Enviando...') : t('Confirmar solicitud')}
                 </button>
               </div>
             )}
@@ -850,7 +863,7 @@ export default function Reservar() {
         {tipo === 'clase' && (
           <>
             <div className="card">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">Fecha</p>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">{t('Fecha')}</p>
               <input
                 type="date"
                 className="input-field"
@@ -866,7 +879,7 @@ export default function Reservar() {
               </div>
             ) : coaches && coaches.length === 0 ? (
               <div className="card text-center py-8">
-                <p className="text-gray-400 text-sm">Sin instructores disponibles para esta fecha</p>
+                <p className="text-gray-400 text-sm">{t('Sin instructores disponibles para esta fecha')}</p>
               </div>
             ) : coaches ? (
               coaches.map(coach => (
@@ -881,7 +894,7 @@ export default function Reservar() {
                     </div>
                     <div>
                       <p className="font-black text-sp-gray">{coach.nombre}</p>
-                      <p className="text-xs text-gray-400">{coach.horarios?.length || 0} horarios disponibles · clase 60 min</p>
+                      <p className="text-xs text-gray-400">{t('{n} horarios disponibles · clase 60 min', { n: coach.horarios?.length || 0 })}</p>
                     </div>
                   </div>
                   {coachSel === coach.nombre && coach.horarios?.length > 0 && (
@@ -909,15 +922,15 @@ export default function Reservar() {
 
             {puedeConfirmarClase && (
               <div className="card bg-sp-green-light border-0">
-                <p className="text-xs text-sp-green-dark font-semibold uppercase tracking-wide mb-2">Resumen</p>
-                <p className="font-black text-sp-gray text-base">Clase con {coachSel}</p>
+                <p className="text-xs text-sp-green-dark font-semibold uppercase tracking-wide mb-2">{t('Resumen')}</p>
+                <p className="font-black text-sp-gray text-base">{t('Clase con {coach}', { coach: coachSel })}</p>
                 <p className="text-sm text-gray-500 capitalize">{formatDate(fechaClase)} · {horaSel} · 60 min</p>
                 <button
                   className="btn-green w-full mt-4"
                   onClick={handleConfirmar}
                   disabled={loading}
                 >
-                  {loading ? 'Enviando...' : 'Confirmar solicitud'}
+                  {loading ? t('Enviando...') : t('Confirmar solicitud')}
                 </button>
               </div>
             )}

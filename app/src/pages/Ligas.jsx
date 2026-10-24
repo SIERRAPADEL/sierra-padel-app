@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { KANIT, fondoPatro, PatrocinioArco, IconoEscalera, claseClaro, varsClaro } from '../components/PatrocinioJornada';
+import { t, locale } from '../i18n';
 
 /**
  * Índice de LIGAS del club.
@@ -19,10 +20,11 @@ import { KANIT, fondoPatro, PatrocinioArco, IconoEscalera, claseClaro, varsClaro
 // `categoria` de la liga escalera: 'Varonil' | 'Femenil' (o vacía = mixta/sin definir).
 // Verde institucional para la varonil, rosa para la femenil. La mixta se queda en el verde
 // oscuro neutro de siempre, que es lo que había antes de que existieran las ramas.
+// `etiqueta` es función: t() se llama al pintar, no al importar.
 const RAMA = {
-  Varonil: { fondo: '#1d3009', sub: 'rgba(217,249,157,.9)', acento: '#4d7c0f', etiqueta: 'Varonil · ' },
-  Femenil: { fondo: '#4a0d2e', sub: 'rgba(251,207,232,.92)', acento: '#be185d', etiqueta: 'Femenil · ' },
-  _:       { fondo: '#1d3009', sub: 'rgba(217,249,157,.9)', acento: '#4d7c0f', etiqueta: '' },
+  Varonil: { fondo: '#1d3009', sub: 'rgba(217,249,157,.9)', acento: '#4d7c0f', etiqueta: () => t('Varonil') + ' · ' },
+  Femenil: { fondo: '#4a0d2e', sub: 'rgba(251,207,232,.92)', acento: '#be185d', etiqueta: () => t('Femenil') + ' · ' },
+  _:       { fondo: '#1d3009', sub: 'rgba(217,249,157,.9)', acento: '#4d7c0f', etiqueta: () => '' },
 };
 
 export default function Ligas() {
@@ -52,28 +54,28 @@ export default function Ligas() {
   }, [apiFetch]);
 
   const fechaBonita = botanero?.fecha
-    ? new Date(botanero.fecha + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
+    ? new Date(botanero.fecha + 'T12:00:00').toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })
     : '';
   const turnos = botanero?.turnos || [];
-  const apuntados = turnos.reduce((s, t) => s + (t.apuntados || 0), 0);
-  const cupo = turnos.reduce((s, t) => s + (t.cupo || 0), 0);
-  const voy = turnos.some(t => t.mi_estado === 'apuntado');
-  const enEspera = turnos.some(t => t.mi_estado === 'espera');
+  const apuntados = turnos.reduce((s, tu) => s + (tu.apuntados || 0), 0);
+  const cupo = turnos.reduce((s, tu) => s + (tu.cupo || 0), 0);
+  const voy = turnos.some(tu => tu.mi_estado === 'apuntado');
+  const enEspera = turnos.some(tu => tu.mi_estado === 'espera');
 
   const dia = (iso) => iso
-    ? new Date(iso + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
+    ? new Date(iso + 'T12:00:00').toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })
     : '';
 
   return (
     <div className="page safe-bottom">
       <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-4">
-        <p className="text-white font-black text-lg pt-3">Ligas</p>
-        <p className="text-white/85 text-[13px] mt-0.5">Juega cada semana, suma récord y sube en el ranking</p>
+        <p className="text-white font-black text-lg pt-3">{t('Ligas')}</p>
+        <p className="text-white/85 text-[13px] mt-0.5">{t('Juega cada semana, suma récord y sube en el ranking')}</p>
       </div>
 
       <div className="px-4 py-4 flex flex-col gap-3 overflow-y-auto">
         {loading && (
-          <div className="card py-8 text-center text-gray-400 text-sm">Cargando…</div>
+          <div className="card py-8 text-center text-gray-400 text-sm">{t('Cargando…')}</div>
         )}
 
         {/* Ligas escalera abiertas — se leen de la base, no van escritas aquí */}
@@ -103,22 +105,22 @@ export default function Ligas() {
                     <div className="flex-1 min-w-0">
                       <p className="font-extrabold text-[21px] leading-tight">{l.nombre}</p>
                       <p className="text-[14px] leading-snug mt-0.5" style={{ color: pc.tinte }}>
-                        {ramaBase.etiqueta}Escalera por nivel · {l.n_jornadas} jornadas · 3 sets por noche
+                        {ramaBase.etiqueta()}{t('Escalera por nivel · {n} jornadas · 3 sets por noche', { n: l.n_jornadas })}
                       </p>
                     </div>
-                    <span className="text-[13px] font-extrabold uppercase px-2.5 py-1 rounded-lg bg-white/25 shrink-0">Abierta</span>
+                    <span className="text-[13px] font-extrabold uppercase px-2.5 py-1 rounded-lg bg-white/25 shrink-0">{t('Abierta')}</span>
                   </div>
                   <div className="mx-4 h-px bg-white/30" />
                   {com?.precio_inscripcion > 0 && (
                     <p className="text-center text-[22px] mt-4">
-                      Inscripción <b className="font-extrabold">${Number(com.precio_inscripcion).toLocaleString('es-MX')}</b>
+                      {t('Inscripción')} <b className="font-extrabold">${Number(com.precio_inscripcion).toLocaleString('es-MX')}</b>
                     </p>
                   )}
                   <PatrocinioArco m={l.patrocinio} jornada={l.patrocinio.jornada} ancho="58%" className="mt-3 mb-4" />
                   <div className="mx-4 h-px bg-white/30" />
                   <div className="px-5 py-3.5 flex items-center justify-between gap-3">
-                    <span className="text-[14px] text-white/90">Te acomodan por nivel · subes jugando</span>
-                    <span className="text-[15px] font-extrabold shrink-0">Ver liga</span>
+                    <span className="text-[14px] text-white/90">{t('Te acomodan por nivel · subes jugando')}</span>
+                    <span className="text-[15px] font-extrabold shrink-0">{t('Ver liga')}</span>
                   </div>
                 </div>
               </button>
@@ -134,40 +136,40 @@ export default function Ligas() {
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-black text-[16px] leading-tight">{l.nombre}</p>
                     <p className="text-[12px]" style={{ color: rama.sub }}>
-                      {rama.etiqueta}Escalera por nivel · {l.n_jornadas} jornadas · 3 sets por noche
+                      {rama.etiqueta()}{t('Escalera por nivel · {n} jornadas · 3 sets por noche', { n: l.n_jornadas })}
                     </p>
                   </div>
                   <span className="text-[12px] font-bold px-2 py-1 rounded-lg bg-white/15 text-white flex-shrink-0">
-                    Abierta
+                    {t('Abierta')}
                   </span>
                 </div>
                 <div className="px-4 py-3">
                   {com?.fecha_inicio && (
                     <p className="text-sp-gray text-[14px] font-bold capitalize">
-                      🚀 Arranca: {dia(com.fecha_inicio)}
+                      🚀 {t('Arranca: {fecha}', { fecha: dia(com.fecha_inicio) })}
                     </p>
                   )}
                   <p className="text-gray-500 text-[13px] mt-0.5">
                     {com?.precio_inscripcion > 0
-                      ? <>Inscripción <b>${Number(com.precio_inscripcion).toLocaleString('es-MX')}</b></>
-                      : 'Sin costo'}
+                      ? <>{t('Inscripción')} <b>${Number(com.precio_inscripcion).toLocaleString('es-MX')}</b></>
+                      : t('Sin costo')}
                     {bolsa > 0 && <> · <span className="text-amber-600 font-bold">
-                      ${bolsa.toLocaleString('es-MX')} en premios</span></>}
+                      {t('${monto} en premios', { monto: bolsa.toLocaleString('es-MX') })}</span></>}
                   </p>
                   <p className="text-gray-400 text-[12px] mt-1">
                     {l.inscritos === 0
-                      ? 'Sé el primero en apuntarte'
-                      : `${l.inscritos} ${l.inscritos === 1 ? 'inscrito' : 'inscritos'}`}
+                      ? t('Sé el primero en apuntarte')
+                      : l.inscritos === 1 ? t('1 inscrito') : t('{n} inscritos', { n: l.inscritos })}
                   </p>
                   {/* 🥩 Patrocinador de la PRÓXIMA jornada (German 25-sep-2026): sólo mientras es la siguiente. */}
                   {l.patrocinio && (
                     <div className="mt-2 rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-black tracking-widest text-gray-400">
-                          {l.patrocinio.leyenda || `PATROCINA LA JORNADA ${l.patrocinio.jornada}`}
+                          {l.patrocinio.leyenda || t('PATROCINA LA JORNADA {n}', { n: l.patrocinio.jornada })}
                         </p>
                         {l.patrocinio.sponsor_url
-                          ? <img src={l.patrocinio.sponsor_url} alt={l.patrocinio.sponsor_nombre || 'Patrocinador'} loading="lazy"
+                          ? <img src={l.patrocinio.sponsor_url} alt={l.patrocinio.sponsor_nombre || t('Patrocinador')} loading="lazy"
                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                  className="h-10 max-w-full object-contain mt-0.5" />
                           : <p className="font-black text-sp-gray text-[14px]">{l.patrocinio.sponsor_nombre}</p>}
@@ -181,9 +183,9 @@ export default function Ligas() {
                   )}
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-[13px] text-gray-400">
-                      Te acomodan por nivel · subes jugando
+                      {t('Te acomodan por nivel · subes jugando')}
                     </span>
-                    <span className="text-[13px] font-bold" style={{ color: rama.acento }}>Ver liga →</span>
+                    <span className="text-[13px] font-bold" style={{ color: rama.acento }}>{t('Ver liga')} →</span>
                   </div>
                 </div>
               </div>
@@ -203,15 +205,15 @@ export default function Ligas() {
                 <div className="px-5 pt-5 pb-4 flex items-start gap-3.5">
                   <span className="shrink-0" style={{ fontSize: 30, lineHeight: 1 }}>🍻</span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-extrabold text-[21px] leading-tight">Liga Viernes Botanero</p>
-                    <p className="text-[14px] leading-snug mt-0.5" style={{ color: pc.tinte }}>Individual · todos los viernes · futbol en pantallas</p>
+                    <p className="font-extrabold text-[21px] leading-tight">{t('Liga Viernes Botanero')}</p>
+                    <p className="text-[14px] leading-snug mt-0.5" style={{ color: pc.tinte }}>{t('Individual · todos los viernes · futbol en pantallas')}</p>
                   </div>
-                  <span className="text-[13px] font-extrabold uppercase px-2.5 py-1 rounded-lg bg-white/25 shrink-0">{lider ? 'En juego' : 'Arranca'}</span>
+                  <span className="text-[13px] font-extrabold uppercase px-2.5 py-1 rounded-lg bg-white/25 shrink-0">{lider ? t('En juego') : t('Arranca')}</span>
                 </div>
                 <div className="mx-4 h-px bg-white/30" />
                 {fechaBonita && <p className="text-center text-[20px] mt-4 capitalize font-semibold">{fechaBonita}</p>}
-                <p className="text-center text-[15px] text-white/90">{turnos.map(t => `${t.hora} $${t.precio}`).join(' · ')}</p>
-                {cupo > 0 && <p className="text-center text-[13px] text-white/75 mt-0.5">{apuntados}/{cupo} apuntados este viernes</p>}
+                <p className="text-center text-[15px] text-white/90">{turnos.map(tu => `${tu.hora} $${tu.precio}`).join(' · ')}</p>
+                {cupo > 0 && <p className="text-center text-[13px] text-white/75 mt-0.5">{t('{a}/{c} apuntados este viernes', { a: apuntados, c: cupo })}</p>}
                 <div className="relative">
                   <PatrocinioArco m={botanero.media} ancho="46%" className="mt-3 mb-4" />
                   {botanero.media.mascota_url && (
@@ -222,9 +224,9 @@ export default function Ligas() {
                 <div className="mx-4 h-px bg-white/30" />
                 <div className="px-5 py-3.5 flex items-center justify-between gap-3">
                   <span className="text-[14px] text-white/90">
-                    {voy ? '✓ Vas este viernes' : enEspera ? '⏳ Estás en lista de espera' : 'Apúntate cada semana, sin inscripción'}
+                    {voy ? t('✓ Vas este viernes') : enEspera ? t('⏳ Estás en lista de espera') : t('Apúntate cada semana, sin inscripción')}
                   </span>
-                  <span className="text-[15px] font-extrabold shrink-0" style={{ color: pc.tinte }}>Ver liga</span>
+                  <span className="text-[15px] font-extrabold shrink-0" style={{ color: pc.tinte }}>{t('Ver liga')}</span>
                 </div>
               </div>
             </button>
@@ -249,38 +251,38 @@ export default function Ligas() {
                   <span style={{ fontSize: 26 }}>🍻</span>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-black text-[16px] leading-tight">Liga Viernes Botanero</p>
-                  <p className="text-amber-200/90 text-[12px]">Individual · todos los viernes · futbol en pantallas</p>
+                  <p className="text-white font-black text-[16px] leading-tight">{t('Liga Viernes Botanero')}</p>
+                  <p className="text-amber-200/90 text-[12px]">{t('Individual · todos los viernes · futbol en pantallas')}</p>
                 </div>
                 <span className="text-[12px] font-bold px-2 py-1 rounded-lg bg-white/15 text-white flex-shrink-0">
-                  {lider ? 'En juego' : 'Arranca'}
+                  {lider ? t('En juego') : t('Arranca')}
                 </span>
               </div>
               <div className="px-4 py-3">
                 {fechaBonita && (
                   <p className="text-sp-gray text-[14px] font-bold capitalize">
-                    {lider ? 'Próxima jornada: ' : '🚀 Debut: '}{fechaBonita}
+                    {lider ? t('Próxima jornada: {fecha}', { fecha: fechaBonita }) : t('🚀 Debut: {fecha}', { fecha: fechaBonita })}
                   </p>
                 )}
                 <p className="text-gray-500 text-[13px] mt-0.5">
-                  {turnos.map(t => `${t.hora} $${t.precio}`).join(' · ')}
-                  <span className="text-amber-600 font-bold"> · precio de lanzamiento</span>
+                  {turnos.map(tu => `${tu.hora} $${tu.precio}`).join(' · ')}
+                  <span className="text-amber-600 font-bold"> · {t('precio de lanzamiento')}</span>
                 </p>
                 {cupo > 0 && (
-                  <p className="text-gray-400 text-[12px] mt-1">{apuntados}/{cupo} apuntados este viernes</p>
+                  <p className="text-gray-400 text-[12px] mt-1">{t('{a}/{c} apuntados este viernes', { a: apuntados, c: cupo })}</p>
                 )}
                 {lider && (
-                  <p className="text-gray-500 text-[13px] mt-1">👑 Líder: <b>{lider.nombre}</b> · {lider.puntos} pts</p>
+                  <p className="text-gray-500 text-[13px] mt-1">👑 {t('Líder:')} <b>{lider.nombre}</b> · {t('{n} pts', { n: lider.puntos })}</p>
                 )}
                 <div className="mt-2 flex items-center justify-between">
                   {voy ? (
-                    <span className="text-[13px] font-bold text-green-600">✓ Vas este viernes</span>
+                    <span className="text-[13px] font-bold text-green-600">{t('✓ Vas este viernes')}</span>
                   ) : enEspera ? (
-                    <span className="text-[13px] font-bold text-amber-600">⏳ Estás en lista de espera</span>
+                    <span className="text-[13px] font-bold text-amber-600">{t('⏳ Estás en lista de espera')}</span>
                   ) : (
-                    <span className="text-[13px] text-gray-400">Apúntate cada semana, sin inscripción</span>
+                    <span className="text-[13px] text-gray-400">{t('Apúntate cada semana, sin inscripción')}</span>
                   )}
-                  <span className="text-[13px] font-bold text-sp-green-dark">Ver liga →</span>
+                  <span className="text-[13px] font-bold text-sp-green-dark">{t('Ver liga')} →</span>
                 </div>
               </div>
             </div>
@@ -289,7 +291,7 @@ export default function Ligas() {
 
         {!loading && (
           <p className="text-gray-400 text-[12px] text-center px-4">
-            Se irán sumando más ligas — aquí las vas a encontrar todas.
+            {t('Se irán sumando más ligas — aquí las vas a encontrar todas.')}
           </p>
         )}
       </div>

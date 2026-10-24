@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { KANIT, fondoPatro, Arco, PatrocinioArco, IconoPala, esClaro, claseClaro, varsClaro } from '../components/PatrocinioJornada';
+import { t, locale } from '../i18n';
 
 /**
  * LO QUE PASÓ EN UNA JORNADA DE LIGA — y sobre todo, la tarjeta para presumirlo.
@@ -79,13 +80,22 @@ const capitaliza = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
 const fmtFecha = (iso) => {
   if (!iso) return '';
   const d = new Date(String(iso).slice(0, 10) + 'T12:00');
-  return capitaliza(d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }));
+  return capitaliza(d.toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' }));
 };
 const hhmm = (h) => (h ? String(h).slice(0, 5) : '');
 // Las fechas cortas del diseño patrocinado: «Mié 30 sep» (bloque) y «Miércoles 30 Sep» (jornada).
+// Armadas a mano en español; en inglés y coreano, Intl con el idioma de la app.
 const _d = (iso) => new Date(String(iso).slice(0, 10) + 'T12:00');
-const fechaBloque = (iso) => (iso ? `${capitaliza(_d(iso).toLocaleDateString('es-MX', { weekday: 'short' }).replace('.', ''))} ${_d(iso).getDate()} ${_d(iso).toLocaleDateString('es-MX', { month: 'short' }).replace('.', '')}` : '');
-const fechaJornada = (iso) => (iso ? `${capitaliza(_d(iso).toLocaleDateString('es-MX', { weekday: 'long' }))} ${_d(iso).getDate()} ${capitaliza(_d(iso).toLocaleDateString('es-MX', { month: 'short' }).replace('.', ''))}` : '');
+const fechaBloque = (iso) => {
+  if (!iso) return '';
+  if (locale() !== 'es-MX') return _d(iso).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
+  return `${capitaliza(_d(iso).toLocaleDateString('es-MX', { weekday: 'short' }).replace('.', ''))} ${_d(iso).getDate()} ${_d(iso).toLocaleDateString('es-MX', { month: 'short' }).replace('.', '')}`;
+};
+const fechaJornada = (iso) => {
+  if (!iso) return '';
+  if (locale() !== 'es-MX') return _d(iso).toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'short' });
+  return `${capitaliza(_d(iso).toLocaleDateString('es-MX', { weekday: 'long' }))} ${_d(iso).getDate()} ${capitaliza(_d(iso).toLocaleDateString('es-MX', { month: 'short' }).replace('.', ''))}`;
+};
 // Nombre y primer apellido, como en el diseño («Iván Cortez»).
 // Con mayúscula inicial en cada palabra: hay nombres capturados todo en minúsculas («jorge salas»).
 const corto = (n) => String(n || '').trim().split(/\s+/).slice(0, 2)
@@ -102,7 +112,8 @@ function destinoDeLugar(lugar, { sube, baja, tam, esPrimero, esUltimo }) {
   if (lugar > tam - baja) return esUltimo ? 'queda' : 'baja';
   return 'queda';
 }
-const ETIQUETA = { sube: '↑ SUBE', baja: '↓ BAJA', queda: '= QUEDA' };
+// Función, no objeto: t() se llama al pintar.
+const etiqueta = (d) => (d === 'sube' ? t('↑ SUBE') : d === 'baja' ? t('↓ BAJA') : d === 'queda' ? t('= QUEDA') : '');
 
 /** El orden de un bloque: por lugar final; si aún no hay, por el orden con el que salió. */
 function ordenDelBloque(b) {
@@ -176,15 +187,15 @@ export default function LigaJornada({ vista }) {
   const fondo = patro ? fondoPatro(col) : `linear-gradient(160deg,${col.a} 0%,${col.b} 55%,${col.c} 100%)`;
 
   if (cargando) {
-    return <div className="min-h-screen grid place-items-center text-gray-400 text-[14px]">Cargando…</div>;
+    return <div className="min-h-screen grid place-items-center text-gray-400 text-[14px]">{t('Cargando…')}</div>;
   }
   if (!jornada) {
     return (
       <div className="min-h-screen grid place-items-center px-6 text-center">
         <div>
-          <p className="text-sp-gray font-bold">No encontramos esa jornada.</p>
+          <p className="text-sp-gray font-bold">{t('No encontramos esa jornada.')}</p>
           <button onClick={() => navigate(`/liga/${id}`)}
-                  className="mt-4 text-sp-green-dark font-bold text-[14px]">← Volver a la liga</button>
+                  className="mt-4 text-sp-green-dark font-bold text-[14px]">← {t('Volver a la liga')}</button>
         </div>
       </div>
     );
@@ -209,7 +220,7 @@ export default function LigaJornada({ vista }) {
             <BloqueDiseno liga={liga} jornada={jornada} b={b} orden={orden} hayResultado={hayResultado} patro={patro} col={col} />
           ) : (<>
           <Encabezado liga={liga} jornada={jornada} tinte={col.tinte}
-                      linea={`${fmtFecha(b.fecha || jornada.fecha)} · Cancha ${b.cancha ?? '—'}${b.hora ? ` · ${hhmm(b.hora)}` : ''}`} />
+                      linea={`${fmtFecha(b.fecha || jornada.fecha)} · ${t('Cancha {n}', { n: b.cancha ?? '—' })}${b.hora ? ` · ${hhmm(b.hora)}` : ''}`} />
           <Patrocinio m={patro} oscuro />
 
           {campeon ? (
@@ -219,18 +230,18 @@ export default function LigaJornada({ vista }) {
                 {MAY(campeon.jugadores?.nombre)}
               </p>
               <p className="text-white/60 text-[13px] font-bold mt-1.5 tracking-[.22em]">
-                {liga.categoria === 'Femenil' ? 'CAMPEONA' : 'CAMPEÓN'}
+                {liga.categoria === 'Femenil' ? t('CAMPEONA') : t('CAMPEÓN')}
               </p>
             </>
           ) : (
             <>
               <p className="text-[56px] leading-none mt-7">🎾</p>
-              <p className="text-white font-black text-[24px] leading-tight mt-3">AÚN SIN RESULTADOS</p>
+              <p className="text-white font-black text-[24px] leading-tight mt-3">{t('AÚN SIN RESULTADOS')}</p>
             </>
           )}
 
           <p className="text-white/55 text-[11px] font-bold mt-4 tracking-[.12em] uppercase">
-            Bloque {b.numero_bloque} · Suben {reglas.sube} · Bajan {reglas.baja}
+            {t('Bloque {n} · Suben {s} · Bajan {b}', { n: b.numero_bloque, s: reglas.sube, b: reglas.baja })}
           </p>
 
           <div className="mt-2.5 rounded-3xl bg-black/25 px-4 py-1.5 text-left">
@@ -258,7 +269,7 @@ export default function LigaJornada({ vista }) {
                       </span>
                       <span className="shrink-0 font-black text-[10px] tracking-wide rounded-full px-2 py-[3px]"
                             style={{ color: tinta, background: arriba ? SUBE_BG : BAJA_BG }}>
-                        {ETIQUETA[d]}
+                        {etiqueta(d)}
                       </span>
                     </>
                   )}
@@ -275,8 +286,8 @@ export default function LigaJornada({ vista }) {
             disabled={compartiendo}
             onClick={async () => {
               const encabezado = campeon
-                ? `🏆 ${MAY(campeon.jugadores?.nombre)} se llevó la cancha ${b.cancha ?? ''} · ${liga.nombre} J${jornada.numero}`
-                : `${liga.nombre} · Jornada ${jornada.numero}`;
+                ? `🏆 ${t('{nombre} se llevó la cancha {n}', { nombre: MAY(campeon.jugadores?.nombre), n: b.cancha ?? '' })} · ${liga.nombre} J${jornada.numero}`
+                : `${liga.nombre} · ${t('Jornada {n}', { n: jornada.numero })}`;
 
               // 📋 EL PIE DE FOTO SE COPIA SOLO, Y VA ANTES QUE LA IMAGEN.
               //
@@ -294,8 +305,8 @@ export default function LigaJornada({ vista }) {
               // Va PRIMERO porque en iPhone el portapapeles sólo se deja escribir dentro del
               // toque: si se hace después de dibujar la imagen, Safari ya cortó el permiso.
               let copiado = false;
-              const pieDeFoto = `${encabezado}\n\nJugando en ${MARCA.instagram} 🎾\n`
-                + `Reserva en ${MARCA.app}\n\n#SierraPadel #Monclova #Padel`;
+              const pieDeFoto = `${encabezado}\n\n${t('Jugando en {cuenta}', { cuenta: MARCA.instagram })} 🎾\n`
+                + `${t('Reserva en {app}', { app: MARCA.app })}\n\n#SierraPadel #Monclova #Padel`;
               try { await navigator.clipboard.writeText(pieDeFoto); copiado = true; } catch { /* sin portapapeles se comparte igual */ }
               setCopiado(copiado);
 
@@ -324,21 +335,19 @@ export default function LigaJornada({ vista }) {
                 }
               } catch (e) {
                 // Cancelar el menú de compartir no es un error: no se le grita al usuario.
-                if (e?.name !== 'AbortError') alert('No se pudo armar la imagen. Toma captura de pantalla y compártela.');
+                if (e?.name !== 'AbortError') alert(t('No se pudo armar la imagen. Toma captura de pantalla y compártela.'));
               } finally { setCompartiendo(false); }
             }}
             className="mt-6 w-full rounded-2xl bg-white/95 text-black font-black text-[15px] py-3.5 active:scale-[.99] transition-transform disabled:opacity-60"
           >
-            {compartiendo ? 'Armando la imagen…' : '📤 Compartir'}
+            {compartiendo ? t('Armando la imagen…') : '📤 ' + t('Compartir')}
           </button>
 
           {/* La instrucción sólo aparece DESPUÉS de compartir, que es cuando sirve: el
               jugador ya está con la foto en la mano y a punto de escribir el pie. */}
           {copiado && (
             <p className="mt-2.5 text-white/85 text-[12px] font-bold leading-snug px-2">
-              📋 Ya te copiamos el texto. Pégalo y deja la etiqueta{' '}
-              <span className="text-white font-black">{MARCA.instagram}</span> —
-              así nos llega y te reposteamos en nuestras historias.
+              📋 {t('Ya te copiamos el texto. Pégalo y deja la etiqueta {cuenta} — así nos llega y te reposteamos en nuestras historias.', { cuenta: MARCA.instagram })}
             </p>
           )}
 
@@ -346,9 +355,9 @@ export default function LigaJornada({ vista }) {
 
           <div className="mt-5 flex items-center justify-center gap-5">
             <button onClick={() => navigate(`/liga/${id}/j/${num}`)}
-                    className="text-white/70 text-[13px] font-bold">← Jornada {num}</button>
+                    className="text-white/70 text-[13px] font-bold">← {t('Jornada {n}', { n: num })}</button>
             <button onClick={() => navigate(`/liga/${id}/j/${num}/escalera`)}
-                    className="text-white/70 text-[13px] font-bold">Ver la escalera →</button>
+                    className="text-white/70 text-[13px] font-bold">{t('Ver la escalera')} →</button>
           </div>
         </div>
       </div>
@@ -390,9 +399,9 @@ export default function LigaJornada({ vista }) {
             <img src="/icons/isotipo-mask.png" alt="" width="64" height="64" className="mx-auto isotipo-patro" />
             <p className="font-black text-[27px] leading-none mt-4">SIERRA PADEL</p>
             <p className="font-semibold text-[17px] mt-1.5" style={{ color: col.tinte }}>{liga.nombre}</p>
-            <p className="font-extrabold text-[31px] leading-tight mt-1" style={{ color: col.tinte }}>Jornada {jornada.numero}</p>
-            <p className="text-[15px] leading-snug mt-1">Así quedó la escalera</p>
-            <p className="text-[15px] leading-snug">{ranking.length} Jugadores</p>
+            <p className="font-extrabold text-[31px] leading-tight mt-1" style={{ color: col.tinte }}>{t('Jornada {n}', { n: jornada.numero })}</p>
+            <p className="text-[15px] leading-snug mt-1">{t('Así quedó la escalera')}</p>
+            <p className="text-[15px] leading-snug">{t('{n} Jugadores', { n: ranking.length })}</p>
 
             {/* German (26-sep): «con margen y cargado al margen, que se vea uniforme la lista»:
                 el número en su columna (alineado a la derecha) y todos los nombres arrancan en
@@ -401,7 +410,7 @@ export default function LigaJornada({ vista }) {
               {ranking.map((r, i) => (
                 <p key={r.jugador_id || i} className="text-[21px] leading-tight flex items-baseline">
                   <b className="font-extrabold tabular-nums w-9 shrink-0 text-right mr-4">{r.posicion_actual ?? i + 1}</b>
-                  <span className="font-light min-w-0 truncate">{corto(r.jugadores?.nombre || r.nombre || 'Jugador')}</span>
+                  <span className="font-light min-w-0 truncate">{corto(r.jugadores?.nombre || r.nombre || t('Jugador'))}</span>
                 </p>
               ))}
             </div>
@@ -409,7 +418,7 @@ export default function LigaJornada({ vista }) {
             <PatrocinioArco m={patro} jornada={jornada.numero} className="mt-10" />
 
             <button onClick={() => navigate(`/liga/${id}/j/${num}`)}
-                    className="mt-8 text-white/75 text-[14px] font-semibold">← Jornada {num}</button>
+                    className="mt-8 text-white/75 text-[14px] font-semibold">← {t('Jornada {n}', { n: num })}</button>
           </div>
         </div>
       );
@@ -418,7 +427,7 @@ export default function LigaJornada({ vista }) {
       <div className="w-full flex flex-col" style={{ minHeight: '100svh', background: fondo }}>
         <div className="px-5 py-8 text-center">
           <Encabezado liga={liga} jornada={jornada} tinte={col.tinte}
-                      linea={`Así quedó la escalera · ${ranking.length} jugador${ranking.length === 1 ? '' : 'es'}`} />
+                      linea={`${t('Así quedó la escalera')} · ${ranking.length === 1 ? t('1 jugador') : t('{n} jugadores', { n: ranking.length })}`} />
           <Patrocinio m={patro} oscuro />
 
           <div className="mt-6 rounded-3xl bg-black/25 px-4 py-1.5 text-left">
@@ -443,7 +452,7 @@ export default function LigaJornada({ vista }) {
                   {abreBloque && (
                     <div className="flex items-center gap-2 pt-2.5 pb-1">
                       <span className="text-white/40 text-[9px] font-black tracking-[.14em] uppercase whitespace-nowrap">
-                        Bloque {bloque}
+                        {t('Bloque {n}', { n: bloque })}
                       </span>
                       <i className="flex-1 h-px bg-white/20" />
                     </div>
@@ -452,7 +461,7 @@ export default function LigaJornada({ vista }) {
                     <span className="text-white/40 font-black tabular-nums w-6 text-[15px] shrink-0">{pos}</span>
                     <span className="font-bold text-[15px] flex-1 min-w-0 truncate leading-tight"
                           style={{ color: tinta }}>
-                      {MAY(r.jugadores?.nombre || r.nombre || 'Jugador')}
+                      {MAY(r.jugadores?.nombre || r.nombre || t('Jugador'))}
                     </span>
                     {movio != null && (
                       <span className="shrink-0 font-black text-[10px] tabular-nums rounded-full px-2 py-[3px]"
@@ -469,7 +478,7 @@ export default function LigaJornada({ vista }) {
           </div>
 
           <button onClick={() => navigate(`/liga/${id}/j/${num}`)}
-                  className="mt-7 text-white/70 text-[13px] font-bold">← Jornada {num}</button>
+                  className="mt-7 text-white/70 text-[13px] font-bold">← {t('Jornada {n}', { n: num })}</button>
         </div>
       </div>
     );
@@ -487,7 +496,7 @@ export default function LigaJornada({ vista }) {
           </button>
           <div className="text-center mt-3">
             <p className="font-extrabold text-[27px] leading-tight text-white/80">{liga.nombre}</p>
-            <p className="font-black text-[46px] leading-none mt-1">Jornada {jornada.numero}</p>
+            <p className="font-black text-[46px] leading-none mt-1">{t('Jornada {n}', { n: jornada.numero })}</p>
             <p className="font-semibold text-[20px] mt-2.5" style={{ color: col.tinte }}>{fechaJornada(jornada.fecha)}</p>
           </div>
           <PatrocinioArco m={patro} jornada={jornada.numero} className="mt-5" />
@@ -502,10 +511,10 @@ export default function LigaJornada({ vista }) {
                         style={{ background: col.a }}>{b.numero_bloque}</span>
                   <span className="flex-1 min-w-0">
                     <span className="block font-extrabold text-[18px] leading-tight truncate">
-                      {campeon ? `🏆 ${corto(campeon)}` : 'Sin resultados todavía'}
+                      {campeon ? `🏆 ${corto(campeon)}` : t('Sin resultados todavía')}
                     </span>
                     <span className="block text-white/80 text-[13px] mt-0.5">
-                      Cancha {b.cancha ?? '—'}{b.hora ? ` · ${hhmm(b.hora)}` : ''}
+                      {t('Cancha {n}', { n: b.cancha ?? '—' })}{b.hora ? ` · ${hhmm(b.hora)}` : ''}
                     </span>
                   </span>
                 </button>
@@ -514,8 +523,8 @@ export default function LigaJornada({ vista }) {
             <button onClick={() => navigate(`/liga/${id}/j/${num}/escalera`)} className={fila}>
               <span className="w-12 h-12 rounded-xl grid place-items-center text-[20px] shrink-0" style={{ background: col.a }}>📊</span>
               <span className="flex-1 min-w-0">
-                <span className="block font-extrabold text-[18px] leading-tight">Cómo quedó la escalera</span>
-                <span className="block text-white/80 text-[13px] mt-0.5">Los {ranking.length} de la liga</span>
+                <span className="block font-extrabold text-[18px] leading-tight">{t('Cómo quedó la escalera')}</span>
+                <span className="block text-white/80 text-[13px] mt-0.5">{t('Los {n} de la liga', { n: ranking.length })}</span>
               </span>
             </button>
           </div>
@@ -529,10 +538,10 @@ export default function LigaJornada({ vista }) {
         <button onClick={() => navigate(`/liga/${id}`)} className="text-white/80 text-[13px] font-bold">
           ← {liga.nombre}
         </button>
-        <h1 className="text-[26px] font-black leading-tight mt-2">Jornada {jornada.numero}</h1>
+        <h1 className="text-[26px] font-black leading-tight mt-2">{t('Jornada {n}', { n: jornada.numero })}</h1>
         <p className="text-[13px] font-semibold mt-1" style={{ color: col.tinte }}>
-          {fmtFecha(jornada.fecha)} · {bloques.length} bloque{bloques.length === 1 ? '' : 's'}
-          {jornada.estado === 'finalizada' ? ' · cerrada' : ''}
+          {fmtFecha(jornada.fecha)} · {bloques.length === 1 ? t('1 bloque') : t('{n} bloques', { n: bloques.length })}
+          {jornada.estado === 'finalizada' ? ' · ' + t('cerrada') : ''}
         </p>
       </div>
 
@@ -552,11 +561,11 @@ export default function LigaJornada({ vista }) {
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-black text-sp-gray text-[15px] truncate">
-                    {campeon ? `🏆 ${campeon}` : 'Sin resultados todavía'}
+                    {campeon ? `🏆 ${campeon}` : t('Sin resultados todavía')}
                   </p>
                   <p className="text-gray-400 text-[12.5px] mt-0.5">
-                    Cancha {b.cancha ?? '—'}{b.hora ? ` · ${hhmm(b.hora)}` : ''}
-                    {' · '}{orden.length} jugador{orden.length === 1 ? '' : 'es'}
+                    {t('Cancha {n}', { n: b.cancha ?? '—' })}{b.hora ? ` · ${hhmm(b.hora)}` : ''}
+                    {' · '}{orden.length === 1 ? t('1 jugador') : t('{n} jugadores', { n: orden.length })}
                   </p>
                 </div>
                 <span className="text-gray-300 text-[18px] shrink-0">›</span>
@@ -567,9 +576,9 @@ export default function LigaJornada({ vista }) {
 
         <button onClick={() => navigate(`/liga/${id}/j/${num}/escalera`)}
                 className="card p-4 text-left w-full active:scale-[.99] transition-transform">
-          <p className="font-black text-sp-gray text-[15px]">📊 Cómo quedó la escalera</p>
+          <p className="font-black text-sp-gray text-[15px]">📊 {t('Cómo quedó la escalera')}</p>
           <p className="text-gray-400 text-[12.5px] mt-0.5">
-            Los {ranking.length} de la liga, con quién subió y quién bajó
+            {t('Los {n} de la liga, con quién subió y quién bajó', { n: ranking.length })}
           </p>
         </button>
       </div>
@@ -625,8 +634,8 @@ async function imagenDelBloque({ liga, jornada, bloque, orden, reglas, extremos,
   } catch { y += 40; }
 
   txt(ctx, 'SIERRA PADEL', CW / 2, y, { size: 58, weight: '900', track: 10 });
-  txt(ctx, `${liga.nombre} · Jornada ${jornada.numero}`, CW / 2, y + 66, { size: 28, weight: '800', color: col.tinte, track: 5, max: CW - 120 });
-  txt(ctx, `${fmtFecha(bloque.fecha || jornada.fecha)} · Cancha ${bloque.cancha ?? '—'}${bloque.hora ? ` · ${hhmm(bloque.hora)}` : ''}`,
+  txt(ctx, `${liga.nombre} · ${t('Jornada {n}', { n: jornada.numero })}`, CW / 2, y + 66, { size: 28, weight: '800', color: col.tinte, track: 5, max: CW - 120 });
+  txt(ctx, `${fmtFecha(bloque.fecha || jornada.fecha)} · ${t('Cancha {n}', { n: bloque.cancha ?? '—' })}${bloque.hora ? ` · ${hhmm(bloque.hora)}` : ''}`,
       CW / 2, y + 116, { size: 28, weight: '600', color: 'rgba(255,255,255,.72)' });
 
   // Lo de en medio (copa, campeón y el cuadro) se CENTRA entre el encabezado y el pie: con
@@ -639,15 +648,15 @@ async function imagenDelBloque({ liga, jornada, bloque, orden, reglas, extremos,
   if (hayResultado && orden[0]) {
     ctx.font = '150px system-ui'; ctx.fillStyle = '#fff'; ctx.fillText('🏆', CW / 2, y);
     txt(ctx, MAY(orden[0].jugadores?.nombre), CW / 2, y + 110, { size: 62, weight: '900', max: CW - 110 });
-    txt(ctx, liga.categoria === 'Femenil' ? 'CAMPEONA' : 'CAMPEÓN', CW / 2, y + 168,
+    txt(ctx, liga.categoria === 'Femenil' ? t('CAMPEONA') : t('CAMPEÓN'), CW / 2, y + 168,
         { size: 24, weight: '800', color: 'rgba(255,255,255,.62)', track: 9 });
   } else {
     ctx.font = '140px system-ui'; ctx.fillStyle = '#fff'; ctx.fillText('🎾', CW / 2, y);
-    txt(ctx, 'AÚN SIN RESULTADOS', CW / 2, y + 110, { size: 46, weight: '900' });
+    txt(ctx, t('AÚN SIN RESULTADOS'), CW / 2, y + 110, { size: 46, weight: '900' });
   }
 
   y += 240;
-  txt(ctx, `BLOQUE ${bloque.numero_bloque} · SUBEN ${reglas.sube} · BAJAN ${reglas.baja}`,
+  txt(ctx, t('Bloque {n} · Suben {s} · Bajan {b}', { n: bloque.numero_bloque, s: reglas.sube, b: reglas.baja }).toUpperCase(),
       CW / 2, y, { size: 22, weight: '800', color: 'rgba(255,255,255,.58)', track: 5 });
 
   // El cuadro de resultados, con los mismos verdes y rojos de la pantalla.
@@ -675,7 +684,7 @@ async function imagenDelBloque({ liga, jornada, bloque, orden, reglas, extremos,
     if (hayResultado) {
       ctx.textAlign = 'right';
       ctx.font = '900 34px ui-sans-serif, system-ui, sans-serif'; ctx.fillStyle = tinta;
-      ctx.fillText(ETIQUETA[d], CW - 120, ry);
+      ctx.fillText(etiqueta(d), CW - 120, ry);
       ctx.font = '900 50px ui-sans-serif, system-ui, sans-serif';
       ctx.fillText(`${j.sets_ganados || 0}-${3 - (j.sets_ganados || 0)}`, CW - 320, ry);
     }
@@ -689,7 +698,7 @@ async function imagenDelBloque({ liga, jornada, bloque, orden, reglas, extremos,
   txt(ctx, MARCA.app, CW / 2, pie + 24, { size: 36, weight: '900', color: '#fff', track: 2 });
   txt(ctx, `Instagram ${MARCA.instagram}   ·   Facebook ${MARCA.facebook}`,
       CW / 2, pie + 82, { size: 27, weight: '700', color: 'rgba(255,255,255,.78)' });
-  txt(ctx, 'RESERVA, LIGAS Y PUNTOS EN LA APP', CW / 2, pie + 132,
+  txt(ctx, t('RESERVA, LIGAS Y PUNTOS EN LA APP'), CW / 2, pie + 132,
       { size: 20, weight: '700', color: 'rgba(255,255,255,.5)', track: 4 });
 
   return new Promise((ok) => cv.toBlob(ok, 'image/png'));
@@ -722,10 +731,10 @@ function Patrocinio({ m, oscuro }) {
     <div className={`mt-4 rounded-2xl px-4 py-2.5 flex items-center gap-3 ${oscuro ? 'bg-black/25' : 'bg-white border border-gray-100 shadow-sm'}`}>
       <div className="flex-1 min-w-0 text-left">
         <p className={`text-[10px] font-black tracking-widest ${oscuro ? 'text-white/60' : 'text-gray-400'}`}>
-          {m.leyenda || 'PATROCINA'}
+          {m.leyenda || t('PATROCINA')}
         </p>
         {m.sponsor_url
-          ? <img src={m.sponsor_url} alt={m.sponsor_nombre || 'Patrocinador'} loading="lazy"
+          ? <img src={m.sponsor_url} alt={m.sponsor_nombre || t('Patrocinador')} loading="lazy"
                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
                  className="h-12 max-w-full object-contain mt-1" />
           : <p className={`font-black text-[16px] ${oscuro ? 'text-white' : 'text-sp-gray'}`}>{m.sponsor_nombre}</p>}
@@ -749,17 +758,17 @@ function BloqueDiseno({ liga, jornada, b, orden, hayResultado, patro, col }) {
     <div className="text-white" style={{ fontFamily: KANIT }}>
       <p className="font-black text-[34px] leading-none">SIERRA PADEL</p>
       <p className="font-extrabold text-[16px] mt-2.5 uppercase tracking-[.05em]" style={{ color: col.tinte }}>
-        {liga.nombre} Jornada {jornada.numero}
+        {liga.nombre} {t('Jornada {n}', { n: jornada.numero })}
       </p>
       <p className="text-[16px] font-light mt-1.5 tracking-[.03em]">
-        {fechaBloque(b.fecha || jornada.fecha)}<span className="ml-3">Cancha {b.cancha ?? '—'}</span>
+        {fechaBloque(b.fecha || jornada.fecha)}<span className="ml-3">{t('Cancha {n}', { n: b.cancha ?? '—' })}</span>
         {b.hora && <span className="ml-3">{hhmm(b.hora)}</span>}
       </p>
 
       {hayResultado ? (
         <>
           <div className="mx-auto mt-7" style={{ width: '80%' }}>
-            <Arco texto="GANADOR DEL BLOQUE" color={col.tinte} size={19} />
+            <Arco texto={t('GANADOR DEL BLOQUE')} color={col.tinte} size={19} />
           </div>
           <p className="font-black text-[38px] leading-[1.02] uppercase px-1">{corto(orden[0]?.jugadores?.nombre)}</p>
 
@@ -769,7 +778,7 @@ function BloqueDiseno({ liga, jornada, b, orden, hayResultado, patro, col }) {
       ) : (
         <>
           <PatrocinioArco m={patro} jornada={jornada.numero} className="mt-7" />
-          <p className="font-black text-[26px] leading-tight mt-7">AÚN SIN RESULTADOS</p>
+          <p className="font-black text-[26px] leading-tight mt-7">{t('AÚN SIN RESULTADOS')}</p>
           {/* German (26-sep): la mascota en lugar de la pala, mismo lugar y mismo tamaño. */}
           {patro.mascota_url
             ? <img src={patro.mascota_url} alt="" loading="lazy" className="h-28 w-auto mx-auto mt-4 object-contain"
@@ -789,9 +798,9 @@ function TablaBloque({ orden, col, jugado }) {
   // Negro translúcido: sirve con la paleta de cualquier patrocinador (el rojo fijo era de Carnes Luis y con Pietra salía café).
   return (
     <div className="mt-5 rounded-2xl px-4 pt-4 pb-3 text-left" style={{ background: 'var(--patro-caja, rgba(0,0,0,.42))' }}>
-      <p className="text-center text-[15px] tracking-[.03em]">RESULTADO DEL BLOQUE</p>
+      <p className="text-center text-[15px] tracking-[.03em]">{t('RESULTADO DEL BLOQUE')}</p>
       <div className="grid grid-cols-[22px_1fr_58px_62px] gap-x-1.5 items-end mt-3 text-[10.5px] text-white/85 text-center">
-        <span /><span /><span>SETS G–P</span><span>DIF. JUEGOS</span>
+        <span /><span /><span>{t('SETS G–P')}</span><span>{t('DIF. JUEGOS')}</span>
       </div>
       {orden.map((j, i) => {
         const lugar = jugado ? (j.posicion_final ?? i + 1) : i + 1;
@@ -825,7 +834,7 @@ function Encabezado({ liga, jornada, tinte, linea }) {
         </p>
       </div>
       <p className="text-[11px] font-black mt-2.5 tracking-[.2em] uppercase" style={{ color: tinte }}>
-        {liga.nombre} · Jornada {jornada.numero}
+        {liga.nombre} · {t('Jornada {n}', { n: jornada.numero })}
       </p>
       <p className="text-white/70 text-[12px] font-semibold mt-1">{linea}</p>
     </>
@@ -836,8 +845,8 @@ function NoHay({ onVolver }) {
   return (
     <div className="min-h-screen grid place-items-center px-6 text-center">
       <div>
-        <p className="text-sp-gray font-bold">No encontramos ese bloque.</p>
-        <button onClick={onVolver} className="mt-4 text-sp-green-dark font-bold text-[14px]">← Volver</button>
+        <p className="text-sp-gray font-bold">{t('No encontramos ese bloque.')}</p>
+        <button onClick={onVolver} className="mt-4 text-sp-green-dark font-bold text-[14px]">← {t('Volver')}</button>
       </div>
     </div>
   );

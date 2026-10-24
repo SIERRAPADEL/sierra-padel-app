@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { isPushSupported, isStandalone, usePushSubscription } from './NotificationSetup';
+import { t } from '../i18n';
+
+// Texto traducido con <b>…</b> adentro (la frase viaja completa al traductor).
+function negritas(s) {
+  return String(s).split(/<b>(.*?)<\/b>/g).map((p, i) => (i % 2 ? <b key={i}>{p}</b> : p));
+}
 
 /**
  * PrenderAvisos — el botón para encender las notificaciones, a la vista.
@@ -33,9 +39,9 @@ export default function PrenderAvisos({ motivo, compacto = false }) {
     if (!listo) return null;                 // ya las tenía: no hay nada que decirle
     return (
       <div className={`rounded-2xl bg-sp-green-light p-4 ${compacto ? '' : 'mx-4 mt-4'}`}>
-        <p className="font-black text-sp-green-dark text-[15px]">🔔 Listo, ya las tienes</p>
+        <p className="font-black text-sp-green-dark text-[15px]">🔔 {t('Listo, ya las tienes')}</p>
         <p className="text-[13px] text-sp-green-dark/80 mt-0.5">
-          {motivo || 'Te avisamos en cuanto haya algo que necesites saber.'}
+          {motivo || t('Te avisamos en cuanto haya algo que necesites saber.')}
         </p>
       </div>
     );
@@ -45,11 +51,9 @@ export default function PrenderAvisos({ motivo, compacto = false }) {
   if (esIOS && !isStandalone()) {
     return (
       <div className={`rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 ${compacto ? '' : 'mx-4 mt-4'}`}>
-        <p className="font-black text-amber-900 text-[15px]">🔔 Para recibir avisos</p>
+        <p className="font-black text-amber-900 text-[15px]">🔔 {t('Para recibir avisos')}</p>
         <p className="text-[13px] text-amber-900/80 mt-1 leading-snug">
-          En iPhone hay que agregar Sierra Pádel a la pantalla de inicio primero. Toca
-          <b> Compartir</b> abajo y luego <b>Agregar a inicio</b>; desde ahí ya podrás
-          prender las notificaciones.
+          {negritas(t('En iPhone hay que agregar Sierra Pádel a la pantalla de inicio primero. Toca <b>Compartir</b> abajo y luego <b>Agregar a inicio</b>; desde ahí ya podrás prender las notificaciones.'))}
         </p>
       </div>
     );
@@ -59,21 +63,21 @@ export default function PrenderAvisos({ motivo, compacto = false }) {
 
   return (
     <div className={`rounded-2xl border-2 border-sp-green bg-white p-4 ${compacto ? '' : 'mx-4 mt-4'}`}>
-      <p className="font-black text-sp-gray text-[15px]">🔔 Prende tus notificaciones</p>
+      <p className="font-black text-sp-gray text-[15px]">🔔 {t('Prende tus notificaciones')}</p>
       <p className="text-[13px] text-gray-600 mt-1 leading-snug">
-        {motivo || 'Te avisamos lo que necesitas saber.'} Sin esto no te llega nada al teléfono.
+        {motivo || t('Te avisamos lo que necesitas saber.')} {t('Sin esto no te llega nada al teléfono.')}
       </p>
       <button
         onClick={async () => {
           setError('');
           const ok = await subscribe();
           if (ok) setListo(true);
-          else setError('No se pudieron activar. Revisa los permisos del navegador e intenta de nuevo.');
+          else setError(t('No se pudieron activar. Revisa los permisos del navegador e intenta de nuevo.'));
         }}
         disabled={subscribing}
         className="btn-green w-full mt-3 disabled:opacity-60"
       >
-        {subscribing ? 'Activando…' : 'Prender notificaciones'}
+        {subscribing ? t('Activando…') : t('Prender notificaciones')}
       </button>
       {error && <p className="text-[12px] text-red-500 mt-2">{error}</p>}
     </div>

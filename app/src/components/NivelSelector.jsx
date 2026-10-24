@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BACKEND } from '../lib/constants';
+import { t } from '../i18n';
 
 // Fallback local por si el catálogo no carga (mismo orden que el backend)
 // «Principiante» lleva rama desde el 29-sep-2026 (German: el nivel ES la clasificación).
@@ -31,7 +32,7 @@ export default function NivelSelector({ value, onChange, compact = false }) {
       {grupos.map(g => g.items.length > 0 && (
         <div key={g.titulo || 'otros'}>
           {g.titulo && (
-            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1.5">{g.titulo}</p>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1.5">{g.titulo === 'Varonil' ? t('Varonil') : t('Femenil')}</p>
           )}
           <div className="flex flex-wrap gap-2">
             {g.items.map(n => {
@@ -54,7 +55,7 @@ export default function NivelSelector({ value, onChange, compact = false }) {
         </div>
       ))}
       <p className="text-xs text-gray-400">
-        Si no estás seguro, elige donde sueles jugar — el club lo puede ajustar después.
+        {t('Si no estás seguro, elige donde sueles jugar — el club lo puede ajustar después.')}
       </p>
     </div>
   );

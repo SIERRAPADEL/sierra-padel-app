@@ -1,4 +1,11 @@
 import { useState, useEffect } from 'react';
+import { t } from '../i18n';
+
+// Texto traducido con <b>…</b> adentro: la frase viaja completa al traductor y aquí se pintan
+// las negritas (en inglés o coreano el orden de las palabras cambia).
+function negritas(s, style) {
+  return String(s).split(/<b>(.*?)<\/b>/g).map((p, i) => (i % 2 ? <strong key={i} style={style}>{p}</strong> : p));
+}
 
 // ─── Deteccion de contexto ────────────────────────────────────────────────────
 function getContext() {
@@ -110,10 +117,10 @@ function WebViewBanner({ isAndroid }) {
       // iOS: copiar el link para pegarlo en Safari
       if (navigator.clipboard) {
         navigator.clipboard.writeText(window.location.href).then(() => {
-          alert('Link copiado. Pegalo en Safari para instalar la app.');
+          alert(t('Link copiado. Pegalo en Safari para instalar la app.'));
         });
       } else {
-        alert(`Copia este link en Safari:\n${window.location.href}`);
+        alert(t('Copia este link en Safari:') + '\n' + window.location.href);
       }
     }
   }
@@ -123,10 +130,10 @@ function WebViewBanner({ isAndroid }) {
       <span style={{ fontSize: 22 }}>⚠️</span>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 700, fontSize: 13 }}>
-          Abre en {isAndroid ? 'Chrome' : 'Safari'}
+          {t('Abre en {navegador}', { navegador: isAndroid ? 'Chrome' : 'Safari' })}
         </div>
         <div style={{ fontSize: 11, color: '#bbb', marginTop: 1 }}>
-          Para instalar la app y recibir notificaciones
+          {t('Para instalar la app y recibir notificaciones')}
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
@@ -138,7 +145,7 @@ function WebViewBanner({ isAndroid }) {
             fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
           }}
         >
-          {isAndroid ? 'Abrir en Chrome' : 'Copiar link'}
+          {isAndroid ? t('Abrir en Chrome') : t('Copiar link')}
         </button>
         <button
           onClick={() => setVisible(false)}
@@ -147,7 +154,7 @@ function WebViewBanner({ isAndroid }) {
             fontSize: 11, cursor: 'pointer', padding: 0, fontFamily: 'inherit',
           }}
         >
-          Ignorar
+          {t('Ignorar')}
         </button>
       </div>
     </div>
@@ -167,22 +174,22 @@ function IOSChromCard({ onDismiss }) {
           }}>🎾</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>
-              Instala Sierra Padel
+              {t('Instala Sierra Padel')}
             </div>
             <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-              Recibe notificaciones de reservas y torneos
+              {t('Recibe notificaciones de reservas y torneos')}
             </div>
           </div>
         </div>
         <button onClick={onDismiss} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 20, padding: 4, lineHeight: 1 }}>✕</button>
       </div>
       <div style={styles.steps}>
-        <strong style={{ color: '#333', fontSize: 12 }}>Solo Safari puede instalar la app en iPhone:</strong>
-        <div style={{ marginTop: 6 }}>1️⃣ Toca <strong>···</strong> arriba → <strong>"Abrir en Safari"</strong></div>
-        <div>2️⃣ En Safari: toca <strong>Compartir</strong> (□↑)</div>
-        <div>3️⃣ Selecciona <strong>"Anadir a pantalla de inicio"</strong></div>
+        <strong style={{ color: '#333', fontSize: 12 }}>{t('Solo Safari puede instalar la app en iPhone:')}</strong>
+        <div style={{ marginTop: 6 }}>1️⃣ {negritas(t('Toca <b>···</b> arriba → <b>"Abrir en Safari"</b>'))}</div>
+        <div>2️⃣ {negritas(t('En Safari: toca <b>Compartir</b> (□↑)'))}</div>
+        <div>3️⃣ {negritas(t('Selecciona <b>"Anadir a pantalla de inicio"</b>'))}</div>
       </div>
-      <button onClick={onDismiss} style={styles.btnOutline}>Ahora no</button>
+      <button onClick={onDismiss} style={styles.btnOutline}>{t('Ahora no')}</button>
     </div>
   );
 }
@@ -200,24 +207,24 @@ function IOSSafariCard({ onDismiss }) {
           }}>🎾</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>
-              Instala la app en tu iPhone
+              {t('Instala la app en tu iPhone')}
             </div>
             <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-              Acceso rapido y notificaciones de torneos
+              {t('Acceso rapido y notificaciones de torneos')}
             </div>
           </div>
         </div>
         <button onClick={onDismiss} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 20, padding: 4, lineHeight: 1 }}>✕</button>
       </div>
       <div style={styles.steps}>
-        <div>1️⃣ Toca el boton <strong>Compartir</strong> <span style={{ fontSize: 15 }}>□↑</span> en la barra inferior de Safari</div>
-        <div>2️⃣ Baja y selecciona <strong>"Anadir a pantalla de inicio"</strong></div>
-        <div>3️⃣ Toca <strong>"Agregar"</strong> — listo 🎉</div>
+        <div>1️⃣ {negritas(t('Toca el boton <b>Compartir</b> □↑ en la barra inferior de Safari'))}</div>
+        <div>2️⃣ {negritas(t('Baja y selecciona <b>"Anadir a pantalla de inicio"</b>'))}</div>
+        <div>3️⃣ {negritas(t('Toca <b>"Agregar"</b> — listo'))} 🎉</div>
       </div>
       <div style={{ marginTop: 10, fontSize: 11, color: '#999', textAlign: 'center' }}>
-        Necesitas iOS 16.4 o superior para recibir notificaciones
+        {t('Necesitas iOS 16.4 o superior para recibir notificaciones')}
       </div>
-      <button onClick={onDismiss} style={styles.btnOutline}>Ahora no</button>
+      <button onClick={onDismiss} style={styles.btnOutline}>{t('Ahora no')}</button>
     </div>
   );
 }
@@ -246,24 +253,24 @@ function AndroidInstallCard({ prompt, onDismiss, onInstalled }) {
           }}>🎾</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>
-              Instala Sierra Padel
+              {t('Instala Sierra Padel')}
             </div>
             <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-              Notificaciones de reservas, torneos y puntos
+              {t('Notificaciones de reservas, torneos y puntos')}
             </div>
           </div>
         </div>
         <button onClick={onDismiss} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 20, padding: 4, lineHeight: 1 }}>✕</button>
       </div>
       <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 12, color: '#555', lineHeight: 1.8 }}>
-        <li>Acceso desde tu pantalla de inicio</li>
-        <li>Notificaciones aunque tengas la app cerrada</li>
-        <li>No ocupa espacio en tu telefono</li>
+        <li>{t('Acceso desde tu pantalla de inicio')}</li>
+        <li>{t('Notificaciones aunque tengas la app cerrada')}</li>
+        <li>{t('No ocupa espacio en tu telefono')}</li>
       </ul>
       <button onClick={handleInstall} style={styles.btnGreen}>
-        Instalar app gratis
+        {t('Instalar app gratis')}
       </button>
-      <button onClick={onDismiss} style={styles.btnOutline}>Ahora no</button>
+      <button onClick={onDismiss} style={styles.btnOutline}>{t('Ahora no')}</button>
     </div>
   );
 }
@@ -281,21 +288,21 @@ function AndroidOtherBrowserCard({ onDismiss }) {
           }}>🎾</div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>
-              Instala la app en tu Android
+              {t('Instala la app en tu Android')}
             </div>
             <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-              Abre este link en Chrome para instalarla
+              {t('Abre este link en Chrome para instalarla')}
             </div>
           </div>
         </div>
         <button onClick={onDismiss} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 20, padding: 4, lineHeight: 1 }}>✕</button>
       </div>
       <div style={styles.steps}>
-        <div>1️⃣ Abre <strong>Google Chrome</strong> en tu telefono</div>
-        <div>2️⃣ Entra a <strong style={{ color: 'var(--sp-green)' }}>sierra-padel-app.vercel.app</strong></div>
-        <div>3️⃣ Toca el menu <strong>⋮</strong> → <strong>"Instalar app"</strong></div>
+        <div>1️⃣ {negritas(t('Abre <b>Google Chrome</b> en tu telefono'))}</div>
+        <div>2️⃣ {negritas(t('Entra a <b>sierra-padel-app.vercel.app</b>'), { color: 'var(--sp-green)' })}</div>
+        <div>3️⃣ {negritas(t('Toca el menu <b>⋮</b> → <b>"Instalar app"</b>'))}</div>
       </div>
-      <button onClick={onDismiss} style={styles.btnOutline}>Ahora no</button>
+      <button onClick={onDismiss} style={styles.btnOutline}>{t('Ahora no')}</button>
     </div>
   );
 }

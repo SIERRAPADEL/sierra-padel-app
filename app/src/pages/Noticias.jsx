@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import PromoExpressBanner from '../components/PromoExpressBanner';
 import { BACKEND } from '../lib/constants';
 import { fmtRelativa } from '../lib/format';
+import { t } from '../i18n';
 
 const TIPO_ICON = { imagen: '🖼', gif: '🎞', video: '🎬', texto: '📝', link: '🔗' };
 
@@ -22,9 +23,9 @@ export default function Noticias() {
       const r = await fetch(`${BACKEND}/api/media/activas`);
       const d = await r.json();
       if (d.ok) setPromos(d.data || []);
-      else setError('No se pudieron cargar las noticias.');
+      else setError(t('No se pudieron cargar las noticias.'));
     } catch {
-      setError('Sin conexion. Intenta mas tarde.');
+      setError(t('Sin conexion. Intenta mas tarde.'));
     } finally {
       setLoading(false);
     }
@@ -35,12 +36,12 @@ export default function Noticias() {
       {/* Header */}
       <div className="bg-sp-green px-5 pt-[env(safe-area-inset-top)] pb-4">
         <div className="flex items-center justify-between pt-3">
-          <p className="text-white font-black text-lg">Novedades del club</p>
+          <p className="text-white font-black text-lg">{t('Novedades del club')}</p>
           <button
             onClick={fetchPromos}
             className="bg-black/20 rounded-full px-3.5 py-1.5 text-white text-[13px] font-bold active:scale-95 transition-transform"
           >
-            Actualizar
+            {t('Actualizar')}
           </button>
         </div>
       </div>
@@ -68,10 +69,10 @@ export default function Noticias() {
         {error && !loading && (
           <div className="text-center py-14">
             <div style={{ fontSize: 40, marginBottom: 12 }}>📡</div>
-            <p className="text-sp-gray font-bold text-[15px] mb-1">Sin conexion</p>
+            <p className="text-sp-gray font-bold text-[15px] mb-1">{t('Sin conexion')}</p>
             <p className="text-gray-400 text-sm mb-5">{error}</p>
             <button onClick={fetchPromos} className="bg-sp-green text-white font-bold text-sm px-6 py-2.5 rounded-xl">
-              Reintentar
+              {t('Reintentar')}
             </button>
           </div>
         )}
@@ -79,8 +80,8 @@ export default function Noticias() {
         {!loading && !error && promos.length === 0 && (
           <div className="text-center py-14">
             <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
-            <p className="text-sp-gray font-bold text-[15px] mb-1">Sin noticias por ahora</p>
-            <p className="text-gray-400 text-sm">Vuelve pronto para ver las ultimas novedades del club.</p>
+            <p className="text-sp-gray font-bold text-[15px] mb-1">{t('Sin noticias por ahora')}</p>
+            <p className="text-gray-400 text-sm">{t('Vuelve pronto para ver las ultimas novedades del club.')}</p>
           </div>
         )}
 
@@ -166,7 +167,7 @@ function PromoCard({ promo: p, activeVideo, setActiveVideo }) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 mt-3 bg-sp-green-light text-sp-green-dark text-[13px] font-bold px-3.5 py-2 rounded-lg"
           >
-            Ver mas →
+            {t('Ver mas →')}
           </a>
         )}
       </div>

@@ -1,6 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { t } from '../i18n';
 
+// `label` es la llave en español: se traduce al pintar con t(tab.label), nunca aquí.
 const tabs = [
   { to: '/home',    icon: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10', label: 'Inicio' },
   // Reservar salió de la barra (ya está como botón principal en Inicio); su lugar lo toma Ligas.
@@ -61,7 +63,7 @@ export default function BottomNav() {
               >
                 <path d={tab.icon} />
               </svg>
-              <span className="text-[12px] font-semibold whitespace-nowrap leading-none">{tab.label}</span>
+              <span className="text-[12px] font-semibold whitespace-nowrap leading-none">{t(tab.label)}</span>
             </>
           )}
         </NavLink>

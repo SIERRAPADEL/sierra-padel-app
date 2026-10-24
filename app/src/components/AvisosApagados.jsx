@@ -20,6 +20,7 @@
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { isPushSupported, isStandalone, usePushSubscription } from './NotificationSetup';
+import { t } from '../i18n';
 
 const POSPUESTO = 'avisosApagados_pospuesto';
 const DIAS_POSPUESTO = 7;
@@ -69,7 +70,7 @@ export default function AvisosApagados() {
       <div className="card flex items-center gap-3 py-3" style={{ borderColor: 'var(--sp-green)' }}>
         <span style={{ fontSize: 22 }}>✅</span>
         <p className="text-sp-gray font-bold text-[15px]">
-          Listo, ya te vamos a avisar de tus retas.
+          {t('Listo, ya te vamos a avisar de tus retas.')}
         </p>
       </div>
     );
@@ -79,20 +80,20 @@ export default function AvisosApagados() {
   const textos = {
     activar: {
       icono: '🔔',
-      titulo: 'Activa los avisos',
-      cuerpo: 'Te avisamos cuando te inviten a una reta, cuando se llene tu cancha y cuando haya torneo.',
-      boton: subscribing ? 'Activando…' : 'Activar avisos',
+      titulo: t('Activa los avisos'),
+      cuerpo: t('Te avisamos cuando te inviten a una reta, cuando se llene tu cancha y cuando haya torneo.'),
+      boton: subscribing ? t('Activando…') : t('Activar avisos'),
     },
     instalar: {
       icono: '📲',
-      titulo: 'Instala la app para recibir avisos',
-      cuerpo: 'En tu iPhone: toca Compartir abajo y luego «Agregar a inicio». Desde ahí ya te podemos avisar de tus retas.',
+      titulo: t('Instala la app para recibir avisos'),
+      cuerpo: t('En tu iPhone: toca Compartir abajo y luego «Agregar a inicio». Desde ahí ya te podemos avisar de tus retas.'),
       boton: null,
     },
     bloqueado: {
       icono: '🔕',
-      titulo: 'Tienes los avisos bloqueados',
-      cuerpo: 'Actívalos en los ajustes de tu teléfono, en las notificaciones de Sierra Padel. Sin eso no te enteras de tus retas.',
+      titulo: t('Tienes los avisos bloqueados'),
+      cuerpo: t('Actívalos en los ajustes de tu teléfono, en las notificaciones de Sierra Padel. Sin eso no te enteras de tus retas.'),
       boton: null,
     },
   }[estado];
@@ -123,7 +124,7 @@ export default function AvisosApagados() {
               onClick={posponer}
               className="text-[13px] font-bold px-3 py-2 rounded-full text-gray-400"
             >
-              Ahora no
+              {t('Ahora no')}
             </button>
           </div>
         </div>
