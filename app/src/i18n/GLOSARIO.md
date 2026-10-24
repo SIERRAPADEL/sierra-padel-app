@@ -65,7 +65,7 @@ Fechas en coreano: `10월 23일(금)` (sin espacio antes del paréntesis).
 | para llevar | to go | 포장 | para comer aquí → 매장 |
 | notificaciones / avisos | notifications / alerts | 알림 | |
 | repeticiones (jugadas) | replays | 리플레이 | botón de ver → 다시보기 |
-| Inicio / Ligas / Torneos / Pedir / Perfil | Home / Leagues / Tournaments / Order / Profile | 홈 / 리그 / 대회 / 주문 / 마이 | barra de abajo; 마이 es la pestaña de perfil típica de apps coreanas (프로필 también sirve) |
+| Inicio / Ligas / Torneos / Pedir / Perfil | Home / Leagues / Tournaments / Order / Profile | 홈 / 리그 / 대회 / 주문 / 프로필 | barra de abajo; German ya vio 프로필 en la muestra (마이 también es típico) |
 | hoy / mañana | today / tomorrow | 오늘 / 내일 | |
 | gratis | free | 무료 | |
 | peso (moneda) | peso | 페소 | en texto: 멕시코 페소(MXN) la primera vez; en cifras se queda `$` |

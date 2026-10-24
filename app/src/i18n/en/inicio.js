@@ -54,7 +54,7 @@ export default {
   'No se pudo. Intenta de nuevo.': "That didn't work. Please try again.",
   'Retas abiertas': 'Open matches',
   'Reta': 'Match',
-  'Abierta a todos': 'Open to all',
+  'Abierta a todos': 'Open to everyone',
   'Tu reta': 'Your match',
   'Me apunto': "I'm in",
   'Proximos torneos': 'Upcoming tournaments',
@@ -89,7 +89,7 @@ export default {
   'Presenta {marca}': 'Presented by {marca}',
   'Jueves 7:00 y 8:30 · sólo mujeres': 'Thursdays 7:00 and 8:30 · women only',
   'Promos para ti': 'Promos for you',
-  'Reclamalas y usalas en la caja': 'Claim them and use them at the front desk',
+  'Reclamalas y usalas en la caja': 'Claim them and use them at the register',
 
   // Noticias
   'No se pudieron cargar las noticias.': "Couldn't load the news.",
@@ -185,9 +185,9 @@ export default {
   'No se pudo reclamar la promo': "Couldn't claim the promo",
   'Error de conexión. Intenta de nuevo.': 'Connection error. Please try again.',
   'Promo reclamada': 'Promo claimed',
-  'Se aplica sola en la caja cuando el cajero te identifique.': 'It applies automatically at the front desk once the cashier finds you.',
+  'Se aplica sola en la caja cuando el cajero te identifique.': 'It applies automatically at the register once the cashier looks you up.',
   'Úsalo al reservar tu cancha': 'Use it when you book your court',
-  'Tu pedido ya llegó a caja': 'Your order reached the front desk',
+  'Tu pedido ya llegó a caja': 'Your order reached the register',
   'Hacer otro pedido →': 'Place another order →',
   'Hoy en el club': 'Today at the club',
   'Para ti': 'For you',
@@ -215,7 +215,7 @@ export default {
   '¡Viva México!': 'Viva México!',
 
   // La caja quiere usar tus puntos
-  'La caja': 'The front desk',
+  'La caja': 'The register',
   '¿Autorizas usar tus puntos?': 'Allow use of your points?',
   'Revisar y contestar →': 'Review and respond →',
 

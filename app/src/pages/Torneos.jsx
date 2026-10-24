@@ -766,7 +766,7 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
               <p className="font-bold text-sp-gray mt-0.5">{catSelObj?.categoria || '—'}</p>
             </div>
             <div className="border-t border-gray-100 pt-3">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{t('Pareja')}</p>
+              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{t('Tu pareja')}</p>
               <p className="font-bold text-sp-gray mt-0.5">{nombre2 || pareja?.nombre}</p>
               <p className="text-xs text-gray-400">{pareja?.telefono}</p>
             </div>

@@ -338,7 +338,7 @@ export default function Puntos() {
 
       {/* Tabs */}
       <div className="mx-4 mt-3 flex gap-2">
-        {[['beneficios', t('Beneficios')], ['promos', t('Promos')], ['historial', t('Historial')]].map(([val, label]) => (
+        {[['beneficios', t('Beneficios')], ['promos', t('Promos')], ['historial', t('Movimientos')]].map(([val, label]) => (
           <button
             key={val}
             onClick={() => setTab(val)}
