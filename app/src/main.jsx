@@ -4,6 +4,26 @@ import App from './App';
 import './index.css';
 import { BACKEND } from './lib/constants';
 import { vigilarTemporada } from './lib/temporada';
+import { idioma } from './i18n';
+
+// 🌐 El backend traduce lo que viene de la base (carta, promos, textos de eventos) según la
+// cabecera X-Idioma. Se manda SÓLO cuando la app no está en español: el español viaja igual
+// que siempre y una falla aquí no puede tocar a la gran mayoría de los clientes.
+(() => {
+  const f = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    try {
+      const l = idioma();
+      const url = typeof input === 'string' ? input : (input && input.url) || '';
+      if (l !== 'es' && url.startsWith(BACKEND)) {
+        const h = new Headers(init.headers || (typeof input !== 'string' && input.headers) || {});
+        h.set('X-Idioma', l);
+        init = { ...init, headers: h };
+      }
+    } catch { /* jamás rompe una llamada */ }
+    return f(input, init);
+  };
+})();
 
 // El tema de temporada se aplica ANTES de pintar: si se aplicara después, la app abriría en
 // verde lima y medio segundo más tarde cambiaría de color frente al cliente.

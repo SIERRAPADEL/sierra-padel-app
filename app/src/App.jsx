@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { useIdioma } from './i18n/useIdioma';
 import { destinoTrasEntrar } from './lib/destino';
 import BottomNav from './components/BottomNav';
 import InstallGuide from './components/InstallGuide';
@@ -126,10 +127,13 @@ function LayoutWrapper() {
 }
 
 export default function App() {
+  // 🌐 Al cambiar de idioma se vuelve a montar todo: cada pantalla se pinta otra vez con
+  // los textos nuevos y ninguna se queda a medias (ver i18n/index.js).
+  const idioma = useIdioma();
   return (
     <BrowserRouter>
       <AuthProvider>
-        <LayoutWrapper />
+        <LayoutWrapper key={idioma} />
       </AuthProvider>
     </BrowserRouter>
   );

@@ -1,4 +1,13 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { idioma, setIdioma } from '../i18n';
+import { guardarIdiomaEnFicha } from '../components/SelectorIdioma';
+
+// 🌐 Al entrar: si su ficha ya tiene idioma, ése manda (lo eligió en otro celular); si no,
+// se le guarda el de este celular para que lo siga a donde entre.
+function idiomaAlEntrar(cliente) {
+  if (cliente && ['es', 'en', 'ko'].includes(cliente.idioma)) setIdioma(cliente.idioma);
+  else guardarIdiomaEnFicha(idioma());
+}
 
 const API = 'https://sierra-padel-backend-production-a55f.up.railway.app/api';
 const AuthContext = createContext(null);
@@ -27,6 +36,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('sp_token', data.data.token);
     localStorage.setItem('sp_user', JSON.stringify(data.data.cliente));
     setUser(data.data.cliente);
+    idiomaAlEntrar(data.data.cliente);
     return data.data;
   }
 
@@ -50,6 +60,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('sp_token', data.data.token);
     localStorage.setItem('sp_user', JSON.stringify(data.data.cliente));
     setUser(data.data.cliente);
+    idiomaAlEntrar(data.data.cliente);
     return data.data;
   }
 
@@ -59,6 +70,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('sp_token', token);
     localStorage.setItem('sp_user', JSON.stringify(cliente));
     setUser(cliente);
+    idiomaAlEntrar(cliente);
   }
 
   function logout() {
