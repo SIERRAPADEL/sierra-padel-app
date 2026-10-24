@@ -120,7 +120,7 @@ export default {
   'Listo, ya las tienes': '완료! 알림이 켜졌어요',
   'Te avisamos en cuanto haya algo que necesites saber.': '알아야 할 소식이 생기면 바로 알려 드려요.',
   'Para recibir avisos': '알림을 받으려면',
-  'En iPhone hay que agregar Sierra Pádel a la pantalla de inicio primero. Toca <b>Compartir</b> abajo y luego <b>Agregar a inicio</b>; desde ahí ya podrás prender las notificaciones.': 'iPhone에서는 먼저 Sierra Pádel를 홈 화면에 추가해야 해요. 아래의 <b>공유</b>를 누르고 <b>홈 화면에 추가</b>를 누르세요. 그다음 알림을 켤 수 있어요.',
+  'En iPhone hay que agregar Sierra Pádel a la pantalla de inicio primero. Toca <b>Compartir</b> abajo y luego <b>Agregar a inicio</b>; desde ahí ya podrás prender las notificaciones.': 'iPhone에서는 먼저 Sierra Pádel 앱을 홈 화면에 추가해야 해요. 아래의 <b>공유</b>를 누르고 <b>홈 화면에 추가</b>를 누르세요. 그다음 알림을 켤 수 있어요.',
   'Prende tus notificaciones': '알림을 켜 주세요',
   'Te avisamos lo que necesitas saber.': '꼭 필요한 소식을 알려 드려요.',
   'Sin esto no te llega nada al teléfono.': '알림을 켜지 않으면 휴대폰으로 아무것도 받을 수 없어요.',
