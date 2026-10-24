@@ -322,4 +322,5 @@ export default {
   'Pon el marcador de tus retas. Cuenta para tu récord y el ranking del club.': 'Enter the score of your matches. It counts toward your record and the club ranking.',
   'Marcador guardado. Tus rivales pueden revisarlo.': 'Score saved. Your opponents can review it.',
   'Poner marcador': 'Enter score',
+  "Precios en pesos mexicanos (MXN)": "Prices in Mexican pesos (MXN)",
 };

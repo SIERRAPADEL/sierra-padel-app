@@ -194,7 +194,7 @@ export default {
   "Si no estás seguro, elige donde sueles jugar — el club lo puede ajustar después.": "If you're not sure, pick where you usually play — the club can adjust it later.",
   "Escribe tu nombre.": "Enter your name.",
   "Tu nombre no puede llevar números. Escribe tu nombre y apellido.": "Your name can't contain numbers. Enter your first and last name.",
-  "Tu nombre sólo puede llevar letras.": "Your name can only contain letters.",
+  "Tu nombre sólo puede llevar letras.": "Please type your name in Latin letters (e.g., Kim Minjun).",
   "Escribe tu nombre completo.": "Enter your full name.",
 
   // ── Unirse (link de reta) ──

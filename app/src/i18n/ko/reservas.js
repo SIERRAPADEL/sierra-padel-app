@@ -322,4 +322,5 @@ export default {
   'Pon el marcador de tus retas. Cuenta para tu récord y el ranking del club.': '매치 스코어를 입력하세요. 내 전적과 클럽 랭킹에 반영돼요.',
   'Marcador guardado. Tus rivales pueden revisarlo.': '스코어가 저장됐어요. 상대 팀이 확인할 수 있어요.',
   'Poner marcador': '스코어 입력하기',
+  "Precios en pesos mexicanos (MXN)": "금액은 멕시코 페소(MXN)예요",
 };

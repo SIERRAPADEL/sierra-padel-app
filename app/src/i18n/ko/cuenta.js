@@ -193,7 +193,7 @@ export default {
   "Si no estás seguro, elige donde sueles jugar — el club lo puede ajustar después.": "잘 모르겠다면 평소 플레이하는 레벨을 고르세요 — 나중에 클럽에서 조정할 수 있어요.",
   "Escribe tu nombre.": "이름을 입력하세요.",
   "Tu nombre no puede llevar números. Escribe tu nombre y apellido.": "이름에는 숫자를 넣을 수 없어요. 이름과 성을 입력하세요.",
-  "Tu nombre sólo puede llevar letras.": "이름에는 글자만 넣을 수 있어요.",
+  "Tu nombre sólo puede llevar letras.": "이름은 영문으로 입력해 주세요 (예: Kim Minjun).",
   "Escribe tu nombre completo.": "이름 전체를 입력하세요.",
 
   // ── Unirse (link de reta) ──

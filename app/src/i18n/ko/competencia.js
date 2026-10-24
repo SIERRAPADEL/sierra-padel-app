@@ -339,4 +339,5 @@ export default {
   "Disponible hasta el {fecha} · descárgala para no perderla": "{fecha}까지 볼 수 있어요 · 잃어버리지 않게 다운로드하세요",
   "Etiqueta a @sierra.padel y entra a la Jugada de la semana": "@sierra.padel 계정을 태그하고 이번 주 베스트 플레이에 도전하세요",
   "Etiqueta a @sierra.padel y entra a la Jugada de la quincena": "@sierra.padel 계정을 태그하고 2주 베스트 플레이에 도전하세요",
+  "Traducción de referencia: el reglamento oficial es el de español.": "참고용 번역이에요. 공식 규정은 스페인어 원문이에요.",
 };

@@ -338,4 +338,5 @@ export default {
   "Disponible hasta el {fecha} · descárgala para no perderla": "Available until {fecha} · download it so you don't lose it",
   "Etiqueta a @sierra.padel y entra a la Jugada de la semana": "Tag @sierra.padel to enter Play of the Week",
   "Etiqueta a @sierra.padel y entra a la Jugada de la quincena": "Tag @sierra.padel to enter Play of the Fortnight",
+  "Traducción de referencia: el reglamento oficial es el de español.": "Reference translation: the official rules are the Spanish version.",
 };

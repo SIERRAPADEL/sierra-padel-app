@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { isPushSupported, usePushSubscription } from '../components/NotificationSetup';
-import { t, locale } from '../i18n';
+import { t, locale, idioma } from '../i18n';
 
 // ──────────────────────────────────────────────────────────
 // Helpers
@@ -794,6 +794,9 @@ function InscripcionFlow({ torneo, onDone, apiFetch, catInicial = null }) {
                   <a href={torneo.reglamento_url} target="_blank" rel="noopener noreferrer" className="text-sp-green font-semibold underline">
                     {t('Ver reglamento')}
                   </a>
+                )}
+                {idioma() !== 'es' && (
+                  <span className="block mt-1 text-gray-400">{t('Traducción de referencia: el reglamento oficial es el de español.')}</span>
                 )}
               </span>
             </label>

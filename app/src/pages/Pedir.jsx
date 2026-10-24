@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND, UBICACIONES, PARA_LLEVAR, nombreUbicacion } from '../lib/constants';
 import { t } from '../i18n';
+import NotaPesos from '../components/NotaPesos';
 
 // Función (no objeto) para que t() corra al pintar, en el idioma vigente.
 function catLabel(cat) {
@@ -499,6 +500,7 @@ export default function Pedir() {
               <span>{t('Total')}</span>
               <span>${parseFloat(pedidoOk.total).toFixed(0)}</span>
             </div>
+            <NotaPesos className="text-right" />
           </div>
           <button
             onClick={() => { setSeguim(null); setPedidoOk(null); }}
@@ -799,6 +801,7 @@ export default function Pedir() {
               <div className="flex justify-between pt-2 mt-1 border-t border-gray-200 font-black text-sp-green-dark">
                 <span>{t('Total')}</span><span>${totalCarrito().toFixed(0)}</span>
               </div>
+              <NotaPesos className="text-right" />
               {/* Lo que se le promete al cliente. Manda el producto más lento del carrito. */}
               <div className="flex justify-between pt-1.5 text-[13px] text-gray-500">
                 <span>{t('Listo en aprox.')}</span>

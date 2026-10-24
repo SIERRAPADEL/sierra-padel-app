@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { t, locale } from '../i18n';
+import NotaPesos from '../components/NotaPesos';
 
 // ── Mis Reservas ─────────────────────────────────────────────────────────────
 
@@ -815,6 +816,7 @@ export default function Reservar() {
                     <div className="text-right">
                       <p className="font-black text-sp-green-dark text-xl">${tarifa.precio}</p>
                       <p className="text-[10px] text-gray-400">{t('precio de lista')}</p>
+                      <NotaPesos className="text-[10px]" />
                     </div>
                   )}
                 </div>
