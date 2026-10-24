@@ -1,5 +1,5 @@
 // Helpers de formato compartidos
-import { locale, t } from '../i18n';
+import { locale, t } from '../i18n/index.js';
 
 // "2026-06-29" parseado como fecha LOCAL. Con new Date('YYYY-MM-DD') JS asume UTC
 // y en México (UTC-6) la fecha se mostraba un día antes del real.

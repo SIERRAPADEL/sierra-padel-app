@@ -1,5 +1,5 @@
 // Constantes compartidas de la app
-import { t } from '../i18n';
+import { t } from '../i18n/index.js';
 
 export const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://sierra-padel-backend-production-a55f.up.railway.app';
 

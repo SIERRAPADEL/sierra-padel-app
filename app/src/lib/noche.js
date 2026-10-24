@@ -9,7 +9,7 @@
 // `saltaSemana`: la próxima noche está a 7 días o más. En una semana normal nunca pasa (del
 // sábado al viernes siguiente son 6), así que sólo se enciende cuando de verdad se brincó una.
 
-import { locale, t } from '../i18n';
+import { locale, t } from '../i18n/index.js';
 
 // Hoy EN MONCLOVA, no en el reloj del teléfono ni en UTC.
 export function hoyClub() {

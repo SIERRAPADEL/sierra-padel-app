@@ -9,7 +9,7 @@ export function soloLetras(s) {
   return String(s || '').replace(/[^A-Za-zÀ-ÖØ-öø-ÿÑñÜü' .\-]/g, '').replace(/\s{2,}/g, ' ');
 }
 
-import { t } from '../i18n';
+import { t } from '../i18n/index.js';
 
 // Devuelve el texto del error, o '' si está bien.
 export function errorNombre(s) {

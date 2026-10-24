@@ -12,14 +12,14 @@
 //
 // ⚠️ t() se llama AL PINTAR, nunca al importar: un arreglo de textos a nivel de módulo se
 // evalúa una sola vez y se quedaría en el idioma con el que abrió la app.
-import enInicio from './en/inicio';
-import enReservas from './en/reservas';
-import enCompetencia from './en/competencia';
-import enCuenta from './en/cuenta';
-import koInicio from './ko/inicio';
-import koReservas from './ko/reservas';
-import koCompetencia from './ko/competencia';
-import koCuenta from './ko/cuenta';
+import enInicio from './en/inicio.js';
+import enReservas from './en/reservas.js';
+import enCompetencia from './en/competencia.js';
+import enCuenta from './en/cuenta.js';
+import koInicio from './ko/inicio.js';
+import koReservas from './ko/reservas.js';
+import koCompetencia from './ko/competencia.js';
+import koCuenta from './ko/cuenta.js';
 
 export const IDIOMAS = [
   { clave: 'es', nombre: 'Español' },
