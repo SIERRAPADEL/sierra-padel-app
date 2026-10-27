@@ -214,6 +214,7 @@ export default {
 
   // Temporada
   '¡Viva México!': '¡Viva México!',
+  'Día de Muertos': '죽은 자의 날',
 
   // La caja quiere usar tus puntos
   'La caja': '카운터',

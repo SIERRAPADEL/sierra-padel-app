@@ -58,6 +58,7 @@ Fechas en coreano: `10월 23일(금)` (sin espacio antes del paréntesis).
 | set / game | set / game | 세트 / 게임 | |
 | tie-break / punto de oro | tie-break / golden point | 타이브레이크 / 골든 포인트 | |
 | ganó / perdió | won / lost | 승 / 패 | récord «3-1» → 3승 1패 |
+| Día de Muertos (tema de la app, 1–3 nov) | Day of the Dead | 죽은 자의 날 | nombre establecido en coreano (위키백과, prensa: 멕시코 죽은 자의 날); saludo del Inicio |
 | ranking | ranking | 랭킹 | 랭킹 = la tabla; 순위 = el lugar («3er lugar» → 3위) |
 | pelotas / bote de pelotas | balls / can of balls | 공 / 공 1캔 | |
 | pedir al bar | order from the bar | 바에서 주문하기 | |

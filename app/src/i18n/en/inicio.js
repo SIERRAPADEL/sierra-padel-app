@@ -214,6 +214,7 @@ export default {
 
   // Temporada
   '¡Viva México!': 'Viva México!',
+  'Día de Muertos': 'Day of the Dead',
 
   // La caja quiere usar tus puntos
   'La caja': 'The register',

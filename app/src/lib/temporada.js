@@ -9,8 +9,14 @@
 // que alguien se acordara. Aquí el mes lo decide:
 //   · septiembre → patria    (verde bandera, blanco y rojo)
 //   · octubre    → halloween (naranja y morado)
+//   · 1 al 3 de noviembre → muertos (morado, cempasúchil y magenta, con papel picado)
 //   · el resto   → el verde lima de siempre
 // Se repite cada año sin tocar nada.
+//
+// 💀 Día de Muertos (26-oct-2026): sólo decoración, SIN promo. Va por DÍAS, no por mes: entra
+// el 1 de noviembre a las 00:00 del club (Halloween dura hasta el 31 a las 23:59) y se quita
+// solo el 4. Un tema por días se declara con `dias: ['MM-DD', 'MM-DD']` (desde y hasta,
+// ambos incluidos); los de mes completo siguen con `meses`.
 //
 // Los colores viven en index.css (`html[data-temporada=…]`); aquí sólo se decide cuál toca y
 // se marca en <html>. El mes es el del CLUB (Monterrey), no el del teléfono ni el de UTC: el
@@ -19,6 +25,7 @@
 const TEMPORADAS = {
   patria:    { meses: ['09'], barra: '#006847' },
   halloween: { meses: ['10'], barra: '#EA580C' },
+  muertos:   { dias: ['11-01', '11-03'], barra: '#4A2766' },
 };
 const BARRA_NORMAL = '#96C800';
 const LLAVE_FORZADA = 'sp_temporada_forzada';
@@ -31,13 +38,30 @@ export function mesDelClub(fecha = new Date()) {
   }
 }
 
+// 'MM-DD' del club: el 1 de noviembre empieza a las 00:00 de Monclova, no a las 18:00 de la
+// víspera (cuando en UTC ya es día 1).
+export function diaDelClub(fecha = new Date()) {
+  try {
+    const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Monterrey', month: '2-digit', day: '2-digit' }).formatToParts(fecha);
+    const v = (k) => p.find(x => x.type === k).value;
+    return `${v('month')}-${v('day')}`;
+  } catch {
+    return `${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+  }
+}
+
 export function temporadaDe(fecha = new Date()) {
   const mes = mesDelClub(fecha);
-  for (const [nombre, t] of Object.entries(TEMPORADAS)) if (t.meses.includes(mes)) return nombre;
+  const dia = diaDelClub(fecha);
+  // Primero las de días: son más precisas que las de mes completo.
+  for (const [nombre, t] of Object.entries(TEMPORADAS)) {
+    if (t.dias && dia >= t.dias[0] && dia <= t.dias[1]) return nombre;
+  }
+  for (const [nombre, t] of Object.entries(TEMPORADAS)) if (t.meses && t.meses.includes(mes)) return nombre;
   return null;
 }
 
-// Para VER un tema antes de que llegue su mes: `?temporada=halloween` (o `patria`, `normal`).
+// Para VER un tema antes de que llegue su fecha: `?temporada=halloween` (o `patria`, `muertos`, `normal`).
 // Dura lo que dure la pestaña; `?temporada=auto` lo quita. Sirve para revisar octubre desde
 // septiembre sin esperar ni desplegar nada.
 function temporadaForzada() {

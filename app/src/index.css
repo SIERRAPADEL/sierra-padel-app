@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* 🎨 LOS COLORES DE LA MARCA, EN VARIABLES. El tema de temporada (lib/temporada.js) marca
-   <html data-temporada="patria|halloween"> y los bloques de abajo cambian estos valores en
+   <html data-temporada="patria|halloween|muertos"> y los bloques de abajo cambian estos valores en
    toda la app a la vez. Nombres «green» por historia: en octubre --sp-green es naranja.
    · --sp-green / -dark / -deep / -light / -soft / -wash → el color de marca y sus tonos
    · --sp-ink-on      → texto SOBRE el color de marca (negro con lima, blanco con verde bandera)
@@ -67,6 +67,26 @@ html[data-temporada="halloween"] {
   --sp-pedir-shadow: rgba(234, 88, 12, .3);
 }
 
+/* 🏵️ 1 al 3 de noviembre — Día de Muertos (sólo decoración, sin promo). Morado ciruela de
+   base, cempasúchil de acento y magenta en el botón del bar; el verde del club sigue en el
+   papel picado. Texto blanco sobre el morado (contraste 11:1). */
+html[data-temporada="muertos"] {
+  --sp-green: #4A2766;          --sp-green-rgb: 74 39 102;
+  --sp-green-dark: #3A1D52;     --sp-green-dark-rgb: 58 29 82;
+  --sp-green-deep: #2C1540;
+  --sp-green-light: #F1EAF6;    --sp-green-light-rgb: 241 234 246;
+  --sp-green-soft: #C3A8D9;
+  --sp-green-wash: #FAF6FC;
+  --sp-ink-on: #ffffff;
+  --sp-ink-on-sub: rgba(255, 255, 255, .74);
+  --sp-dark-a: #2C1540;
+  --sp-dark-b: #1A0C27;
+  --sp-on-dark: #F2A93B;        --sp-on-dark-rgb: 242 169 59;
+  --sp-pedir-a: #B8246E;
+  --sp-pedir-b: #7A1D57;
+  --sp-pedir-shadow: rgba(184, 36, 110, .28);
+}
+
 /* Adornos del Inicio (components/Temporada.jsx) */
 .temporada-saludo {
   display: inline-flex; align-items: center; border-radius: 9999px;
@@ -84,6 +104,14 @@ html[data-temporada="halloween"] {
   text-align: center; white-space: nowrap; overflow: hidden;
   background: #1B0A33; color: #FDBA74;
 }
+.temporada-saludo--muertos { background: #F2A93B; color: #2C1540; gap: 7px; }
+/* La flor de cempasúchil del saludo: un botón de pétalos hecho con un degradado, sin emoji. */
+.temporada-saludo--muertos::before {
+  content: ''; width: 11px; height: 11px; border-radius: 9999px; flex-shrink: 0;
+  background: radial-gradient(circle, #7A3A00 0 22%, #E8930C 24% 58%, #C96F00 60% 100%);
+}
+.temporada-franja--muertos { height: 34px; line-height: 0; overflow: hidden; }
+.temporada-franja--muertos svg { display: block; }
 
 * {
   -webkit-tap-highlight-color: transparent;
