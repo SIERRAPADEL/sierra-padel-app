@@ -105,11 +105,6 @@ html[data-temporada="muertos"] {
   background: #1B0A33; color: #FDBA74;
 }
 .temporada-saludo--muertos { background: #F2A93B; color: #2C1540; gap: 7px; }
-/* La flor de cempasúchil del saludo: un botón de pétalos hecho con un degradado, sin emoji. */
-.temporada-saludo--muertos::before {
-  content: ''; width: 11px; height: 11px; border-radius: 9999px; flex-shrink: 0;
-  background: radial-gradient(circle, #7A3A00 0 22%, #E8930C 24% 58%, #C96F00 60% 100%);
-}
 .temporada-franja--muertos { height: 34px; line-height: 0; overflow: hidden; }
 .temporada-franja--muertos svg { display: block; }
 

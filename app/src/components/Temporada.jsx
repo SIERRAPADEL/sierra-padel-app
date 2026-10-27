@@ -21,8 +21,8 @@ const saludo = (k) => ({
   // German (10-sep): «Spooky szn», con la calabaza y un fantasma, en lugar de «¡Feliz Halloween!».
   // Ya es inglés: igual en los tres idiomas.
   halloween: '🎃 Spooky szn 👻',
-  // Día de Muertos (1 al 3 de nov): sin emoji; la flor de cempasúchil la pone el CSS.
-  muertos: t('Día de Muertos'),
+  // Día de Muertos (1 al 3 de nov). German (26-oct): «agregar algún emoji, una calaverita o algo afín».
+  muertos: '💀 ' + t('Día de Muertos') + ' 🌼',
 })[k];
 
 export function TemporadaSaludo() {
