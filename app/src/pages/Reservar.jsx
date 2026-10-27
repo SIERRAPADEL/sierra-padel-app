@@ -433,6 +433,13 @@ export default function Reservar() {
   // 🎾 Link directo del Martes de Todo o Nada (German 19-oct): ?todo-o-nada abre el próximo
   // martes a las 8:30 pm. La promo la aplica sola la caja; aquí no se manda ningún código.
   const esTodoONada    = urlParams.has('todo-o-nada') && !esCumple && !tienePromo;
+  // 🔗 PROMOTOR ÚNICO (German 27-oct-2026: «cuando un cliente hace click en la promoción, no sólo
+  // porque reservó a esa hora»): el link de la promo trae ?pu=<token>&fecha=…&hora=…. Al abrirlo se
+  // avisa al club (cuenta como «abierto»), se prellenan día y turno, y el token viaja al reservar:
+  // sólo ESA reserva recibe el beneficio en el check-in.
+  const puToken        = (!tienePromo && !esCumple && urlParams.get('pu')) || null;
+  const puFecha        = puToken && /^\d{4}-\d{2}-\d{2}$/.test(urlParams.get('fecha') || '') ? urlParams.get('fecha') : null;
+  const puHora         = puToken && /^\d{2}:\d{2}$/.test(urlParams.get('hora') || '') ? urlParams.get('hora') : null;
 
   // Puede venir a "Mis reservas" desde Mi cuenta (state) o desde un push (?tab=mis)
   const [mainTab, setMainTab] = useState(
@@ -442,10 +449,10 @@ export default function Reservar() {
 
   // --- Cancha ---
   const [fecha, setFecha]             = useState(
-    esTodoONada ? proximoMartes() : (esCumple && cumpleDesde > hoyISO() ? cumpleDesde : hoyISO())
+    esTodoONada ? proximoMartes() : (puFecha || (esCumple && cumpleDesde > hoyISO() ? cumpleDesde : hoyISO()))
   );
   const [canchas2, setCanchas2]       = useState([]);     // 2x1: las dos canchas elegidas
-  const [hora, setHora]               = useState(esTodoONada ? '20:30' : null);
+  const [hora, setHora]               = useState(esTodoONada ? '20:30' : (puHora || null));
   const [horasDisp, setHorasDisp]     = useState(null);   // [{hora, libres}] del backend
   const [canchasDisp, setCanchasDisp] = useState(null);
   const [loadingCanchas, setLoadingCanchas] = useState(false);
@@ -475,6 +482,22 @@ export default function Reservar() {
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 🔗 La promo del link: se registra el click y se trae lo que regala para mostrarlo.
+  const [promoPU, setPromoPU] = useState(null); // { ok, tipo, fecha, hora, texto, vigente, quedan }
+  useEffect(() => {
+    if (!puToken) return;
+    apiFetch(`/promotor-unico/promo/${encodeURIComponent(puToken)}`)
+      .then(d => {
+        if (!d?.ok) { setPromoPU({ ok: false }); return; }
+        setPromoPU(d);
+        if (d.fecha) setFecha(d.fecha);
+        if (d.hora) setHora(d.hora);
+      })
+      .catch(() => setPromoPU({ ok: false }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const conPromoPU = !!(puToken && promoPU?.ok && promoPU.vigente && fecha === promoPU.fecha && hora === promoPU.hora);
 
   // Horas con disponibilidad (oculta pasadas si es hoy, marca llenas)
   useEffect(() => {
@@ -554,6 +577,9 @@ export default function Reservar() {
 
     if (tipo === 'cancha' && !tienePromo && primera?.elegible && !usarPrimera) body.sin_primera = true;
 
+    // 🔗 La reserva queda ligada a la promo del link SÓLO si es su día y su turno.
+    if (tipo === 'cancha' && conPromoPU) body.promotor_token = puToken;
+
     // Adjuntar código de promo express si viene de tipo 2
     if (tienePromo) {
       body.promo_codigo = promoCodigo;
@@ -574,6 +600,8 @@ export default function Reservar() {
         hora:    tipo === 'cancha' ? hora       : horaSel,
         detalle: tipo === 'cancha' ? t('Cancha {n}', { n: cancha }) : t('Clase con {coach}', { coach: coachSel }),
         promo:   tienePromo ? { codigo: promoCodigo, precio: promoPrecio, titulo: promoTitulo } : null,
+        promotor: data.promotor ? { texto: data.promotor.texto } : null,
+        promotorRechazo: data.promotor_rechazo || null,
         primera: esPrimera ? { precio: Number(data.data.promo_precio) || 200, bote: boteInfo } : null,
       });
     } else {
@@ -622,6 +650,16 @@ export default function Reservar() {
             <p style={{ fontSize: 11, color: '#5e5e78', marginTop: 4 }}>{t('El encargado vera este codigo al revisar la reserva')}</p>
           </div>
         )}
+        {done.promotor && (
+          <div style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))', border: '1px solid var(--sp-on-dark)', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--sp-on-dark)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>{t('🎁 Tu promoción quedó ligada a esta reserva')}</p>
+            <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--sp-on-dark)' }}>{done.promotor.texto}</p>
+            <p style={{ fontSize: 11, color: '#9090a8', marginTop: 4 }}>{t('Se aplica sola al hacer check-in en este turno.')}</p>
+          </div>
+        )}
+        {done.promotorRechazo && (
+          <p className="text-xs text-gray-500 text-center max-w-xs">{done.promotorRechazo}</p>
+        )}
         {done.primera && (
           <div style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))', border: '1px solid var(--sp-on-dark)', borderRadius: 16, padding: '14px 16px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--sp-on-dark)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>{t('🎉 Promo de bienvenida aplicada')}</p>
@@ -650,6 +688,26 @@ export default function Reservar() {
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 12, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{promoTitulo || t('Promo Express activa')}</p>
               {promoPrecio && <p style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginTop: 2 }}>{t('Precio preferencial:')} <strong>${promoPrecio}</strong> · {t('Codigo: {codigo}', { codigo: promoCodigo })}</p>}
+            </div>
+          </div>
+        )}
+        {/* 🔗 Banner de la promo del link (promotor único) */}
+        {puToken && promoPU && (
+          <div style={{ background: 'rgba(0,0,0,.25)', borderRadius: 12, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20 }}>🎁</span>
+            <div style={{ flex: 1 }}>
+              {promoPU.ok && promoPU.vigente ? (
+                <>
+                  <p style={{ fontSize: 12, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{promoPU.texto}</p>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginTop: 2 }}>
+                    {t('Sólo el {fecha} a las {hora}, reservando aquí. Se aplica sola al hacer check-in.', { fecha: promoPU.fecha, hora: promoPU.hora })}
+                    {promoPU.tipo === 'general' && promoPU.quedan != null ? ' ' + t('Quedan {n} canchas con la promo.', { n: promoPU.quedan }) : ''}
+                  </p>
+                  {!conPromoPU && <p style={{ fontSize: 11, color: '#ffd9a0', marginTop: 2 }}>{t('Para usarla, deja el día y la hora de la promoción.')}</p>}
+                </>
+              ) : (
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{t('Esta promoción ya no está vigente; puedes reservar a precio normal.')}</p>
+              )}
             </div>
           </div>
         )}

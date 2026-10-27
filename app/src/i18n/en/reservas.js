@@ -323,4 +323,11 @@ export default {
   'Marcador guardado. Tus rivales pueden revisarlo.': 'Score saved. Your opponents can review it.',
   'Poner marcador': 'Enter score',
   "Precios en pesos mexicanos (MXN)": "Prices in Mexican pesos (MXN)",
+  // 🔗 Promotor único: la promo del link (27-oct-2026)
+  "🎁 Tu promoción quedó ligada a esta reserva": "🎁 Your promo is linked to this booking",
+  "Se aplica sola al hacer check-in en este turno.": "It applies automatically at check-in for this slot.",
+  "Sólo el {fecha} a las {hora}, reservando aquí. Se aplica sola al hacer check-in.": "Only on {fecha} at {hora}, booking here. It applies automatically at check-in.",
+  "Quedan {n} canchas con la promo.": "{n} courts left with the promo.",
+  "Para usarla, deja el día y la hora de la promoción.": "To use it, keep the promo date and time.",
+  "Esta promoción ya no está vigente; puedes reservar a precio normal.": "This promo is no longer valid; you can book at the regular price.",
 };

@@ -323,4 +323,11 @@ export default {
   'Marcador guardado. Tus rivales pueden revisarlo.': '스코어가 저장됐어요. 상대 팀이 확인할 수 있어요.',
   'Poner marcador': '스코어 입력하기',
   "Precios en pesos mexicanos (MXN)": "금액은 멕시코 페소(MXN)예요",
+  // 🔗 Promotor único: la promo del link (27-oct-2026)
+  "🎁 Tu promoción quedó ligada a esta reserva": "🎁 프로모션이 이 예약에 연결됐어요",
+  "Se aplica sola al hacer check-in en este turno.": "이 시간대 체크인 때 자동으로 적용돼요.",
+  "Sólo el {fecha} a las {hora}, reservando aquí. Se aplica sola al hacer check-in.": "{fecha} {hora}에 여기서 예약할 때만 적용돼요. 체크인 때 자동으로 적용돼요.",
+  "Quedan {n} canchas con la promo.": "프로모션 코트가 {n}개 남았어요.",
+  "Para usarla, deja el día y la hora de la promoción.": "사용하려면 프로모션 날짜와 시간을 유지하세요.",
+  "Esta promoción ya no está vigente; puedes reservar a precio normal.": "이 프로모션은 더 이상 유효하지 않아요. 일반 요금으로 예약할 수 있어요.",
 };
