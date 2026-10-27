@@ -57,6 +57,7 @@ export default {
   "Draw listo": "대진표 확정",
   "Calendario": "일정 공개",
   "Finalizado": "종료",
+  "Cancelado": "취소됨",
   "Por definir": "미정",
   "Aún no hay puntos en el ranking": "아직 랭킹 포인트가 없어요",
   "Se irá llenando con cada resultado": "경기 결과가 나올 때마다 채워져요",

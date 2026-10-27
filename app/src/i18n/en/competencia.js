@@ -56,6 +56,7 @@ export default {
   "Draw listo": "Draw ready",
   "Calendario": "Schedule",
   "Finalizado": "Finished",
+  "Cancelado": "Canceled",
   "Por definir": "TBD",
   "Aún no hay puntos en el ranking": "No ranking points yet",
   "Se irá llenando con cada resultado": "It fills up with every result",

@@ -101,6 +101,7 @@ function EstadoBadge({ estado }) {
     calendario_publicado:  { label: t('Calendario'),     cls: 'bg-purple-100 text-purple-600' },
     en_curso:              { label: t('En curso'),       cls: 'bg-orange-100 text-orange-600' },
     finalizado:            { label: t('Finalizado'),     cls: 'bg-gray-100 text-gray-500' },
+    cancelado:             { label: t('Cancelado'),      cls: 'bg-red-50 text-red-500' },
   };
   const e = map[estado] || { label: estado, cls: 'bg-gray-100 text-gray-500' };
   return <span className={`text-xs font-bold px-2 py-1 rounded-lg ${e.cls}`}>{e.label}</span>;
@@ -167,6 +168,9 @@ function ventanaCorriendo(c, torneo) {
 const ABIERTA = (c, torneo) => INSCRIBIBLES.includes(c?.estado) && ventanaCorriendo(c, torneo);
 
 function torneoEstado(t) {
+  // Cancelado manda sobre todo (26-oct-2026, AVG HALLOWEEN): sus categorías se quedan como
+  // estaban (con la ventana abierta, una seguiría ofreciendo «Inscribirme»).
+  if (t?.estado_global === 'cancelado') return 'cancelado';
   const est = (t?.torneo_categorias || []).map(c => c.estado);
   if ((t?.torneo_categorias || []).some(c => ABIERTA(c, t))) return 'inscripciones';
   if (est.some(e => ['draw_generado', 'calendario_publicado', 'en_curso', 'finalizado'].includes(e))) return 'calendario_publicado';
@@ -988,7 +992,7 @@ export default function Torneos() {
                     </p>
                   )}
                 </div>
-                <EstadoBadge estado={esPasado(tor) ? 'finalizado' : torneoEstado(tor)} />
+                <EstadoBadge estado={torneoEstado(tor) === 'cancelado' ? 'cancelado' : esPasado(tor) ? 'finalizado' : torneoEstado(tor)} />
               </div>
               {tor.descripcion && (
                 <p className="text-sm text-gray-500 mb-3">{tor.descripcion}</p>
