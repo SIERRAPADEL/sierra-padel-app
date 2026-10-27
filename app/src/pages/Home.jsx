@@ -10,6 +10,7 @@ import SolicitudesPuntos from '../components/SolicitudesPuntos';
 import AvisosApagados from '../components/AvisosApagados';
 import NivelSelector from '../components/NivelSelector';
 import { soloLetras, errorNombre, nombreEsValido } from '../lib/nombre';
+import { money } from '../lib/puntosAut';
 import { TemporadaSaludo, TemporadaFranja } from '../components/Temporada';
 import { BACKEND } from '../lib/constants';
 import { formatFecha, formatHora, fmtRelativa, parseLocalDate } from '../lib/format';
@@ -690,6 +691,7 @@ export default function Home() {
   const { apiFetch } = useApi();
   const navigate    = useNavigate();
   const [puntos, setPuntos] = useState(null);
+  const [saldoFavor, setSaldoFavor] = useState(0);
   // Pedir el nivel UNA vez por sesión a cuentas que aún no lo tienen — o que tienen el
   // «Principiante» viejo, que no dice rama (German 29-sep: el nivel ES la clasificación).
   const sinRama = (cat) => !cat || cat === 'Principiante';
@@ -719,6 +721,11 @@ export default function Home() {
       setPuntos(d.data.total_puntos ?? d.data.puntos ?? null);
       setCumpleVivo(d.data.fecha_nacimiento || null);
     });
+    // 💰 Saldo a favor en pesos (26-oct-2026): si tiene, se ve junto a sus puntos al abrir la
+    // app — en la pantalla de Puntos está el detalle. Si la ruta no existe o falla, nada.
+    apiFetch('/saldo-favor/mio').then(r => {
+      if (r?.ok && r.data) setSaldoFavor(Number(r.data.saldo) || 0);
+    }).catch(() => {});
   }, []);
 
   // 🔴 LOS PRECIOS DEL BOTANERO SE LEEN, NO SE ESCRIBEN A MANO.
@@ -817,6 +824,14 @@ export default function Home() {
             <path d="M9 18l6-6-6-6" />
           </svg>
         </button>
+        {saldoFavor > 0 && (
+          <button
+            onClick={() => navigate('/puntos')}
+            className="inline-flex items-center gap-1.5 bg-black/20 rounded-full px-3.5 py-1.5 active:scale-95 transition-transform"
+          >
+            <span className="text-white text-sm font-bold">💰 {t('{monto} a favor', { monto: money(saldoFavor) })}</span>
+          </button>
+        )}
         <TemporadaSaludo />
         </div>
       </div>

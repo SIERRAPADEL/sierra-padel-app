@@ -75,6 +75,14 @@ export default function Puntos() {
     apiFetch('/pagos/puntos/mi-bloqueo').then(r => { if (r?.ok && r.data?.bloqueado) setBloqueo(r.data); }).catch(() => {});
   }, [apiFetch]);
 
+  // 💰 Saldo a favor EN PESOS (German 26-oct-2026: «Sí, en la app y en la caja»). Taty traía
+  // $200 a favor y en 6 visitas nadie se lo aplicó: ella no sabía que existía. Si el servidor
+  // todavía no tiene la ruta o falla, no se pinta nada.
+  const [saldoFavor, setSaldoFavor] = useState(null);
+  useEffect(() => {
+    apiFetch('/saldo-favor/mio').then(r => { if (r?.ok && r.data) setSaldoFavor(r.data); }).catch(() => {});
+  }, [apiFetch]);
+
   const [niveles, setNiveles]   = useState([]);
   const [saldo, setSaldo]       = useState(null);
   const [miNivel, setMiNivel]   = useState(null);   // bolsa única + nivel víbora (/loyalty/mi-nivel)
@@ -283,6 +291,31 @@ export default function Puntos() {
           </div>
         );
       })()}
+
+      {/* 💰 Saldo a favor: dinero suyo, no puntos — va aparte y con su monto exacto, para que
+          lo pida al pagar. Sólo aparece si tiene algo. */}
+      {saldoFavor && saldoFavor.saldo > 0 && (
+        <div className="mx-4 mt-3 rounded-2xl px-4 py-3 bg-sp-green-light">
+          <p className="text-xs font-semibold uppercase tracking-wide text-sp-green-dark">💰 {t('Saldo a favor')}</p>
+          <p className="text-3xl font-black text-sp-gray mt-1">{money(saldoFavor.saldo)}</p>
+          <p className="text-xs text-gray-600 mt-1">
+            {t('Es dinero tuyo en el club, en pesos. Al pagar, pídele al cajero que lo use.')}
+          </p>
+          {(saldoFavor.movimientos || []).length > 0 && (
+            <div className="mt-2 pt-2 border-t border-black/5">
+              <p className="text-[11px] text-gray-500 font-semibold">{t('Últimos movimientos')}</p>
+              {saldoFavor.movimientos.slice(0, 3).map((m, i) => (
+                <div key={i} className="flex items-start justify-between gap-3 mt-1">
+                  <p className="text-[12px] text-gray-600 min-w-0">{formatFecha(m.created_at)} · {m.motivo}</p>
+                  <p className={`text-[12px] font-bold shrink-0 ${m.monto >= 0 ? 'text-sp-green-dark' : 'text-gray-500'}`}>
+                    {m.monto >= 0 ? '+' : '−'}{money(Math.abs(m.monto))}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Nivel víbora + progreso */}
       {miNivel?.nivel && (() => {

@@ -79,6 +79,7 @@ export default {
   'Liga individual': 'Individual league',
   'Jugador': 'Player',
   '{n} puntos': '{n} points',
+  '{monto} a favor': '{monto} credit',
   'Mis puntos': 'My points',
   'Te avisamos tu cancha, tus retas y cuando se libere un lugar.': "We'll notify you about your court, your matches, and when a spot opens up.",
   'Reservar cancha': 'Book a court',

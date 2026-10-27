@@ -79,6 +79,7 @@ export default {
   'Liga individual': '개인전 리그',
   'Jugador': '플레이어',
   '{n} puntos': '{n}포인트',
+  '{monto} a favor': '예치금 {monto}',
   'Mis puntos': '내 포인트',
   'Te avisamos tu cancha, tus retas y cuando se libere un lugar.': '내 코트, 매치 소식과 빈자리가 생기면 알려 드려요.',
   'Reservar cancha': '코트 예약',
