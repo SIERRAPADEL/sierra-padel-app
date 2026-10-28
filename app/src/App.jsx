@@ -30,6 +30,7 @@ import Jugadas from './pages/Jugadas';
 import Avisos from './pages/Avisos';
 import AutorizarPuntos from './pages/AutorizarPuntos';
 import CuentaVencida from './pages/CuentaVencida';
+import Cortesia from './pages/Cortesia';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -94,6 +95,8 @@ function AppRoutes() {
       <Route path="/autorizar-puntos/:id" element={<ProtectedRoute><AutorizarPuntos /></ProtectedRoute>} />
       {/* 🔒 Una cuenta tuya quedó sin pagar: detalle + «No es mía / ya la pagué». */}
       <Route path="/cuenta-vencida/:id" element={<ProtectedRoute><CuentaVencida /></ProtectedRoute>} />
+      {/* 🎁 Pide tu cortesía (27-oct-2026): el push «Tu cortesía de hoy» lleva aquí con ?dia=AAAA-MM-DD. */}
+      <Route path="/cortesia" element={<ProtectedRoute><Cortesia /></ProtectedRoute>} />
       <Route path="/pedir" element={<ProtectedRoute><Pedir /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

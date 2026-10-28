@@ -298,4 +298,22 @@ export default {
   // ── Mensajes generales (useApi) ──
   "Tu sesión expiró. Inicia sesión de nuevo.": "Your session expired. Please log in again.",
   "Error del servidor ({status})": "Server error ({status})",
+
+  // ── 🎁 Pide tu cortesía (27-oct-2026) ──
+  "Tu cortesía de hoy": "Today's courtesy gift",
+  "No pudimos cargar tu cortesía.": "We couldn't load your courtesy gift.",
+  "No se pudo pedir tu cortesía. Intenta de nuevo.": "We couldn't request your courtesy gift. Try again.",
+  "Cortesía nivel {nivel}": "{nivel} level gift",
+  "Cortesía de lealtad": "Loyalty gift",
+  "Vence hoy": "Expires today",
+  "¡Listo! Tu {item} ya va en camino.": "Done! Your {item} is on its way.",
+  "Pásala a recoger a barra/tienda. No se cobra.": "Pick it up at the bar/shop. Free of charge.",
+  "Escoge tu cortesía sin costo": "Choose your free gift",
+  "sin costo": "free",
+  "Se entrega en barra/tienda. Es sólo por hoy: si no la pides, se pierde.": "Handed out at the bar/shop. Today only: if you don't request it, it's gone.",
+  "Pidiendo…": "Requesting…",
+  "Pedir mi cortesía": "Get my gift",
+  "Overgrip": "Overgrip",
+  "Agua 1L": "Water 1L",
+  "Agua 500ml": "Water 500ml",
 };

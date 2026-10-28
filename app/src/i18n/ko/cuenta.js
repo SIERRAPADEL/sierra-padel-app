@@ -297,4 +297,22 @@ export default {
   // ── Mensajes generales (useApi) ──
   "Tu sesión expiró. Inicia sesión de nuevo.": "세션이 만료됐어요. 다시 로그인해 주세요.",
   "Error del servidor ({status})": "서버 오류 ({status})",
+
+  // ── 🎁 Pide tu cortesía (27-oct-2026) ──
+  "Tu cortesía de hoy": "오늘의 무료 선물",
+  "No pudimos cargar tu cortesía.": "선물 정보를 불러오지 못했어요.",
+  "No se pudo pedir tu cortesía. Intenta de nuevo.": "선물을 요청하지 못했어요. 다시 시도해 주세요.",
+  "Cortesía nivel {nivel}": "{nivel} 등급 선물",
+  "Cortesía de lealtad": "멤버십 선물",
+  "Vence hoy": "오늘 만료",
+  "¡Listo! Tu {item} ya va en camino.": "완료! {item}을(를) 준비하고 있어요.",
+  "Pásala a recoger a barra/tienda. No se cobra.": "바/매장에서 받아 가세요. 무료예요.",
+  "Escoge tu cortesía sin costo": "무료 선물을 골라 주세요",
+  "sin costo": "무료",
+  "Se entrega en barra/tienda. Es sólo por hoy: si no la pides, se pierde.": "바/매장에서 드려요. 오늘만 가능해요: 요청하지 않으면 사라져요.",
+  "Pidiendo…": "요청 중…",
+  "Pedir mi cortesía": "선물 받기",
+  "Overgrip": "오버그립",
+  "Agua 1L": "물 1L",
+  "Agua 500ml": "물 500ml",
 };
