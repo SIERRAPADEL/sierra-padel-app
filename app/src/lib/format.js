@@ -15,6 +15,16 @@ export function formatFecha(str) {
   return parseLocalDate(str).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
+// El último DÍA que vale un cupón o promo ("2026-11-05"). Lo calcula el backend en la jornada del
+// club (`ultimo_dia`, reloj-club.js). Antes se enseñaba String(valido_hasta).slice(0,10) = la fecha
+// UTC: un premio de liga o un «hasta el 5» del panel decía 6 (2-nov-2026). Si el backend aún no
+// lo manda, se queda lo de antes.
+export function ultimoDiaDe(p) {
+  if (!p) return '';
+  if (p.ultimo_dia) return String(p.ultimo_dia).slice(0, 10);
+  return p.valido_hasta ? String(p.valido_hasta).slice(0, 10) : '';
+}
+
 // "18:30" desde "18:30:00"
 export function formatHora(str) {
   if (!str) return '';

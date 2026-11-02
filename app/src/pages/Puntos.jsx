@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { money } from '../lib/puntosAut';
+import { ultimoDiaDe } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import Isotipo from '../components/Isotipo';
@@ -454,7 +455,7 @@ export default function Puntos() {
                   <p className="text-xs text-gray-400 mt-0.5">
                     {p.monto_minimo ? t('Mínimo ${monto}', { monto: p.monto_minimo }) : ''}
                     {p.monto_minimo && p.valido_hasta ? ' · ' : ''}
-                    {p.valido_hasta ? t('Hasta {fecha}', { fecha: String(p.valido_hasta).slice(0, 10) }) : ''}
+                    {p.valido_hasta ? t('Hasta {fecha}', { fecha: ultimoDiaDe(p) }) : ''}
                   </p>
                 )}
                 {/* 🔒 Promo atada a las notificaciones (German, 24-ago-2026: «condiciónale
