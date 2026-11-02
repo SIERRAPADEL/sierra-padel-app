@@ -315,4 +315,13 @@ export default {
   "Overgrip": "오버그립",
   "Agua 1L": "물 1L",
   "Agua 500ml": "물 500ml",
+  // 🐍 Lealtad, regla única y caducidad (2-nov-2026)
+  "Ganas 1 punto por cada $20 que pagas en cancha, tienda y consumo, ya con descuentos. Cada punto vale $0.50, todo en una sola bolsa. No acumulan: el alcohol, los productos en promoción ni lo que pagas con puntos.": "코트, 매장, 식음료에서 할인 후 결제한 금액 $20마다 1포인트가 적립돼요. 1포인트는 $0.50이고 하나의 포인트로 모여요. 주류, 프로모션 상품, 포인트로 결제한 금액은 적립되지 않아요.",
+  "Tu nivel es el mismo en la app y en la caja, y se mide por tus últimos 30 días. Si dejas de venir bajas de nivel solo, así que mantente activo 🎾": "등급은 앱과 계산대에서 같으며 최근 30일 기준이에요. 오지 않으면 등급이 자동으로 내려가니 꾸준히 와 주세요 🎾",
+  "Tus puntos vencen el {fecha} si no vienes. Cualquier visita o canje reinicia el plazo de 6 meses.": "방문하지 않으면 포인트가 {fecha}에 소멸돼요. 방문하거나 사용하면 6개월 기간이 다시 시작돼요.",
+  "Si no vuelves, bajas de {nivel} el {fecha}.": "다시 오지 않으면 {fecha}에 {nivel} 등급에서 내려가요.",
+  "Para no bajar, antes de esa fecha te falta 1 visita o {monto} de consumo.": "등급을 유지하려면 그 전에 방문 1회 또는 {monto} 이용이 더 필요해요.",
+  "Para no bajar, antes de esa fecha te faltan {visitas} visitas o {monto} de consumo.": "등급을 유지하려면 그 전에 방문 {visitas}회 또는 {monto} 이용이 더 필요해요.",
+  "Tus puntos vencen si pasan 6 meses sin que vengas ni los uses; te avisamos 30 y 7 días antes.": "6개월 동안 방문이나 사용이 없으면 포인트가 소멸돼요. 30일 전과 7일 전에 알려 드려요.",
+  "⏳ Puntos vencidos (6 meses sin actividad)": "⏳ 포인트 소멸 (6개월 활동 없음)",
 };

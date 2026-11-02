@@ -35,6 +35,12 @@ function NivelIcono({ nivel, orden, nombre, size = 40 }) {
   );
 }
 const fmtMoney = n => '$' + Math.round(Number(n) || 0).toLocaleString(locale());
+// 'AAAA-MM-DD' (día del club, ya calculado en el servidor) → «4 de noviembre» en el idioma de la app.
+// Se arma al mediodía UTC para que ningún huso lo corra de día.
+const fechaLarga = (iso) => {
+  const d = new Date(String(iso || '').slice(0, 10) + 'T12:00:00Z');
+  return isNaN(d) ? '' : d.toLocaleDateString(locale(), { day: 'numeric', month: 'long', timeZone: 'UTC' });
+};
 // Regalo tangible por día que juega, según nivel (Fase 2 al cobrar renta). Son llaves en
 // español: se pintan con t(regalo).
 const TANGIBLE_NIVEL = { 2: 'Agua 500 ml gratis', 3: 'Agua de 1 L gratis', 4: 'Overgrip SP gratis' };
@@ -289,6 +295,13 @@ export default function Puntos() {
             <p className="text-gray-500 text-xs mt-3">
               {t('🎾 Cancha y 🍽️ consumo suman a la misma bolsa. El cajero los aplica al pagar cuando te identifica.')}
             </p>
+            {/* ⏳ Caducidad (German 2-nov-2026): el saldo vence a los 6 meses sin actividad. Sólo se
+                pinta si el servidor la manda (con saldo y con la regla ya publicada). */}
+            {miNivel?.vencimiento?.vence && (miNivel?.saldo_puntos ?? 0) > 0 && (
+              <p className="text-xs mt-2" style={{ color: '#FBBF24' }}>
+                ⏳ {t('Tus puntos vencen el {fecha} si no vienes. Cualquier visita o canje reinicia el plazo de 6 meses.', { fecha: fechaLarga(miNivel.vencimiento.vence) })}
+              </p>
+            )}
           </div>
         );
       })()}
@@ -341,6 +354,21 @@ export default function Puntos() {
                 : t('Últimos 30 días: {visitas} visitas · {monto} de consumo', { visitas: act.visitas, monto: fmtMoney(act.gasto) })}
             </div>
 
+            {/* 📉 «Que sientan el bajón» (German 2-nov-2026): si no vuelve, qué día baja y qué le
+                falta antes de esa fecha para conservar su nivel. */}
+            {miNivel.mantener && (
+              <div className="rounded-xl p-3 bg-amber-50 border border-amber-200">
+                <p className="text-xs font-bold text-amber-800">
+                  📉 {t('Si no vuelves, bajas de {nivel} el {fecha}.', { nivel: miNivel.mantener.nombre, fecha: fechaLarga(miNivel.mantener.baja_el) })}
+                </p>
+                <p className="text-xs text-amber-800/90 mt-1">
+                  {miNivel.mantener.faltan_visitas === 1
+                    ? t('Para no bajar, antes de esa fecha te falta 1 visita o {monto} de consumo.', { monto: fmtMoney(miNivel.mantener.faltan_gasto) })
+                    : t('Para no bajar, antes de esa fecha te faltan {visitas} visitas o {monto} de consumo.', { visitas: miNivel.mantener.faltan_visitas, monto: fmtMoney(miNivel.mantener.faltan_gasto) })}
+                </p>
+              </div>
+            )}
+
             {sig ? (
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs text-gray-500">
@@ -392,7 +420,7 @@ export default function Puntos() {
           <div className="card flex flex-col gap-2">
             <p className="text-sm font-bold text-sp-gray">{t('Cómo ganas 🐍')}</p>
             <p className="text-xs text-gray-500">
-              {t('Ganas 1 punto por cada $20 en cancha, tienda y consumo (el alcohol no acumula). Cada punto vale $0.50 — el 2.5% de todo lo que gastas, en una sola bolsa.')}
+              {t('Ganas 1 punto por cada $20 que pagas en cancha, tienda y consumo, ya con descuentos. Cada punto vale $0.50, todo en una sola bolsa. No acumulan: el alcohol, los productos en promoción ni lo que pagas con puntos.')}
             </p>
             <p className="text-xs text-gray-500">
               {t('Entre más alto tu nivel, más rápido acumulas y desbloqueas un regalo por cada día que juegas.')}
@@ -428,7 +456,10 @@ export default function Puntos() {
               })}
             </div>
             <p className="text-[11px] text-gray-400 mt-3">
-              {t('Tu nivel se mide por tus últimos 30 días. Si dejas de venir bajas de nivel, así que mantente activo 🎾')}
+              {t('Tu nivel es el mismo en la app y en la caja, y se mide por tus últimos 30 días. Si dejas de venir bajas de nivel solo, así que mantente activo 🎾')}
+            </p>
+            <p className="text-[11px] text-gray-400 mt-1">
+              {t('Tus puntos vencen si pasan 6 meses sin que vengas ni los uses; te avisamos 30 y 7 días antes.')}
             </p>
           </div>
         </div>
@@ -521,7 +552,9 @@ export default function Puntos() {
           {historial.map(h => {
             const canje  = h.registrado_por === 'redencion_pos';
             const ajuste = h.registrado_por === 'ajuste_admin' || h.registrado_por === 'redencion_revert';
-            const titulo = canje  ? t('🎁 Puntos usados en el club')
+            const caduco = h.registrado_por === 'caducidad';
+            const titulo = caduco ? t('⏳ Puntos vencidos (6 meses sin actividad)')
+                         : canje  ? t('🎁 Puntos usados en el club')
                          : ajuste ? t('⚙️ Ajuste de puntos')
                          : h.tipo === 'renta'   ? t('🎾 Renta de cancha')
                          : h.tipo === 'consumo' ? t('🍽️ Consumo')

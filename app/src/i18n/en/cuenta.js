@@ -316,4 +316,13 @@ export default {
   "Overgrip": "Overgrip",
   "Agua 1L": "Water 1L",
   "Agua 500ml": "Water 500ml",
+  // 🐍 Lealtad, regla única y caducidad (2-nov-2026)
+  "Ganas 1 punto por cada $20 que pagas en cancha, tienda y consumo, ya con descuentos. Cada punto vale $0.50, todo en una sola bolsa. No acumulan: el alcohol, los productos en promoción ni lo que pagas con puntos.": "You earn 1 point for every $20 you pay on courts, the shop and food & drinks, after discounts. Each point is worth $0.50, all in a single balance. These don't earn points: alcohol, items on promotion, or what you pay with points.",
+  "Tu nivel es el mismo en la app y en la caja, y se mide por tus últimos 30 días. Si dejas de venir bajas de nivel solo, así que mantente activo 🎾": "Your level is the same in the app and at the register, and it is based on your last 30 days. If you stop coming you drop a level automatically, so stay active 🎾",
+  "Tus puntos vencen el {fecha} si no vienes. Cualquier visita o canje reinicia el plazo de 6 meses.": "Your points expire on {fecha} if you don't come. Any visit or redemption restarts the 6-month period.",
+  "Si no vuelves, bajas de {nivel} el {fecha}.": "If you don't come back, you drop from {nivel} on {fecha}.",
+  "Para no bajar, antes de esa fecha te falta 1 visita o {monto} de consumo.": "To keep it, before that date you need 1 more visit or {monto} in purchases.",
+  "Para no bajar, antes de esa fecha te faltan {visitas} visitas o {monto} de consumo.": "To keep it, before that date you need {visitas} more visits or {monto} in purchases.",
+  "Tus puntos vencen si pasan 6 meses sin que vengas ni los uses; te avisamos 30 y 7 días antes.": "Your points expire after 6 months without visits or redemptions; we'll remind you 30 and 7 days before.",
+  "⏳ Puntos vencidos (6 meses sin actividad)": "⏳ Points expired (6 months without activity)",
 };
