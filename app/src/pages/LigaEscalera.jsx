@@ -99,8 +99,10 @@ export default function LigaEscalera() {
       setPreguntaRama(false);
       if (!r?.ok) { setAviso({ malo: true, txt: r?.error || t('No se pudo. Intenta de nuevo.') }); return; }
       if (r.data?.aviso_extras) {
-        // La inscripción quedó; el extra no (fecha límite, talla). Se dice tal cual.
-        setAviso({ malo: true, txt: t('Ya estás dentro, pero el extra no se pudo pedir:') + ' ' + r.data.aviso_extras });
+        // La inscripción quedó; el extra no (fecha límite, talla). Se dice tal cual — y si además
+        // la inscripción quedó sin adeudo anotado, también eso (no se tapa un aviso con el otro).
+        setAviso({ malo: true, txt: t('Ya estás dentro, pero el extra no se pudo pedir:') + ' ' + r.data.aviso_extras
+          + (r.data?.aviso_cobro ? ' ' + t('Pasa a recepción para dejar registrada tu inscripción.') : '') });
       } else if (r.data?.aviso_cobro) {
         setAviso({ txt: t('Ya estás dentro. Pasa a recepción para dejar registrada tu inscripción.') });
       } else {
@@ -451,8 +453,17 @@ export default function LigaEscalera() {
               return (
                 <div key={ex.clave} className="mt-3 rounded-xl border border-gray-200 p-3">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="w-5 h-5" checked={!!valor}
-                           onChange={(e) => setElegidos((x) => ({ ...x, [ex.clave]: e.target.checked ? (pideTalla ? '' : true) : undefined }))} />
+                    {/* Marcada = lo eligió, aunque falte la talla (valor ''). Con `!!valor` la casilla
+                        se veía vacía con '' y no había cómo quitarla: «Apuntarme» quedaba trabado. */}
+                    <input type="checkbox" className="w-5 h-5" checked={valor !== undefined}
+                           onChange={(e) => {
+                             const marcado = e.target.checked;
+                             setElegidos((x) => {
+                               const y = { ...x };
+                               if (marcado) y[ex.clave] = pideTalla ? '' : true; else delete y[ex.clave];
+                               return y;
+                             });
+                           }} />
                     <span className="text-[14px] font-bold text-sp-gray">
                       {t('Agregar {extra}', { extra: ex.etiqueta.toLowerCase() })} +{pesos(ex.precio)}
                     </span>

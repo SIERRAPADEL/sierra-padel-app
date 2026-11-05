@@ -213,6 +213,7 @@ export default {
   "Apuntándote…": "신청 중…",
   "Apuntarme a la liga": "리그 신청하기",
   // 🧥 Extras opcionales al inscribirse (hoodie de la liga, 5-nov-2026)
+  "Pasa a recepción para dejar registrada tu inscripción.": "참가 등록을 위해 리셉션에 들러 주세요.",
   "Elige tu talla para el extra que agregaste.": "추가한 상품의 사이즈를 선택하세요.",
   "Ya estás dentro, pero el extra no se pudo pedir:": "신청은 완료되었지만 추가 상품은 주문하지 못했습니다:",
   "Elige tu talla.": "사이즈를 선택하세요.",

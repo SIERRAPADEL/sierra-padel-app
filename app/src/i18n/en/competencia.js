@@ -212,6 +212,7 @@ export default {
   "Apuntándote…": "Signing you up…",
   "Apuntarme a la liga": "Join the league",
   // 🧥 Extras opcionales al inscribirse (hoodie de la liga, 5-nov-2026)
+  "Pasa a recepción para dejar registrada tu inscripción.": "Stop by the front desk to register your entry.",
   "Elige tu talla para el extra que agregaste.": "Choose your size for the extra you added.",
   "Ya estás dentro, pero el extra no se pudo pedir:": "You're in, but the extra couldn't be ordered:",
   "Elige tu talla.": "Choose your size.",
