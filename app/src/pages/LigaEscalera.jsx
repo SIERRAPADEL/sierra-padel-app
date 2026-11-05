@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { fondoPatro, PatrocinioArco, claseClaro, varsClaro } from '../components/PatrocinioJornada';
 import { t, locale } from '../i18n';
+import { extrasAbiertos, totalConExtras, extrasParaEnviar, textoHasta } from '../lib/extras';
 
 /**
  * Una LIGA ESCALERA vista por el jugador: de qué se trata, quién va, y el botón
@@ -40,6 +41,11 @@ export default function LigaEscalera() {
   const [aviso, setAviso] = useState(null);
   // La liga es de rama y no sabemos si juega varonil o femenil. Se pregunta UNA vez.
   const [preguntaRama, setPreguntaRama] = useState(false);
+  // 🧥 Extras opcionales elegidos al inscribirse: { clave: talla } (German 5-nov: el hoodie de la liga).
+  const [elegidos, setElegidos] = useState({});
+  // Talla elegida para pedir/cambiar un extra cuando YA está inscrito: { clave: talla }.
+  const [tallaYa, setTallaYa] = useState({});
+  const [pidiendo, setPidiendo] = useState(false);
 
   const cargar = useCallback(async () => {
     const [abiertas, mia, rank, jor] = await Promise.all([
@@ -70,6 +76,9 @@ export default function LigaEscalera() {
   // argumento es una trampa en React, y el cableado se puede volver a romper mañana.
   async function apuntarme(sexoCrudo) {
     const sexo = (sexoCrudo === 'H' || sexoCrudo === 'M') ? sexoCrudo : null;
+    // 🧥 Lo opcional que eligió (hoodie + talla). Sin talla no se manda a medias: se le pide.
+    const extras = extrasParaEnviar(extrasAbiertos(liga?.extras), elegidos);
+    if (extras === null) { setAviso({ malo: true, txt: t('Elige tu talla para el extra que agregaste.') }); return; }
     setApuntando(true);
     setAviso(null);
     // `sexo` sólo viaja cuando la liga es de rama y el sistema no lo tenía: es la persona
@@ -84,12 +93,15 @@ export default function LigaEscalera() {
     try {
       const r = await apiFetch(`/escalera/${id}/inscribirme`, {
         method: 'POST',
-        ...(sexo ? { body: JSON.stringify({ sexo }) } : {}),
+        ...((sexo || extras.length) ? { body: JSON.stringify({ ...(sexo ? { sexo } : {}), ...(extras.length ? { extras } : {}) }) } : {}),
       });
       if (r?.codigo === 'FALTA_SEXO') { setPreguntaRama(true); return; }
       setPreguntaRama(false);
       if (!r?.ok) { setAviso({ malo: true, txt: r?.error || t('No se pudo. Intenta de nuevo.') }); return; }
-      if (r.data?.aviso_cobro) {
+      if (r.data?.aviso_extras) {
+        // La inscripción quedó; el extra no (fecha límite, talla). Se dice tal cual.
+        setAviso({ malo: true, txt: t('Ya estás dentro, pero el extra no se pudo pedir:') + ' ' + r.data.aviso_extras });
+      } else if (r.data?.aviso_cobro) {
         setAviso({ txt: t('Ya estás dentro. Pasa a recepción para dejar registrada tu inscripción.') });
       } else {
         setAviso({ txt: r.ya_estaba ? t('Ya estabas inscrito.') : t('¡Listo, ya estás dentro!') });
@@ -102,8 +114,56 @@ export default function LigaEscalera() {
     }
   }
 
+  // 🧥 Ya inscrito: pedir el extra, cambiarle la talla o cancelarlo (antes de la fecha límite; el
+  // backend y la base lo cuidan — aquí sólo se pregunta y se dice lo que contestaron).
+  async function pedirExtraYa(extra) {
+    const pideTalla = (extra.tallas || []).length > 0;
+    const talla = tallaYa[extra.clave] || null;
+    if (pideTalla && !talla) { setAviso({ malo: true, txt: t('Elige tu talla.') }); return; }
+    setPidiendo(true); setAviso(null);
+    try {
+      const r = await apiFetch(`/escalera/${id}/extras/${encodeURIComponent(extra.clave)}`, {
+        method: 'POST', body: JSON.stringify({ talla }),
+      });
+      if (!r?.ok) { setAviso({ malo: true, txt: r?.error || t('No se pudo. Intenta de nuevo.') }); return; }
+      setAviso({ txt: r.cambio_talla ? t('Listo, cambiamos tu talla.') : t('¡Listo! Te lo cobran en el club junto con tu inscripción.') });
+      setTallaYa((x) => ({ ...x, [extra.clave]: null }));
+      cargar();
+    } catch {
+      setAviso({ malo: true, txt: t('No se pudo completar. Intenta de nuevo.') });
+    } finally { setPidiendo(false); }
+  }
+
+  async function cancelarExtraYa(extra) {
+    if (!window.confirm(t('¿Cancelar tu {extra}?', { extra: extra.etiqueta }))) return;
+    setPidiendo(true); setAviso(null);
+    try {
+      const r = await apiFetch(`/escalera/${id}/extras/${encodeURIComponent(extra.clave)}`, { method: 'DELETE' });
+      if (!r?.ok) { setAviso({ malo: true, txt: r?.error || t('No se pudo. Intenta de nuevo.') }); return; }
+      setAviso({ txt: t('Cancelado. Ya no se te cobra.') });
+      cargar();
+    } catch {
+      setAviso({ malo: true, txt: t('No se pudo completar. Intenta de nuevo.') });
+    } finally { setPidiendo(false); }
+  }
+
   const com = liga?.comercial;
   const precio = com?.precio_inscripcion;
+  const extras = extrasAbiertos(liga?.extras);
+  const misExtras = Array.isArray(mi?.extras) ? mi.extras : [];
+  const pesos = (n) => '$' + Number(n || 0).toLocaleString('es-MX');
+  // Las tallas como botones: se ven todas de un vistazo y se tocan con el pulgar.
+  const chipsTalla = (extra, valor, alElegir) => (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {(extra.tallas || []).map((tl) => (
+        <button key={tl} type="button" onClick={() => alElegir(tl)}
+                className={`px-3 py-1.5 rounded-lg text-[13px] font-bold border-2 ${valor === tl ? 'text-white' : 'text-sp-gray bg-white'}`}
+                style={{ borderColor: rama.fondo, ...(valor === tl ? { background: rama.fondo } : {}) }}>
+          {tl}
+        </button>
+      ))}
+    </div>
+  );
   const inscritos = liga?.inscritos ?? 0;
   const bolsa = com ? Number(com.premio_efectivo || 0) + Number(com.premio_especie_valor || 0) : 0;
   const minPremios = com?.premios_min_participantes;
@@ -191,6 +251,62 @@ export default function LigaEscalera() {
                   : t('Falta pagar ${monto} — te la cobran en el club', { monto: Number(mi.adeudo.saldo).toLocaleString('es-MX') })}
               </p>
             )}
+
+            {/* 🧥 Sus extras: lo que ya pidió (con su talla y si ya lo pagó) y lo que todavía puede agregar. */}
+            {misExtras.map((p) => {
+              const ex = extras.find((e) => e.clave === p.clave);
+              return (
+                <div key={p.id} className="mt-3 pt-3 border-t border-black/10">
+                  <p className="text-[14px] font-bold text-sp-gray">
+                    🧥 {ex?.etiqueta || p.clave}{p.talla ? ' · ' + t('talla {t}', { t: p.talla }) : ''}
+                  </p>
+                  <p className={`text-[13px] font-bold ${p.pagado ? 'text-green-700' : 'text-amber-700'}`}>
+                    {p.pagado ? t('✓ Pagado') : t('Falta pagar ${monto} — te la cobran en el club', { monto: Number(p.saldo ?? p.precio).toLocaleString('es-MX') })}
+                  </p>
+                  {ex && (
+                    <>
+                      {(ex.tallas || []).length > 0 && chipsTalla(ex, tallaYa[ex.clave] || p.talla, (tl) => setTallaYa((x) => ({ ...x, [ex.clave]: tl })))}
+                      <div className="flex gap-2 mt-2">
+                        {tallaYa[ex.clave] && tallaYa[ex.clave] !== p.talla && (
+                          <button type="button" disabled={pidiendo} onClick={() => pedirExtraYa(ex)}
+                                  className="flex-1 py-2 rounded-xl text-white font-bold text-[13px] disabled:opacity-60"
+                                  style={{ background: rama.fondo }}>
+                            {t('Cambiar a talla {t}', { t: tallaYa[ex.clave] })}
+                          </button>
+                        )}
+                        {!p.pagado && (
+                          <button type="button" disabled={pidiendo} onClick={() => cancelarExtraYa(ex)}
+                                  className="py-2 px-3 rounded-xl text-red-600 font-bold text-[13px] border border-red-200 disabled:opacity-60">
+                            {t('Cancelar')}
+                          </button>
+                        )}
+                      </div>
+                      {ex.hasta && (
+                        <p className="text-gray-500 text-[12px] mt-1">
+                          {t('Puedes cambiarlo o cancelarlo hasta el {fecha}', { fecha: textoHasta(ex.hasta, locale()) })}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+            {extras.filter((e) => !misExtras.some((p) => p.clave === e.clave)).map((ex) => (
+              <div key={ex.clave} className="mt-3 pt-3 border-t border-black/10">
+                <p className="text-[14px] font-bold text-sp-gray">🧥 {t('Agregar {extra}', { extra: ex.etiqueta })} +{pesos(ex.precio)}</p>
+                {ex.hasta && (
+                  <p className="text-gray-500 text-[12px]">
+                    {t('Puedes pedirlo hasta el {fecha}', { fecha: textoHasta(ex.hasta, locale()) })}
+                  </p>
+                )}
+                {(ex.tallas || []).length > 0 && chipsTalla(ex, tallaYa[ex.clave], (tl) => setTallaYa((x) => ({ ...x, [ex.clave]: tl })))}
+                <button type="button" disabled={pidiendo} onClick={() => pedirExtraYa(ex)}
+                        className="mt-2 w-full py-2.5 rounded-xl text-white font-bold text-[14px] disabled:opacity-60"
+                        style={{ background: rama.fondo }}>
+                  {pidiendo ? t('Un momento…') : t('Pedir {extra}', { extra: ex.etiqueta.toLowerCase() })}
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
@@ -327,6 +443,40 @@ export default function LigaEscalera() {
                 )}
               </>
             )}
+
+            {/* 🧥 Lo OPCIONAL al inscribirse (German 5-nov-2026): casilla, talla y el total a la vista. */}
+            {extras.map((ex) => {
+              const valor = elegidos[ex.clave];
+              const pideTalla = (ex.tallas || []).length > 0;
+              return (
+                <div key={ex.clave} className="mt-3 rounded-xl border border-gray-200 p-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="w-5 h-5" checked={!!valor}
+                           onChange={(e) => setElegidos((x) => ({ ...x, [ex.clave]: e.target.checked ? (pideTalla ? '' : true) : undefined }))} />
+                    <span className="text-[14px] font-bold text-sp-gray">
+                      {t('Agregar {extra}', { extra: ex.etiqueta.toLowerCase() })} +{pesos(ex.precio)}
+                    </span>
+                  </label>
+                  {valor !== undefined && pideTalla && (
+                    <>
+                      <p className="text-[12px] text-gray-500 mt-2">{t('Tu talla:')}</p>
+                      {chipsTalla(ex, valor, (tl) => setElegidos((x) => ({ ...x, [ex.clave]: tl })))}
+                    </>
+                  )}
+                  {ex.hasta && (
+                    <p className="text-gray-500 text-[12px] mt-2">
+                      {t('Puedes pedirlo hasta el {fecha}', { fecha: textoHasta(ex.hasta, locale()) })}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+            {extras.some((ex) => elegidos[ex.clave] !== undefined) && precio > 0 && (
+              <p className="text-[14px] font-black text-sp-gray mt-2">
+                {t('Total: {monto}', { monto: pesos(totalConExtras(precio, extras, elegidos)) })}
+              </p>
+            )}
+
             <button
               onClick={() => apuntarme()}
               disabled={apuntando}
