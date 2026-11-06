@@ -36,6 +36,7 @@ function hora12(h) {
 // ⚡ Clase relámpago: «1 = $350 · 2 = $250 c/u · 3-4 = $200 c/u» (los escalones que manda el servidor).
 function escalonesTexto(c) {
   const esc = c.escalones || [];
+  if (!esc.length) return '';
   const precioDe = (n) => { let p = esc[0].precio; for (const e of esc) if (n >= e.desde) p = e.precio; return p; };
   const grupos = [];
   for (let n = 1; n <= c.cupo_max; n++) {
@@ -72,7 +73,7 @@ function ClaseCard({ c, onJoin, joining }) {
               : t('Si te unes: ${precio} por persona', { precio: c.precio_si_te_unes })}
           </p>
           {c.relampago && (
-            <p className="text-[12px] text-gray-400 mt-0.5">{escalonesTexto(c)} · {t('Entre más se anoten, menos paga cada quien')}</p>
+            <p className="text-[12px] text-gray-400 mt-0.5">{escalonesTexto(c) ? escalonesTexto(c) + ' · ' : ''}{t('Entre más se anoten, menos paga cada quien')}</p>
           )}
         </div>
       </div>
