@@ -48,9 +48,12 @@ function escalonesTexto(c) {
 // La hora del cierre, en hora del club (no la del teléfono).
 const horaCierre = (iso) => new Date(iso).toLocaleTimeString(locale(), { hour: 'numeric', minute: '2-digit', timeZone: 'America/Monterrey' });
 
-function ClaseCard({ c, onJoin, joining }) {
+function ClaseCard({ c, onJoin, onQuit, joining }) {
   const faltan = Math.max(0, c.cupo_min - c.inscritos);
   const voy = c.mi_estado === 'inscrito', espero = c.mi_estado === 'espera';
+  // ⚡ En la relámpago el coach acepta a los alumnos: «por_aceptar» (esperando) o «rechazado» (no hubo lugar).
+  const porAceptar = c.mi_estado === 'por_aceptar', rechazado = c.mi_estado === 'rechazado';
+  const coach1 = String(c.coach).split(' ')[0];
   const llena = c.lugares === 0;
   return (
     <div className={`card ${voy ? 'border-sp-green/40' : ''}`}>
@@ -67,11 +70,18 @@ function ClaseCard({ c, onJoin, joining }) {
           <p className="font-black text-sp-gray text-[15px] leading-tight">{cap(fechaLarga(c.fecha))} · {hora12(c.hora)}</p>
           {c.relampago && <p className="text-[12px] font-black text-sp-green-dark uppercase tracking-wide">⚡ {t('Clase relámpago')}</p>}
           <p className="text-[13px] text-gray-400 mt-0.5">{t('Con {coach} · 1 hora', { coach: c.coach })}</p>
-          <p className="text-[13px] font-black text-sp-green-dark mt-1">
-            {voy || espero
-              ? t('Pagas en recepción: ${precio} por persona', { precio: c.precio_actual })
-              : t('Si te unes: ${precio} por persona', { precio: c.precio_si_te_unes })}
-          </p>
+          {porAceptar && <p className="text-[13px] font-black text-amber-600 mt-1">{t('Esperando que {coach} te acepte', { coach: coach1 })}</p>}
+          {rechazado ? (
+            <p className="text-[13px] font-black text-gray-500 mt-1">{t('No hubo lugar')}</p>
+          ) : (
+            <p className="text-[13px] font-black text-sp-green-dark mt-1">
+              {voy || espero
+                ? t('Pagas en recepción: ${precio} por persona', { precio: c.precio_actual })
+                : c.relampago
+                  ? t('Si te aceptan: ${precio} por persona', { precio: c.precio_si_te_unes })
+                  : t('Si te unes: ${precio} por persona', { precio: c.precio_si_te_unes })}
+            </p>
+          )}
           {c.relampago && (
             <p className="text-[12px] text-gray-400 mt-0.5">{escalonesTexto(c) ? escalonesTexto(c) + ' · ' : ''}{t('Entre más se anoten, menos paga cada quien')}</p>
           )}
@@ -90,7 +100,13 @@ function ClaseCard({ c, onJoin, joining }) {
           </span>
         </div>
         {voy ? (
-          <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-sp-green-light text-sp-green-dark">{t('✓ Ya vas')}</span>
+          <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-sp-green-light text-sp-green-dark">{c.relampago ? '✓ ' + t('Aceptado') : t('✓ Ya vas')}</span>
+        ) : porAceptar ? (
+          <button onClick={() => onQuit(c)} className="text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 text-gray-500 active:scale-95 transition-transform">{t('Quitarme')}</button>
+        ) : rechazado ? (
+          <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 text-gray-500">{t('No hubo lugar')}</span>
+        ) : c.relampago && llena ? (
+          <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 text-gray-500">{t('Llena')}</span>
         ) : espero ? (
           <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 text-gray-500">{t('En espera')}</span>
         ) : (
@@ -128,6 +144,11 @@ export default function ClaseAbierta() {
     setJoining('');
     if (!d.ok) { setMsg({ ok: false, text: d.error || t('No se pudo. Intenta de nuevo.') }); return; }
     const x = d.data || {};
+    if (x.estado === 'por_aceptar') {   // ⚡ el coach decide
+      setMsg({ ok: true, text: t('Listo: le avisamos a {coach}. Cuando te acepte, te avisamos.', { coach: String(c.coach).split(' ')[0] }) });
+      load();
+      return;
+    }
     // La clase no siempre está abierta todavía: se abre al juntarse el mínimo.
     setMsg({ ok: true, text:
       x.estado === 'espera' ? t('La clase está llena: quedaste en lista de espera. Si alguien se baja, entras tú.')
@@ -137,6 +158,13 @@ export default function ClaseAbierta() {
   }
 
   // El cuadro de «cómo funciona» habla de la clase abierta de siempre (mínimo, máximo, precio): la relámpago trae lo suyo en su tarjeta.
+  async function quit(c) {
+    setMsg(null);
+    const d = await apiFetch('/clase-abierta/quitarme-app', { method: 'POST', body: JSON.stringify({ horario_id: c.horario_id, fecha: c.fecha }) });
+    if (!d.ok) setMsg({ ok: false, text: d.error || t('No se pudo. Intenta de nuevo.') });
+    load();
+  }
+
   const c0 = (clases || []).find(x => !x.relampago);
 
   return (
@@ -190,7 +218,7 @@ export default function ClaseAbierta() {
             <p className="text-gray-400 text-sm mt-1.5">{t('Pregunta en recepción.')}</p>
           </div>
         )}
-        {(clases || []).map(c => <ClaseCard key={c.fecha + c.horario_id} c={c} onJoin={join} joining={joining} />)}
+        {(clases || []).map(c => <ClaseCard key={c.fecha + c.horario_id} c={c} onJoin={join} onQuit={quit} joining={joining} />)}
       </div>
     </div>
   );

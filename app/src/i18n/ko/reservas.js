@@ -288,6 +288,13 @@ export default {
   '${precio} c/u': '1인당 ${precio}',
   'Entre más se anoten, menos paga cada quien': '많이 모일수록 1인당 가격이 내려가요',
   'Inscripción hasta las {hora}': '{hora}까지 신청',
+  'Esperando que {coach} te acepte': '{coach} 코치의 수락을 기다리는 중',
+  'Aceptado': '수락됨',
+  'No hubo lugar': '이번엔 자리가 없었어요',
+  'Quitarme': '신청 취소',
+  'Llena': '마감',
+  'Si te aceptan: ${precio} por persona': '수락되면: 1인당 ${precio}',
+  'Listo: le avisamos a {coach}. Cuando te acepte, te avisamos.': '{coach} 코치에게 알렸어요. 수락되면 알려 드릴게요.',
 
   // ── Marcadores
   'Ayer': '어제',

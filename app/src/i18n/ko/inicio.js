@@ -48,6 +48,7 @@ export default {
   'Abrir': '열기',
   'Clase abierta · todos los niveles': '오픈 레슨 · 모든 레벨',
   'Clase relámpago · todos los niveles': '번개 레슨 · 모든 레벨',
+  'Esperando respuesta': '답변 대기 중',
   'Ya vas': '참여 확정',
   '{dia} · {hora} · con {coach}': '{dia} · {hora} · {coach} 코치',
   'Desde ${precio} por persona': '1인당 ${precio}부터',

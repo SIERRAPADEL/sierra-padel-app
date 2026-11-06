@@ -48,6 +48,7 @@ export default {
   'Abrir': 'Open',
   'Clase abierta · todos los niveles': 'Open lesson · all levels',
   'Clase relámpago · todos los niveles': 'Flash lesson · all levels',
+  'Esperando respuesta': 'Waiting for a reply',
   'Ya vas': "You're in",
   '{dia} · {hora} · con {coach}': '{dia} · {hora} · with {coach}',
   'Desde ${precio} por persona': 'From ${precio} per person',

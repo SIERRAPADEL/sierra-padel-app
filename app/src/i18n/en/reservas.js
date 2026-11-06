@@ -288,6 +288,13 @@ export default {
   '${precio} c/u': '${precio} each',
   'Entre más se anoten, menos paga cada quien': 'The more who join, the less each pays',
   'Inscripción hasta las {hora}': 'Sign-up until {hora}',
+  'Esperando que {coach} te acepte': 'Waiting for {coach} to accept you',
+  'Aceptado': 'Accepted',
+  'No hubo lugar': 'No spot this time',
+  'Quitarme': 'Remove me',
+  'Llena': 'Full',
+  'Si te aceptan: ${precio} por persona': "If you're accepted: ${precio} per person",
+  'Listo: le avisamos a {coach}. Cuando te acepte, te avisamos.': "Done: we let {coach} know. We'll tell you once they accept you.",
 
   // ── Marcadores
   'Ayer': 'Yesterday',

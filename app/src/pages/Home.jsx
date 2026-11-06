@@ -392,7 +392,7 @@ function TarjetaClaseAbierta({ apiFetch, navigate }) {
       <span style={{ fontSize: 30, lineHeight: 1 }}>🎾</span>
       <div className="flex-1 min-w-0">
         <p className="text-sp-gray font-black text-[15px]">{c.relampago ? '⚡ ' + t('Clase relámpago · todos los niveles') : t('Clase abierta · todos los niveles')}</p>
-        <p className="text-[13px] text-gray-400">{c.mi_estado === 'inscrito' ? '✓ ' + t('Ya vas') + ' · ' : ''}{t('{dia} · {hora} · con {coach}', { dia: dia.charAt(0).toUpperCase() + dia.slice(1), hora, coach: String(c.coach).split(' ')[0] })}</p>
+        <p className="text-[13px] text-gray-400">{c.mi_estado === 'inscrito' ? '✓ ' + t('Ya vas') + ' · ' : c.mi_estado === 'por_aceptar' ? t('Esperando respuesta') + ' · ' : ''}{t('{dia} · {hora} · con {coach}', { dia: dia.charAt(0).toUpperCase() + dia.slice(1), hora, coach: String(c.coach).split(' ')[0] })}</p>
         <p className="text-[13px] font-black text-sp-green-dark">{t('Desde ${precio} por persona', { precio: desde })}</p>
       </div>
       <span className="text-sp-green-dark font-black">›</span>
