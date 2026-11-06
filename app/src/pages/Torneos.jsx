@@ -314,7 +314,9 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
       .finally(() => setLoading(false));
   }, [catSel, torneo.id]);
 
+  // El servidor ya no manda teléfonos en esta lista pública: marca `es_mio` en lo del cliente con sesión.
   function esMiPareja(partido) {
+    if (partido.inscripcion1?.es_mio || partido.inscripcion2?.es_mio) return true;
     if (!miTelefono) return false;
     const tel = miTelefono.replace(/[^0-9]/g, '');
     const checkInsc = (insc) => {
@@ -392,7 +394,7 @@ function TorneoDetail({ torneo, apiFetch, miTelefono }) {
                 </thead>
                 <tbody>
                   {(g.inscripciones || []).map(ins => {
-                    const esMio = (() => {
+                    const esMio = ins.es_mio || (() => {
                       if (!miTelefono) return false;
                       const tel = miTelefono.replace(/[^0-9]/g, '');
                       const t1 = (ins.jugador1?.telefono || '').replace(/[^0-9]/g, '');
