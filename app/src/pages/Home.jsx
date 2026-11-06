@@ -391,7 +391,7 @@ function TarjetaClaseAbierta({ apiFetch, navigate }) {
     <button onClick={() => navigate('/clase-abierta')} className="card text-left flex items-center gap-3 py-3 active:scale-[.99] transition-transform">
       <span style={{ fontSize: 30, lineHeight: 1 }}>🎾</span>
       <div className="flex-1 min-w-0">
-        <p className="text-sp-gray font-black text-[15px]">{t('Clase abierta · todos los niveles')}</p>
+        <p className="text-sp-gray font-black text-[15px]">{c.relampago ? '⚡ ' + t('Clase relámpago · todos los niveles') : t('Clase abierta · todos los niveles')}</p>
         <p className="text-[13px] text-gray-400">{c.mi_estado === 'inscrito' ? '✓ ' + t('Ya vas') + ' · ' : ''}{t('{dia} · {hora} · con {coach}', { dia: dia.charAt(0).toUpperCase() + dia.slice(1), hora, coach: String(c.coach).split(' ')[0] })}</p>
         <p className="text-[13px] font-black text-sp-green-dark">{t('Desde ${precio} por persona', { precio: desde })}</p>
       </div>

@@ -33,6 +33,20 @@ function hora12(h) {
   return `${(a % 12) || 12}:${String(b || 0).padStart(2, '0')} ${a < 12 ? 'am' : 'pm'}`;
 }
 
+// ⚡ Clase relámpago: «1 = $350 · 2 = $250 c/u · 3-4 = $200 c/u» (los escalones que manda el servidor).
+function escalonesTexto(c) {
+  const esc = c.escalones || [];
+  const precioDe = (n) => { let p = esc[0].precio; for (const e of esc) if (n >= e.desde) p = e.precio; return p; };
+  const grupos = [];
+  for (let n = 1; n <= c.cupo_max; n++) {
+    const p = precioDe(n), g = grupos[grupos.length - 1];
+    if (g && g.p === p) g.hasta = n; else grupos.push({ de: n, hasta: n, p });
+  }
+  return grupos.map(g => `${g.de === g.hasta ? g.de : g.de + '-' + g.hasta} = ${g.de === 1 && g.hasta === 1 ? '$' + g.p : t('${precio} c/u', { precio: g.p })}`).join(' · ');
+}
+// La hora del cierre, en hora del club (no la del teléfono).
+const horaCierre = (iso) => new Date(iso).toLocaleTimeString(locale(), { hour: 'numeric', minute: '2-digit', timeZone: 'America/Monterrey' });
+
 function ClaseCard({ c, onJoin, joining }) {
   const faltan = Math.max(0, c.cupo_min - c.inscritos);
   const voy = c.mi_estado === 'inscrito', espero = c.mi_estado === 'espera';
@@ -50,12 +64,16 @@ function ClaseCard({ c, onJoin, joining }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-black text-sp-gray text-[15px] leading-tight">{cap(fechaLarga(c.fecha))} · {hora12(c.hora)}</p>
+          {c.relampago && <p className="text-[12px] font-black text-sp-green-dark uppercase tracking-wide">⚡ {t('Clase relámpago')}</p>}
           <p className="text-[13px] text-gray-400 mt-0.5">{t('Con {coach} · 1 hora', { coach: c.coach })}</p>
           <p className="text-[13px] font-black text-sp-green-dark mt-1">
             {voy || espero
               ? t('Pagas en recepción: ${precio} por persona', { precio: c.precio_actual })
               : t('Si te unes: ${precio} por persona', { precio: c.precio_si_te_unes })}
           </p>
+          {c.relampago && (
+            <p className="text-[12px] text-gray-400 mt-0.5">{escalonesTexto(c)} · {t('Entre más se anoten, menos paga cada quien')}</p>
+          )}
         </div>
       </div>
 
@@ -65,7 +83,9 @@ function ClaseCard({ c, onJoin, joining }) {
             <span key={i} style={{ width: 10, height: 10, borderRadius: 99, background: i < c.inscritos ? 'var(--sp-green)' : '#e5e7eb' }} />
           ))}
           <span className="text-xs text-gray-400 font-semibold ml-1">
-            {c.confirmada ? t('✅ Confirmada') : faltan === 1 ? t('falta 1 para abrir') : t('faltan {n} para abrir', { n: faltan })}
+            {c.relampago
+              ? (c.inscritos > 0 ? t('✅ Confirmada') + ' · ' : '') + t('Inscripción hasta las {hora}', { hora: horaCierre(c.cierra_at) })
+              : c.confirmada ? t('✅ Confirmada') : faltan === 1 ? t('falta 1 para abrir') : t('faltan {n} para abrir', { n: faltan })}
           </span>
         </div>
         {voy ? (
@@ -115,7 +135,8 @@ export default function ClaseAbierta() {
     load();
   }
 
-  const c0 = (clases || [])[0];
+  // El cuadro de «cómo funciona» habla de la clase abierta de siempre (mínimo, máximo, precio): la relámpago trae lo suyo en su tarjeta.
+  const c0 = (clases || []).find(x => !x.relampago);
 
   return (
     <div className="page safe-bottom">

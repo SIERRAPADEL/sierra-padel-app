@@ -283,6 +283,11 @@ export default {
   'Se paga en recepción el día de la clase.': '레슨 당일 프런트에서 결제해요.',
   'Por ahora no hay clases abiertas programadas': '지금은 예정된 오픈 레슨이 없어요',
   'Pregunta en recepción.': '프런트에 문의해 주세요.',
+  // ⚡ Clase relámpago
+  'Clase relámpago': '번개 레슨',
+  '${precio} c/u': '1인당 ${precio}',
+  'Entre más se anoten, menos paga cada quien': '많이 모일수록 1인당 가격이 내려가요',
+  'Inscripción hasta las {hora}': '{hora}까지 신청',
 
   // ── Marcadores
   'Ayer': '어제',

@@ -47,6 +47,7 @@ export default {
   '{apuntados} de {cupo}': '{apuntados} of {cupo}',
   'Abrir': 'Open',
   'Clase abierta · todos los niveles': 'Open lesson · all levels',
+  'Clase relámpago · todos los niveles': 'Flash lesson · all levels',
   'Ya vas': "You're in",
   '{dia} · {hora} · con {coach}': '{dia} · {hora} · with {coach}',
   'Desde ${precio} por persona': 'From ${precio} per person',

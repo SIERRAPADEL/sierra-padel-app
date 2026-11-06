@@ -283,6 +283,11 @@ export default {
   'Se paga en recepción el día de la clase.': 'Pay at the front desk on the day of the lesson.',
   'Por ahora no hay clases abiertas programadas': 'No open lessons scheduled for now',
   'Pregunta en recepción.': 'Ask at the front desk.',
+  // ⚡ Clase relámpago
+  'Clase relámpago': 'Flash lesson',
+  '${precio} c/u': '${precio} each',
+  'Entre más se anoten, menos paga cada quien': 'The more who join, the less each pays',
+  'Inscripción hasta las {hora}': 'Sign-up until {hora}',
 
   // ── Marcadores
   'Ayer': 'Yesterday',
