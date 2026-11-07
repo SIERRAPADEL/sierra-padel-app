@@ -350,8 +350,8 @@ export default function Puntos() {
 
             <div className="text-xs text-gray-400">
               {act.visitas === 1
-                ? t('Últimos 30 días: {visitas} visita · {monto} de consumo', { visitas: act.visitas, monto: fmtMoney(act.gasto) })
-                : t('Últimos 30 días: {visitas} visitas · {monto} de consumo', { visitas: act.visitas, monto: fmtMoney(act.gasto) })}
+                ? t('Últimos 30 días: {visitas} visita', { visitas: act.visitas })
+                : t('Últimos 30 días: {visitas} visitas', { visitas: act.visitas })}
             </div>
 
             {/* 📉 «Que sientan el bajón» (German 2-nov-2026): si no vuelve, qué día baja y qué le
