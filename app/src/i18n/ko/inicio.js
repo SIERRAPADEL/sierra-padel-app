@@ -221,6 +221,7 @@ export default {
   // La caja quiere usar tus puntos
   'La caja': '카운터',
   '¿Autorizas usar tus puntos?': '포인트 사용을 승인할까요?',
+  '¿Autorizas usar tu saldo a favor?': '예치금 사용을 승인할까요?',
   'Revisar y contestar →': '확인하고 답하기 →',
 
   // Patrocinio

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import { textoSolicitud, segundosRestantes, reloj, mensajeEstado, es404, money } from '../lib/puntosAut';
+import { textoSolicitud, preguntaSaldo, esSaldo, segundosRestantes, reloj, mensajeEstado, es404, money } from '../lib/puntosAut';
 import { t } from '../i18n';
 
 // 🔐 AUTORIZAR EL USO DE TUS PUNTOS (German 22-oct-2026: «evitar que los puntos se usen sin
 // permiso»). Aquí llega el push «¿Autorizas?» y la tarjeta de Inicio. Nada se descuenta hasta
 // que la persona toca «Autorizar»; si no contesta en 3 minutos, vence sola.
+// 💰 Y EL DE TU SALDO A FAVOR (German 17-nov-2026: «el saldo a favor es decisión del cliente»):
+// la misma solicitud con `tipo: 'saldo_favor'` → «¿Usar $X de tu saldo a favor en la cuenta F-…?».
 export default function AutorizarPuntos() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -47,6 +49,7 @@ export default function AutorizarPuntos() {
   const seg = s ? segundosRestantes(s.expires_at) : 0;
   const pendiente = s && s.estado === 'pendiente' && seg > 0;
   const vencida = s && s.estado === 'pendiente' && seg <= 0;
+  const saldo = esSaldo(s);
 
   return (
     <div className="page safe-bottom">
@@ -59,7 +62,7 @@ export default function AutorizarPuntos() {
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
           </button>
-          <p className="text-white font-black text-lg">{t('Usar mis puntos')}</p>
+          <p className="text-white font-black text-lg">{saldo ? t('Usar mi saldo a favor') : t('Usar mis puntos')}</p>
         </div>
       </div>
 
@@ -70,10 +73,17 @@ export default function AutorizarPuntos() {
         {s && (
           <div className="card">
             <p className="text-[12px] font-black tracking-[.14em] uppercase text-gray-400">{t('Solicitud de la caja')}</p>
-            <p className="text-[17px] font-black text-gray-900 leading-snug mt-1">{textoSolicitud(s, t)}</p>
+            <p className="text-[17px] font-black text-gray-900 leading-snug mt-1">{saldo ? preguntaSaldo(s, t) : textoSolicitud(s, t)}</p>
+            {saldo && <p className="text-[13px] text-gray-500 mt-1">{textoSolicitud(s, t)}</p>}
             <div className="grid grid-cols-2 gap-2 mt-4 text-[13px]">
-              <div className="rounded-xl bg-gray-50 px-3 py-2"><p className="text-gray-400 font-bold">{t('Puntos')}</p><p className="font-black text-gray-900 text-[18px]">{s.puntos}</p></div>
-              <div className="rounded-xl bg-gray-50 px-3 py-2"><p className="text-gray-400 font-bold">{t('Equivalen a')}</p><p className="font-black text-gray-900 text-[18px]">{money(s.monto)}</p></div>
+              {saldo ? (
+                <div className="col-span-2 rounded-xl bg-gray-50 px-3 py-2"><p className="text-gray-400 font-bold">{t('De tu saldo a favor')}</p><p className="font-black text-gray-900 text-[18px]">{money(s.monto)}</p></div>
+              ) : (
+                <>
+                  <div className="rounded-xl bg-gray-50 px-3 py-2"><p className="text-gray-400 font-bold">{t('Puntos')}</p><p className="font-black text-gray-900 text-[18px]">{s.puntos}</p></div>
+                  <div className="rounded-xl bg-gray-50 px-3 py-2"><p className="text-gray-400 font-bold">{t('Equivalen a')}</p><p className="font-black text-gray-900 text-[18px]">{money(s.monto)}</p></div>
+                </>
+              )}
               <div className="rounded-xl bg-gray-50 px-3 py-2"><p className="text-gray-400 font-bold">{t('Área')}</p><p className="font-bold text-gray-800">{s.area}</p></div>
               <div className="rounded-xl bg-gray-50 px-3 py-2"><p className="text-gray-400 font-bold">{t('Cuenta')}</p><p className="font-bold text-gray-800">{s.folio || '—'}</p></div>
             </div>
@@ -100,7 +110,7 @@ export default function AutorizarPuntos() {
             )}
             {!pendiente && (
               <p className={`mt-4 rounded-xl px-3 py-2.5 text-[14px] font-bold ${s.estado === 'aprobada' || s.estado === 'usada' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                {t(mensajeEstado(vencida ? 'expirada' : s.estado))}
+                {t(mensajeEstado(vencida ? 'expirada' : s.estado, s.tipo))}
               </p>
             )}
             {error && s && <p className="text-[12px] text-gray-500 mt-2">{error}</p>}

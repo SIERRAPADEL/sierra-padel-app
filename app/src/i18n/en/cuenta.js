@@ -275,6 +275,19 @@ export default {
   "La caja canceló esta solicitud. No se usó ningún punto.": "The register canceled this request. No points were used.",
   "Esta solicitud ya no está vigente.": "This request is no longer valid.",
 
+  // ── Autorizar el saldo a favor (Credit, GLOSARIO) ──
+  "Usar mi saldo a favor": "Use my credit",
+  "De tu saldo a favor": "From your credit",
+  "¿Usar {monto} de tu saldo a favor en la cuenta {folio}?": "Use {monto} of your credit on tab {folio}?",
+  "¿Usar {monto} de tu saldo a favor en esta cuenta?": "Use {monto} of your credit on this tab?",
+  "{area} quiere usar {monto} de tu saldo a favor en tu cuenta {folio}.": "{area} wants to use {monto} of your credit on your tab {folio}.",
+  "{area} quiere usar {monto} de tu saldo a favor en tu cuenta.": "{area} wants to use {monto} of your credit on your tab.",
+  "Autorizaste usar tu saldo a favor. La caja ya puede aplicarlo.": "You allowed your credit to be used. The register can apply it now.",
+  "Listo: tu saldo a favor ya se aplicó a tu cuenta.": "Done: your credit was applied to your tab.",
+  "No autorizaste. No se usó nada de tu saldo a favor.": "You didn't allow it. None of your credit was used.",
+  "Esta solicitud venció. Si quieres usar tu saldo a favor, pídele a la caja que la mande otra vez.": "This request expired. If you want to use your credit, ask the register to send it again.",
+  "La caja canceló esta solicitud. No se usó nada de tu saldo a favor.": "The register canceled this request. None of your credit was used.",
+
   // ── Cuenta vencida ──
   "Este detalle no está disponible por ahora.": "These details aren't available right now.",
   "No pudimos cargar la cuenta.": "We couldn't load the tab.",

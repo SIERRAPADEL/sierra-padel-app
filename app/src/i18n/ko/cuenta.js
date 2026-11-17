@@ -274,6 +274,19 @@ export default {
   "La caja canceló esta solicitud. No se usó ningún punto.": "카운터에서 요청을 취소했어요. 포인트는 사용되지 않았어요.",
   "Esta solicitud ya no está vigente.": "더 이상 유효하지 않은 요청이에요.",
 
+  // ── Autorizar el saldo a favor (예치금, GLOSARIO) ──
+  "Usar mi saldo a favor": "내 예치금 사용",
+  "De tu saldo a favor": "예치금에서",
+  "¿Usar {monto} de tu saldo a favor en la cuenta {folio}?": "계산서 {folio}에 예치금 {monto}을 사용할까요?",
+  "¿Usar {monto} de tu saldo a favor en esta cuenta?": "이 계산서에 예치금 {monto}을 사용할까요?",
+  "{area} quiere usar {monto} de tu saldo a favor en tu cuenta {folio}.": "{area}에서 계산서 {folio}에 예치금 {monto}을 사용하려고 해요.",
+  "{area} quiere usar {monto} de tu saldo a favor en tu cuenta.": "{area}에서 계산서에 예치금 {monto}을 사용하려고 해요.",
+  "Autorizaste usar tu saldo a favor. La caja ya puede aplicarlo.": "예치금 사용을 승인했어요. 이제 카운터에서 적용할 수 있어요.",
+  "Listo: tu saldo a favor ya se aplicó a tu cuenta.": "완료: 예치금이 계산서에 적용됐어요.",
+  "No autorizaste. No se usó nada de tu saldo a favor.": "승인하지 않았어요. 예치금은 사용되지 않았어요.",
+  "Esta solicitud venció. Si quieres usar tu saldo a favor, pídele a la caja que la mande otra vez.": "요청이 만료됐어요. 예치금을 사용하려면 카운터에 다시 보내 달라고 요청하세요.",
+  "La caja canceló esta solicitud. No se usó nada de tu saldo a favor.": "카운터에서 요청을 취소했어요. 예치금은 사용되지 않았어요.",
+
   // ── Cuenta vencida ──
   "Este detalle no está disponible por ahora.": "지금은 상세 내용을 확인할 수 없어요.",
   "No pudimos cargar la cuenta.": "계산서를 불러오지 못했어요.",

@@ -221,6 +221,7 @@ export default {
   // La caja quiere usar tus puntos
   'La caja': 'The register',
   '¿Autorizas usar tus puntos?': 'Allow use of your points?',
+  '¿Autorizas usar tu saldo a favor?': 'Allow use of your credit?',
   'Revisar y contestar →': 'Review and respond →',
 
   // Patrocinio

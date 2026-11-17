@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import { textoSolicitud } from '../lib/puntosAut';
+import { textoSolicitud, esSaldo } from '../lib/puntosAut';
 import { t } from '../i18n';
 
 // 🔐 «La caja quiere usar tus puntos» (German 22-oct-2026). Si el push no llegó o se cerró sin
@@ -36,7 +36,7 @@ export default function SolicitudesPuntos() {
           onClick={() => navigate(`/autorizar-puntos/${s.id}`)}
           className="w-full text-left rounded-2xl px-4 py-3 bg-violet-600 text-white shadow-md active:scale-[0.99] transition-transform"
         >
-          <p className="text-[11px] font-black tracking-[.14em] uppercase text-white/75">{t('¿Autorizas usar tus puntos?')}</p>
+          <p className="text-[11px] font-black tracking-[.14em] uppercase text-white/75">{esSaldo(s) ? t('¿Autorizas usar tu saldo a favor?') : t('¿Autorizas usar tus puntos?')}</p>
           <p className="font-bold text-[15px] leading-snug mt-0.5">{textoSolicitud(s, t)}</p>
           <p className="text-[13px] font-black mt-1.5">{t('Revisar y contestar →')}</p>
         </button>
