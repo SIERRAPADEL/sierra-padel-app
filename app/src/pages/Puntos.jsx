@@ -192,6 +192,9 @@ export default function Puntos() {
     if (data.ok) {
       setCanjeActivo(data.data);
       setCanjeModal(null);
+    } else if (data.codigo === 'ADEUDO' && data.data && data.data.total != null) {
+      // 🔴 18-nov-2026: quien debe no genera código. Se dice el monto del adeudo (lo gastado no se muestra).
+      setCanjeError(t('Tienes un adeudo de {monto}; al pagarlo podrás usar tus puntos.', { monto: money(data.data.total) }));
     } else {
       setCanjeError(data.error || t('Error al generar codigo'));
     }

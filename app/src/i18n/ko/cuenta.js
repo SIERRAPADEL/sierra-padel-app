@@ -70,6 +70,8 @@ export default {
   "¡Promo reclamada! Se aplicará sola en la caja cuando el cajero te identifique.": "프로모션을 받았어요! 카운터에서 직원이 회원님을 확인하면 자동으로 적용돼요.",
   "No se pudo reclamar": "받지 못했어요",
   "Error al generar codigo": "코드 생성 중 오류가 발생했어요",
+  "Tienes un adeudo de {monto}; al pagarlo podrás usar tus puntos.": "미결제 금액이 {monto} 있어요. 결제하시면 포인트를 사용할 수 있어요.",
+  "Tienes un adeudo de {monto}; al pagarlo podrás pedir tu cortesía de hoy.": "미결제 금액이 {monto} 있어요. 결제하시면 오늘의 무료 선물을 받을 수 있어요.",
   "Codigo de canje": "교환 코드",
   "Muestra este codigo al cajero": "이 코드를 카운터 직원에게 보여 주세요",
   "El codigo expira en {tiempo}": "코드 만료까지 {tiempo}",

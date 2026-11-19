@@ -71,6 +71,8 @@ export default {
   "¡Promo reclamada! Se aplicará sola en la caja cuando el cajero te identifique.": "Promo claimed! It will apply automatically at the register once the cashier looks you up.",
   "No se pudo reclamar": "Couldn't claim it",
   "Error al generar codigo": "Error generating code",
+  "Tienes un adeudo de {monto}; al pagarlo podrás usar tus puntos.": "You have a balance due of {monto}; once you pay it you can use your points.",
+  "Tienes un adeudo de {monto}; al pagarlo podrás pedir tu cortesía de hoy.": "You have a balance due of {monto}; once you pay it you can get today's courtesy gift.",
   "Codigo de canje": "Redemption code",
   "Muestra este codigo al cajero": "Show this code to the cashier",
   "El codigo expira en {tiempo}": "Code expires in {tiempo}",

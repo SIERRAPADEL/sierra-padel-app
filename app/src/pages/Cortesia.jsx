@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { t } from '../i18n';
+import { money } from '../lib/puntosAut';
 
 // 🎁 PIDE TU CORTESÍA (German 27-oct-2026). La cajera entregaba ~22% de las cortesías que
 // tocaban: el socio no sabía que le tocaba y la caja no se acordaba. Ahora al llegar a su reta,
@@ -14,7 +15,19 @@ const ESTILO = {
   vencida: 'bg-gray-100 text-gray-600',
   sin_renta: 'bg-amber-50 text-amber-800',
   sin_derecho: 'bg-gray-100 text-gray-600',
+  adeudo: 'bg-amber-50 text-amber-800',
 };
+
+// 🔴 18-nov-2026: quien debe pierde la cortesía. El servidor manda el mensaje en español con el monto
+// («Tienes un adeudo de $600…»); aquí se arma en el idioma de la app con ese monto. Si no se
+// encuentra el monto (no pudimos revisar), se deja el mensaje del servidor.
+export function textoAdeudo(s) {
+  if (!s || s.estado !== 'adeudo') return null;
+  const m = String(s.mensaje || '').match(/\$\s*([\d.,]+)/);
+  const total = m ? Number(m[1].replace(/,/g, '')) : null;
+  if (total == null || Number.isNaN(total)) return s.mensaje;
+  return t('Tienes un adeudo de {monto}; al pagarlo podrás pedir tu cortesía de hoy.', { monto: money(total) });
+}
 
 export default function Cortesia() {
   const navigate = useNavigate();
@@ -110,7 +123,7 @@ export default function Cortesia() {
               </>
             ) : (
               <p className={`mt-3 rounded-xl px-3 py-2.5 text-[14px] font-bold ${ESTILO[s.estado] || 'bg-gray-100 text-gray-600'}`}>
-                {s.mensaje}
+                {s.estado === 'adeudo' ? textoAdeudo(s) : s.mensaje}
               </p>
             )}
             {error && s && <p className="text-[12px] text-red-600 mt-2">{error}</p>}
