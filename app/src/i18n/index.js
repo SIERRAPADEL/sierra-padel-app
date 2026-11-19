@@ -16,10 +16,12 @@ import enInicio from './en/inicio.js';
 import enReservas from './en/reservas.js';
 import enCompetencia from './en/competencia.js';
 import enCuenta from './en/cuenta.js';
+import enRecoger from './en/recoger.js';
 import koInicio from './ko/inicio.js';
 import koReservas from './ko/reservas.js';
 import koCompetencia from './ko/competencia.js';
 import koCuenta from './ko/cuenta.js';
+import koRecoger from './ko/recoger.js';
 
 export const IDIOMAS = [
   { clave: 'es', nombre: 'Español' },
@@ -28,8 +30,8 @@ export const IDIOMAS = [
 ];
 
 const DICC = {
-  en: { ...enInicio, ...enReservas, ...enCompetencia, ...enCuenta },
-  ko: { ...koInicio, ...koReservas, ...koCompetencia, ...koCuenta },
+  en: { ...enInicio, ...enReservas, ...enCompetencia, ...enCuenta, ...enRecoger },
+  ko: { ...koInicio, ...koReservas, ...koCompetencia, ...koCuenta, ...koRecoger },
 };
 
 const LOCALES = { es: 'es-MX', en: 'en-US', ko: 'ko-KR' };

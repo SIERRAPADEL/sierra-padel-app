@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BACKEND, UBICACIONES, PARA_LLEVAR, nombreUbicacion } from '../lib/constants';
+import { BACKEND, UBICACIONES, PASO_A_RECOGER, nombreUbicacion } from '../lib/constants';
 import { t } from '../i18n';
 import NotaPesos from '../components/NotaPesos';
+import { SelectorModo, PagoRecoger, EsperandoPago, horaClub } from '../components/PagoRecoger';
 
 // Función (no objeto) para que t() corra al pintar, en el idioma vigente.
 function catLabel(cat) {
@@ -30,9 +31,14 @@ export default function Pedir() {
   const [elecciones, setElecciones] = useState({});
   const [eligiendo, setEligiendo]   = useState(null); // { item, sel:{ grupoId:[opcionId] } }
   const [ubicacion, setUbicacion] = useState('');
-  // "Para llevar" no es un lugar donde esperar —el cliente puede ni estar en el club—,
+  // "Paso a recoger" no es un lugar donde esperar —el cliente puede ni estar en el club—,
   // así que ni el pin 📍 ni el "llegará hasta donde estés" aplican.
-  const esLlevar = ubicacion === PARA_LLEVAR;
+  const esRecoger = ubicacion === PASO_A_RECOGER;
+  // 🛍️ En modo «paso a recoger» el servidor cotiza (empaque, recargo, si es habitual) y el cliente elige
+  // cómo paga: 'mp' (link) · 'spei' · 'al_recoger' (sólo clientes frecuentes).
+  const [cot, setCot]             = useState(null);
+  const [cotError, setCotError]   = useState('');
+  const [pago, setPago]           = useState('mp');
   const [notas, setNotas]         = useState('');
   const [enviando, setEnviando]   = useState(false);
   const [errorEnvio, setErrorEnvio] = useState('');
@@ -51,6 +57,27 @@ export default function Pedir() {
   const [horario, setHorario] = useState(null);
 
   useEffect(() => { fetchMenu(); fetchHabitos(); fetchCuentaAbierta(); fetchHorario(); }, []);
+
+  // 🛍️ La cotización de «paso a recoger»: la pide el servidor (los precios son suyos) cada vez que se abre
+  // el carrito en este modo o cambia lo que hay en él.
+  useEffect(() => {
+    if (!confirmando || !esRecoger) return;
+    const token = localStorage.getItem('sp_token');
+    if (!token) { setCotError(t('Entra a tu cuenta para pasar a recoger: así te avisamos cuando esté listo.')); return; }
+    let vivo = true;
+    setCot(null); setCotError('');
+    const items = itemsCarrito().map(i => ({ item_id: i.item_id, cantidad: i.cantidad, ...(i.complementos ? { complementos: i.complementos } : {}) }));
+    fetch(`${BACKEND}/api/pedidos/recoger/cotizar`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ items }),
+    }).then(r => r.json()).then(d => {
+      if (!vivo) return;
+      if (!d.ok) { setCotError(d.error || t('No se pudo calcular tu total. Intenta de nuevo.')); return; }
+      setCot(d.data);
+      // «Pagar al recoger» es sólo para habituales: si estaba elegido y no aplica, se pasa a tarjeta.
+      setPago(p => (p === 'al_recoger' && !d.data.habitual) ? (d.data.mp.activo ? 'mp' : 'spei') : p);
+    }).catch(() => { if (vivo) setCotError(t('No se pudo calcular tu total. Intenta de nuevo.')); });
+    return () => { vivo = false; };
+  }, [confirmando, esRecoger, JSON.stringify(carrito), JSON.stringify(elecciones)]);
 
   async function fetchHorario() {
     try {
@@ -118,7 +145,20 @@ export default function Pedir() {
   }, [pedidoOk?.id]);
 
   // Presentación del estado del pedido para el cliente (amigable, texto grande).
-  function vistaEstado(estado, motivo) {
+  function vistaEstado(estado, motivo, p) {
+    // 🛍️ Paso a recoger: Pagado → En cocina → Listo para recoger → Recogido.
+    if (p && p.modo === 'recoger') {
+      const pagado = p.estado_pago === 'pagado';
+      switch (estado) {
+        case 'esperando_pago': return { icon: '💳', tint: '#b58a00', label: t('Falta tu pago'), titulo: t('Falta tu pago'), sub: t('Tu pedido entra a la barra en cuanto se confirme el pago.') };
+        case 'pendiente':      return { icon: pagado ? '✅' : '⏳', tint: pagado ? 'var(--sp-green-dark)' : '#b58a00', label: pagado ? t('Pago recibido') : t('Pedido enviado'), titulo: pagado ? t('¡Pago recibido!') : t('Pedido enviado'), sub: t('Esperando que la barra lo acepte…') };
+        case 'preparando':     return { icon: '👨‍🍳', tint: 'var(--sp-green-dark)', label: t('En cocina'), titulo: t('¡Tu pedido está en cocina!'), sub: t('Te avisamos cuando puedas pasar por él.') };
+        case 'listo':          return { icon: '🛎️', tint: 'var(--sp-green-dark)', label: t('Listo para recoger'), titulo: t('¡Listo para recoger!'), sub: t('Pásalo a recoger a la barra.') };
+        case 'entregado':      return { icon: '✅', tint: 'var(--sp-green-dark)', label: t('Recogido'), titulo: t('¡Recogido!'), sub: t('¡Buen provecho!') };
+        case 'cancelado':      return { icon: '❌', tint: '#e5484d', label: t('Pedido cancelado'), titulo: t('Tu pedido se canceló'), sub: (motivo || t('El encargado no pudo tomar tu pedido. Acercate al bar si tienes dudas.')) + (pagado || p.estado_pago === 'por_reembolsar' ? ' ' + t('Te devolvemos tu pago.') : '') };
+        default: break;
+      }
+    }
     switch (estado) {
       case 'preparando': return { icon: '👨‍🍳', tint: 'var(--sp-green-dark)', label: t('Pedido aceptado'), titulo: t('¡Tu pedido fue aceptado!'), sub: t('Lo estan preparando.') };
       case 'listo':      return { icon: '🛎️', tint: 'var(--sp-green-dark)', label: t('Pedido listo'), titulo: t('¡Tu pedido esta listo!'), sub: t('En un momento te lo llevan.') };
@@ -391,6 +431,7 @@ export default function Pedir() {
     if (!ubi) { setPickUbi(true); return; }
     const items = itemsCarrito();
     if (items.length === 0) return;
+    if (esRecoger && (!cot || !pago)) return;   // el total y la forma de pago los confirma el servidor
     setConfirmando(false);
 
     setEnviando(true);
@@ -407,6 +448,7 @@ export default function Pedir() {
         body: JSON.stringify({
           items,
           ubicacion: ubi,
+          ...(esRecoger ? { modo: 'recoger', pago } : {}),
           notas: notas || undefined,
           cliente_nombre: user?.nombre || 'Cliente',
           cliente_tel:    user?.telefono || undefined,
@@ -427,18 +469,31 @@ export default function Pedir() {
 
   // ── PANTALLA: PEDIDO ENVIADO + SEGUIMIENTO EN VIVO ────────────────────────
   if (pedidoOk) {
-    const estActual = seguim?.estado || 'pendiente';
-    const v = vistaEstado(estActual, seguim?.motivo_rechazo);
+    // Lo vivo (seguim) manda sobre lo que contestó el POST (pedidoOk).
+    const ped = { ...pedidoOk, ...(seguim || {}) };
+    const recogerOk = ped.modo === 'recoger' || ped.ubicacion === PASO_A_RECOGER;
+    const estActual = seguim?.estado || pedidoOk.estado || 'pendiente';
+    const v = vistaEstado(estActual, seguim?.motivo_rechazo, recogerOk ? { ...ped, modo: 'recoger' } : null);
     const rechazado = estActual === 'cancelado';
     const enCurso   = !['entregado', 'cancelado'].includes(estActual);
     // Pasos visuales del avance (no aplica si fue rechazado)
-    const PASOS = [
-      { k: 'pendiente',  txt: t('Enviado') },
-      { k: 'preparando', txt: t('Aceptado') },
-      { k: 'listo',      txt: t('Listo') },
-      { k: 'entregado',  txt: t('Entregado') },
-    ];
-    const idxActual = PASOS.findIndex(p => p.k === estActual);
+    const PASOS = recogerOk
+      ? [
+        { k: 'pagado',     txt: ped.pago_metodo === 'al_recoger' || ped.estado_pago === 'al_recoger' ? t('Enviado') : t('Pagado') },
+        { k: 'preparando', txt: t('En cocina') },
+        { k: 'listo',      txt: t('Listo para recoger') },
+        { k: 'entregado',  txt: t('Recogido') },
+      ]
+      : [
+        { k: 'pendiente',  txt: t('Enviado') },
+        { k: 'preparando', txt: t('Aceptado') },
+        { k: 'listo',      txt: t('Listo') },
+        { k: 'entregado',  txt: t('Entregado') },
+      ];
+    // En «paso a recoger» el primer paso se cumple al PAGAR (o al enviar, si paga al recoger).
+    const idxActual = recogerOk
+      ? (estActual === 'esperando_pago' ? -1 : estActual === 'pendiente' ? 0 : PASOS.findIndex(p => p.k === estActual))
+      : PASOS.findIndex(p => p.k === estActual);
     return (
       <div className="page safe-bottom">
         <div style={{ padding: '56px 24px', textAlign: 'center' }}>
@@ -451,19 +506,29 @@ export default function Pedir() {
             {v.sub}
           </p>
           <p className="text-gray-500 text-sm mb-6">
-            {pedidoOk.ubicacion === PARA_LLEVAR
+            {recogerOk
               ? conNodo(t('Lo recoges en: {lugar}'), 'lugar', <strong className="text-sp-gray">{t('la barra del club')}</strong>)
               : conNodo(t('Ubicacion: {lugar}'), 'lugar', <strong className="text-sp-gray">{nombreUbicacion(pedidoOk.ubicacion)}</strong>)}
           </p>
+          {/* 🛍️ El número que se canta en la barra, y la hora prometida. */}
+          {recogerOk && (
+            <p className="text-sp-gray font-black text-lg mb-1">{t('Pedido #{n}', { n: ped.numero })}
+              {ped.hora_prometida && !rechazado && estActual !== 'entregado' && estActual !== 'listo' && estActual !== 'esperando_pago' && (
+                <span className="block text-[13px] font-bold" style={{ color: 'var(--sp-green-dark)' }}>{t('Listo hacia las {hora}', { hora: horaClub(ped.hora_prometida) })}</span>
+              )}
+            </p>
+          )}
           {/* El estimado viene del servidor, que lo calcula contra el área REAL de cada
               producto: es el dato bueno, no el que adivinó el carrito. */}
-          {!rechazado && pedidoOk.listo_en_min && (
+          {!rechazado && pedidoOk.listo_en_min && estActual !== 'listo' && estActual !== 'entregado' && estActual !== 'esperando_pago' && (
             <p className="text-[15px] font-bold mb-6" style={{ color: 'var(--sp-green-dark)' }}>
-              ⏱️ {pedidoOk.ubicacion === PARA_LLEVAR
+              ⏱️ {recogerOk
                 ? t('Pasa por él en ~{n} min', { n: pedidoOk.listo_en_min })
                 : t('Listo en ~{n} min', { n: pedidoOk.listo_en_min })}
             </p>
           )}
+          {/* 💳 Mientras espera su pago: el link de tarjeta o los datos de la transferencia. */}
+          {estActual === 'esperando_pago' && <EsperandoPago pago={ped.pago} />}
 
           {/* Barra de avance (oculta si fue rechazado) */}
           {!rechazado && (
@@ -551,7 +616,7 @@ export default function Pedir() {
           style={{ background: 'white', color: ubicacion ? '#575757' : '#9ca3af' }}
         >
           <span>
-            {esLlevar ? '🥡' : '📍'} {ubicacion ? nombreUbicacion(ubicacion) : t('¿Dónde estás?')}
+            {esRecoger ? '🛍️' : '📍'} {ubicacion ? nombreUbicacion(ubicacion) : t('¿Dónde estás?')}
             {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
               <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}> · {t('tu cuenta abierta')}</span>
             )}
@@ -799,7 +864,7 @@ export default function Pedir() {
                 );
               })}
               <div className="flex justify-between pt-2 mt-1 border-t border-gray-200 font-black text-sp-green-dark">
-                <span>{t('Total')}</span><span>${totalCarrito().toFixed(0)}</span>
+                <span>{esRecoger ? t('Productos') : t('Total')}</span><span>${totalCarrito().toFixed(0)}</span>
               </div>
               <NotaPesos className="text-right" />
               {/* Lo que se le promete al cliente. Manda el producto más lento del carrito. */}
@@ -808,18 +873,28 @@ export default function Pedir() {
                 <span className="font-bold text-sp-gray">{t('{n} min', { n: estimadoMin() })}</span>
               </div>
             </div>
-            <button
-              onClick={() => setPickUbi(true)}
-              className="w-full rounded-xl px-3.5 py-3 mb-3 text-left flex items-center justify-between bg-gray-50 border border-gray-200"
-            >
-              <span className="text-[15px] font-bold text-sp-gray">
-                {esLlevar ? '🥡' : '📍'} {ubicacion ? nombreUbicacion(ubicacion) : t('Falta decir dónde estás')}
-                {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
-                  <span className="text-[12px] text-sp-green-dark"> · {t('tu cuenta abierta')}</span>
-                )}
-              </span>
-              <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}>{ubicacion ? t('Cambiar') : t('Elegir')}</span>
-            </button>
+            {/* ¿En el club o paso a recoger? (🔭 a domicilio llegará como un tercer botón) */}
+            <SelectorModo
+              esRecoger={esRecoger}
+              onClub={() => { if (esRecoger) setUbicacion(''); setPickUbi(true); }}
+              onRecoger={() => setUbicacion(PASO_A_RECOGER)}
+            />
+            {esRecoger ? (
+              <PagoRecoger cot={cot} error={cotError} pago={pago} setPago={setPago} minutos={estimadoMin()} />
+            ) : (
+              <button
+                onClick={() => setPickUbi(true)}
+                className="w-full rounded-xl px-3.5 py-3 mb-3 text-left flex items-center justify-between bg-gray-50 border border-gray-200"
+              >
+                <span className="text-[15px] font-bold text-sp-gray">
+                  {esRecoger ? '🛍️' : '📍'} {ubicacion ? nombreUbicacion(ubicacion) : t('Falta decir dónde estás')}
+                  {cuentaAbierta && ubicacion === cuentaAbierta.ubicacion && (
+                    <span className="text-[12px] text-sp-green-dark"> · {t('tu cuenta abierta')}</span>
+                  )}
+                </span>
+                <span className="text-[12px] font-bold" style={{ color: 'var(--sp-green-dark)' }}>{ubicacion ? t('Cambiar') : t('Elegir')}</span>
+              </button>
+            )}
             {notas && <p className="text-gray-400 text-[13px] mb-3">📝 {notas}</p>}
             {/* Fuera de horario: se avisa y se apaga el botón. El reloj del celular NO
                 manda —el backend rechaza igual—, pero avisar aquí evita que el cliente
@@ -849,20 +924,29 @@ export default function Pedir() {
                 >{t('Quitarlos y seguir')}</button>
               </div>
             )}
-            <button
-              onClick={enviarPedido}
-              disabled={enviando || !ubicacion || numItems() === 0 || (horario && !horario.abierto) || cerradosEnCarrito.length > 0}
-              className={`w-full py-3.5 rounded-xl font-black text-[15px] ${
-                (!ubicacion || numItems() === 0 || (horario && !horario.abierto) || cerradosEnCarrito.length > 0) ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'
-              }`}
-            >
-              {enviando ? t('Enviando...')
-                : numItems() === 0 ? t('Agrega algo al carrito')
-                : (horario && !horario.abierto) ? t('Cerrado por ahora')
-                : cerradosEnCarrito.length > 0 ? t('Quita lo que ya cerró')
-                : !ubicacion ? t('Elige tu ubicación primero')
-                : t('✅ Confirmar pedido')}
-            </button>
+            {(() => {
+              const sinCot = esRecoger && (!cot || !pago);
+              const apagado = !ubicacion || numItems() === 0 || (horario && !horario.abierto) || cerradosEnCarrito.length > 0 || sinCot;   // (sólo el color)
+              const montoPago = esRecoger && cot ? (pago === 'mp' ? cot.mp.total : cot.total) : 0;
+              return (
+                <button
+                  onClick={enviarPedido}
+                  disabled={enviando || !ubicacion || numItems() === 0 || (horario && !horario.abierto) || cerradosEnCarrito.length > 0 || sinCot}
+                  className={`w-full py-3.5 rounded-xl font-black text-[15px] ${apagado ? 'bg-gray-100 text-gray-400' : 'bg-sp-green text-white'}`}
+                >
+                  {enviando ? t('Enviando...')
+                    : numItems() === 0 ? t('Agrega algo al carrito')
+                    : (horario && !horario.abierto) ? t('Cerrado por ahora')
+                    : cerradosEnCarrito.length > 0 ? t('Quita lo que ya cerró')
+                    : !ubicacion ? t('Elige tu ubicación primero')
+                    : sinCot ? t('Calculando tu total…')
+                    : esRecoger && pago === 'mp' ? t('💳 Pagar {monto} y pedir', { monto: '$' + montoPago })
+                    : esRecoger && pago === 'spei' ? t('🏦 Pedir y ver datos de transferencia')
+                    : esRecoger ? t('✅ Confirmar pedido (pago al recoger)')
+                    : t('✅ Confirmar pedido')}
+                </button>
+              );
+            })()}
             <button onClick={() => setConfirmando(false)} className="w-full text-center text-gray-400 text-sm font-semibold mt-3">
               {t('Volver')}
             </button>
@@ -948,18 +1032,18 @@ export default function Pedir() {
             onClick={e => e.stopPropagation()}
           >
             <p className="text-sp-gray font-black text-lg text-center mb-1">{t('📍 ¿Dónde estás?')}</p>
-            <p className="text-gray-400 text-[13px] text-center mb-4">{t('Te lo llevamos a tu lugar, o lo preparamos para llevar')}</p>
+            <p className="text-gray-400 text-[13px] text-center mb-4">{t('Te lo llevamos a tu lugar, o pasas a recogerlo')}</p>
 
             {/* Va PRIMERO y de ancho completo: si se mezclara en la parrilla quedaría
                 escondido entre las canchas y nadie lo encontraría. */}
             <button
-              onClick={() => { setUbicacion(PARA_LLEVAR); setPickUbi(false); }}
+              onClick={() => { setUbicacion(PASO_A_RECOGER); setPickUbi(false); }}
               className={`w-full py-3.5 rounded-xl text-[15px] font-bold border transition-colors mb-3 ${
-                ubicacion === PARA_LLEVAR ? 'bg-sp-green text-white border-sp-green' : 'bg-white text-sp-gray border-gray-200'
+                ubicacion === PASO_A_RECOGER ? 'bg-sp-green text-white border-sp-green' : 'bg-white text-sp-gray border-gray-200'
               }`}
             >
-              🥡 {nombreUbicacion(PARA_LLEVAR)}
-              <span className={`block text-[12px] font-semibold ${ubicacion === PARA_LLEVAR ? 'text-white/80' : 'text-gray-400'}`}>
+              🛍️ {nombreUbicacion(PASO_A_RECOGER)}
+              <span className={`block text-[12px] font-semibold ${ubicacion === PASO_A_RECOGER ? 'text-white/80' : 'text-gray-400'}`}>
                 {t('Paso por él — no hace falta que esté en el club')}
               </span>
             </button>
