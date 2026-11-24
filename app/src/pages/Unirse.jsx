@@ -55,6 +55,7 @@ function UnirseReta({ token }) {
         });
       } else {
         if (!nombre.trim()) { setLoading(false); return setError(t('Escribe tu nombre para unirte.')); }
+        if (telefono.replace(/D/g, '').length < 10) { setLoading(false); return setError(t('Escribe tu teléfono (10 dígitos) para unirte.')); }
         res = await fetch(`${API}/reta/${token}/unirme`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
