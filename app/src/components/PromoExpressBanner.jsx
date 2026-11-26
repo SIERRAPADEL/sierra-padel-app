@@ -232,6 +232,19 @@ export default function PromoExpressBanner() {
             {abierta.descripcion && (
               <p className="text-[15px] text-gray-600 mt-2 leading-snug">{abierta.descripcion}</p>
             )}
+            {/* 🎂 Su cupón de cumpleaños, A LA VISTA (German, 26-nov-2026): para dictarlo en el club o
+                sacarlo de aquí; el botón de abajo lo lleva a reservar con este mismo código puesto. */}
+            {abierta.dos_canchas && (
+              <div className="mt-3 rounded-xl px-4 py-3 text-center" style={{ background: '#f4f4f8' }}>
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-400">{t('Tu cupón')}</p>
+                <p style={{ fontSize: 24, fontWeight: 900, letterSpacing: '0.12em' }}>{abierta.dos_canchas.codigo}</p>
+                {abierta.dos_canchas.hasta && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t('Vale del {desde} al {hasta}', { desde: String(abierta.dos_canchas.desde || '').slice(0, 10), hasta: String(abierta.dos_canchas.hasta).slice(0, 10) })}
+                  </p>
+                )}
+              </div>
+            )}
             {/* La hora de JUGAR no es el plazo para RECLAMAR. Confundirlas es como se
                 pierde una reserva, así que se dicen por separado y con todas sus letras. */}
             {abierta.hora_desde && (
@@ -241,7 +254,7 @@ export default function PromoExpressBanner() {
                   : t('Para jugar desde las {desde}', { desde: String(abierta.hora_desde).slice(0, 5) })}
               </p>
             )}
-            {abierta.precio_preferencial != null && (
+            {abierta.precio_preferencial != null && !abierta.dos_canchas && (
               <p className="text-sm text-sp-green mt-1 font-bold">
                 {/* Paquete: el total anunciado (cancha + bote), no sólo la cancha. */}
                 {t('Precio de la promo: ${precio}', { precio: Math.round(Number(abierta.precio_anunciado ?? abierta.precio_preferencial)) })}

@@ -772,6 +772,7 @@ export default function Reservar() {
               <div className="card border-0" style={{ background: 'linear-gradient(135deg,var(--sp-dark-a),var(--sp-dark-b))' }}>
                 <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--sp-on-dark)' }}>{t('🎂 Tu promo de cumpleaños')}</p>
                 <p style={{ color: 'white', fontWeight: 900, fontSize: 18, marginTop: 4 }}>{t('Reserva 2 canchas: la 2ª va por la casa')}</p>
+                <p className="text-xs mt-1" style={{ color: '#c4c4d8' }}>{t('Tu cupón')}: <b style={{ color: 'white', letterSpacing: '0.08em' }}>{cumpleCodigo}</b></p>
                 <p className="text-sm mt-1" style={{ color: '#c4c4d8' }}>
                   {conNodo(t('Elige el día{rango}, la hora y marca {dos}.', {
                     rango: cumpleDesde && cumpleHasta ? t(' (del {desde} al {hasta})', { desde: formatDate(cumpleDesde), hasta: formatDate(cumpleHasta) }) : '',
